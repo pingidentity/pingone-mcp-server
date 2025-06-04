@@ -1,0 +1,66 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+
+# Build artifacts
+./main
+./pingone-mcp-server
+./server
+
+# Go build cache
+.gocache/
+**/.cache
+pkg/tools/go-cache/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Log files
+*.log
+
+# API key files
+*.key
+pingone-mcp-server-api.key
+
+# Temporary files
+tmp/
+.tmp/
+*.tmp
+
+# Build output
+dist/
+
+# Environment files (may contain secrets)
+.env
+.*-env
+!.env.example
+
+.claude
