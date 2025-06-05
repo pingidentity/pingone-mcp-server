@@ -5,7 +5,7 @@ import (
    "encoding/json"
    "fmt"
 
-   "github.com/patrickcping/pingone-go-sdk-v2/pingone-mcp-server/pkg/tools"
+   "github.com/pingidentity/pingone-mcp-server/pkg/tools"
 )
 
 // setUserEnabledSchema defines the input schema for enabling/disabling a user

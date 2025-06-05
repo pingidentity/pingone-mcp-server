@@ -16,16 +16,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/patrickcping/pingone-go-sdk-v2/pingone-mcp-server/pkg/config"
-	"github.com/patrickcping/pingone-go-sdk-v2/pingone-mcp-server/pkg/mcp"
-	"github.com/patrickcping/pingone-go-sdk-v2/pingone-mcp-server/pkg/tools"
+	"github.com/pingidentity/pingone-mcp-server/pkg/config"
+	"github.com/pingidentity/pingone-mcp-server/pkg/mcp"
+	"github.com/pingidentity/pingone-mcp-server/pkg/tools"
 	// identity user search tool
 	"github.com/patrickcping/pingone-go-sdk-v2/management"
-	"github.com/patrickcping/pingone-go-sdk-v2/pingone-mcp-server/pkg/tools/environments"
-	"github.com/patrickcping/pingone-go-sdk-v2/pingone-mcp-server/pkg/tools/environments/populations"
-	"github.com/patrickcping/pingone-go-sdk-v2/pingone-mcp-server/pkg/tools/identity/groups"
-	"github.com/patrickcping/pingone-go-sdk-v2/pingone-mcp-server/pkg/tools/identity/membership"
-	"github.com/patrickcping/pingone-go-sdk-v2/pingone-mcp-server/pkg/tools/identity/users"
+	"github.com/pingidentity/pingone-mcp-server/pkg/tools/environments"
+	"github.com/pingidentity/pingone-mcp-server/pkg/tools/environments/populations"
+	"github.com/pingidentity/pingone-mcp-server/pkg/tools/identity/groups"
+	"github.com/pingidentity/pingone-mcp-server/pkg/tools/identity/membership"
+	"github.com/pingidentity/pingone-mcp-server/pkg/tools/identity/users"
 )
 
 // tokenRefreshingTransport wraps an HTTP RoundTripper and on 401 responses

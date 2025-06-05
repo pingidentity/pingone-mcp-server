@@ -1,4 +1,4 @@
-module github.com/patrickcping/pingone-go-sdk-v2/pingone-mcp-server
+module github.com/pingidentity/pingone-mcp-server
 
 go 1.23.3
 

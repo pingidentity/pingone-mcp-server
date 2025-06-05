@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/patrickcping/pingone-go-sdk-v2/pingone-mcp-server/pkg/tools"
+	"github.com/pingidentity/pingone-mcp-server/pkg/tools"
 )
 
 // ServerMetadata describes the MCP server to clients
