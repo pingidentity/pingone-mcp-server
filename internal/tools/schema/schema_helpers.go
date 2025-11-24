@@ -99,6 +99,11 @@ func excludeFieldsFromRequired(schema *jsonschema.Schema, excludeFieldsList []st
 		result.OneOf = newOneOf
 	}
 
+	// Handle AddtionalProperties if it's a schema
+	if result.AdditionalProperties != nil {
+		result.AdditionalProperties = excludeFieldsFromRequired(result.AdditionalProperties, excludeFieldsList)
+	}
+
 	return result
 }
 
