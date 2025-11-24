@@ -52,7 +52,7 @@ builds:
         goarch: "386"
     
     ldflags:
-      - '-s -w -X main.version={{.Version}}'
+      - '-s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}'
 
 checksum:
   # Algorithm to be used.
