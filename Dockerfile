@@ -1,33 +1,25 @@
-FROM golang:1.24-alpine AS builder
-RUN apk add --no-cache git
-WORKDIR /src
-# Download dependencies
+FROM golang:1.25.1-alpine AS builder
+
+# Set the working directory inside the container
+WORKDIR /app
+
 COPY go.mod go.sum ./
+
 RUN go mod download
-# Copy source code
+
 COPY . .
-# Build static Linux binary
-WORKDIR /src/cmd/server
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server .
 
-# Final image
-FROM gcr.io/distroless/static:nonroot
-WORKDIR /
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pingone-mcp-server .
 
-# Copy binary from builder
-COPY --from=builder /app/server /server
+# Use a minimal base image for the final stage
+FROM alpine:latest
 
-# Set default environment variables (can be overridden at runtime)
-ENV PINGONE_MCP_TRANSPORT=stdio
-ENV PINGONE_MCP_DEBUG_API=false
-ENV PINGONE_MCP_ALLOW_MUTATION=false
-ENV PINGONE_MCP_ALLOW_INSECURE=false
-ENV PINGONE_MCP_SERVER_PORT=8080
-ENV PINGONE_MCP_API_KEY_PATH=/tmp/pingone-mcp-server-api.key
-ENV PINGONE_REGION=com
+WORKDIR /root/
 
-# Use non-root user
-USER nonroot:nonroot
+# Copy the binary from the builder stage
+COPY --from=builder /app/pingone-mcp-server .
 
-# Run the server (accepts CLI arguments)
-ENTRYPOINT ["/server"]
+RUN chmod +x ./pingone-mcp-server
+
+ENTRYPOINT ["./pingone-mcp-server"]

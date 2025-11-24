@@ -1,0 +1,272 @@
+// Copyright © 2025 Ping Identity Corporation
+
+package run_test
+
+import (
+	"context"
+	"os"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
+	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
+	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/populations"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestRunCommand_FromRoot_NoServerRun(t *testing.T) {
+	tests := []struct {
+		name          string
+		args          []string
+		expectError   bool
+		errorContains string
+		description   string
+	}{
+		{
+			name:        "run help flag",
+			args:        []string{"run", "--help"},
+			expectError: false,
+			description: "Run command help should execute without error",
+		},
+		{
+			name:          "run invalid flag",
+			args:          []string{"run", "--invalid-flag"},
+			expectError:   true,
+			errorContains: "unknown flag",
+			description:   "Run command should return error for invalid flag",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			// The server will exit immediately here, but the command can still be run
+			err := testutils.ExecuteCliRootCommand(t, ctx, tt.args...)
+
+			if tt.expectError {
+				require.Error(t, err, tt.description)
+				if tt.errorContains != "" {
+					assert.True(t, strings.Contains(err.Error(), tt.errorContains),
+						"Error should contain '%s', got: %v", tt.errorContains, err)
+				}
+			} else {
+				require.NoError(t, err, tt.description)
+			}
+		})
+	}
+}
+
+func TestRunCommand_FromSubcommand_RunServer(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	r, w, _ := os.Pipe()
+	os.Stdin = r
+	os.Stdout = w
+
+	// Run the server in a goroutine so the test doesn't block.
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		err := testutils.ExecuteCliRunCommand(t, ctx, testutils.NewInMemoryTokenStoreWithDefaultSession(), sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), &mcp.StdioTransport{})
+		assert.ErrorIs(t, err, context.Canceled, "server should stop due to context cancellation")
+	})
+
+	// Give the server a moment to start up.
+	time.Sleep(100 * time.Millisecond)
+
+	// Cancel the context to signal the server to shut down.
+	cancel()
+	wg.Wait()
+}
+
+func TestRunCommand_FromSubcommand_NoValidSession(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	r, w, _ := os.Pipe()
+	os.Stdin = r
+	os.Stdout = w
+
+	emptyTokenStore := testutils.NewInMemoryTokenStore()
+
+	// Run the server in a goroutine so the test doesn't block.
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		err := testutils.ExecuteCliRunCommand(t, ctx, emptyTokenStore, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), &mcp.StdioTransport{})
+		assert.ErrorIs(t, err, context.Canceled, "server should stop due to context cancellation")
+	})
+
+	// Give the server a moment to start up.
+	time.Sleep(100 * time.Millisecond)
+
+	// Cancel the context to signal the server to shut down.
+	cancel()
+	wg.Wait()
+}
+
+func TestRunCommand_FromSubcommand_ToolFiltering(t *testing.T) {
+	tests := []struct {
+		name            string
+		args            []string
+		expectError     bool
+		errorContains   string
+		expectedTools   []string
+		unexpectedTools []string
+	}{
+		{
+			name:            "no filtering defaults to read-only mode",
+			args:            []string{"run"},
+			expectedTools:   testutils.ReadOnlyToolNames(),
+			unexpectedTools: testutils.WriteToolNames(),
+		},
+		{
+			name:          "inclusion",
+			args:          []string{"run", "--include-tools", environments.ListEnvironmentsDef.McpTool.Name},
+			expectedTools: []string{environments.ListEnvironmentsDef.McpTool.Name},
+		},
+		{
+			name:            "exclusion",
+			args:            []string{"run", "--exclude-tools", environments.ListEnvironmentsDef.McpTool.Name},
+			unexpectedTools: []string{environments.ListEnvironmentsDef.McpTool.Name},
+		},
+		{
+			name:            "exclusion takes priority over inclusion",
+			args:            []string{"run", "--include-tools", environments.ListEnvironmentsDef.McpTool.Name, "--exclude-tools", environments.ListEnvironmentsDef.McpTool.Name},
+			unexpectedTools: []string{environments.ListEnvironmentsDef.McpTool.Name},
+		},
+		{
+			name:          "include collection",
+			args:          []string{"run", "--include-tool-collections", environments.CollectionName},
+			expectedTools: []string{environments.ListEnvironmentsDef.McpTool.Name},
+		},
+		{
+			name:            "exclude collection",
+			args:            []string{"run", "--exclude-tool-collections", environments.CollectionName},
+			unexpectedTools: []string{environments.ListEnvironmentsDef.McpTool.Name},
+		},
+		{
+			name:            "collection exclusion takes priority over inclusion",
+			args:            []string{"run", "--include-tool-collections", environments.CollectionName, "--exclude-tool-collections", environments.CollectionName},
+			unexpectedTools: []string{environments.ListEnvironmentsDef.McpTool.Name},
+		},
+		{
+			name:            "exclude collection overrides included tools",
+			args:            []string{"run", "--include-tools", environments.ListEnvironmentsDef.McpTool.Name, "--exclude-tool-collections", environments.CollectionName},
+			unexpectedTools: []string{environments.ListEnvironmentsDef.McpTool.Name},
+		},
+		{
+			name:          "include multiple tools",
+			args:          []string{"run", "--include-tools", environments.ListEnvironmentsDef.McpTool.Name + "," + populations.ListPopulationsDef.McpTool.Name},
+			expectedTools: []string{environments.ListEnvironmentsDef.McpTool.Name, populations.ListPopulationsDef.McpTool.Name},
+		},
+		{
+			name:            "exclude multiple tools",
+			args:            []string{"run", "--exclude-tools", environments.ListEnvironmentsDef.McpTool.Name + "," + populations.ListPopulationsDef.McpTool.Name},
+			unexpectedTools: []string{environments.ListEnvironmentsDef.McpTool.Name, populations.ListPopulationsDef.McpTool.Name},
+		},
+		{
+			name:          "include multiple collections",
+			args:          []string{"run", "--include-tool-collections", environments.CollectionName + "," + populations.CollectionName},
+			expectedTools: []string{environments.ListEnvironmentsDef.McpTool.Name, populations.ListPopulationsDef.McpTool.Name},
+		},
+		{
+			name:            "exclude multiple collections",
+			args:            []string{"run", "--exclude-tool-collections", environments.CollectionName + "," + populations.CollectionName},
+			unexpectedTools: []string{environments.ListEnvironmentsDef.McpTool.Name, populations.ListPopulationsDef.McpTool.Name},
+		},
+		{
+			name:            "mixed inclusion exclusion with multiple tools",
+			args:            []string{"run", "--include-tools", environments.ListEnvironmentsDef.McpTool.Name + "," + populations.ListPopulationsDef.McpTool.Name, "--exclude-tools", environments.ListEnvironmentsDef.McpTool.Name},
+			expectedTools:   []string{populations.ListPopulationsDef.McpTool.Name},
+			unexpectedTools: []string{environments.ListEnvironmentsDef.McpTool.Name},
+		},
+		{
+			name:            "mixed inclusion exclusion with multiple collections",
+			args:            []string{"run", "--include-tool-collections", environments.CollectionName + "," + populations.CollectionName, "--exclude-tool-collections", environments.CollectionName},
+			expectedTools:   []string{populations.ListPopulationsDef.McpTool.Name},
+			unexpectedTools: []string{environments.ListEnvironmentsDef.McpTool.Name},
+		},
+		{
+			name:          "disable-read-only flag includes all tools",
+			args:          []string{"run", "--disable-read-only"},
+			expectedTools: testutils.AllServerToolNames(),
+		},
+		{
+			name:            "disable-read-only mixed with tool filtering",
+			args:            []string{"run", "--disable-read-only", "--include-tools", environments.ListEnvironmentsDef.McpTool.Name + "," + populations.ListPopulationsDef.McpTool.Name, "--exclude-tools", environments.ListEnvironmentsDef.McpTool.Name},
+			expectedTools:   []string{populations.ListPopulationsDef.McpTool.Name},
+			unexpectedTools: []string{environments.ListEnvironmentsDef.McpTool.Name},
+		},
+		{
+			name:            "write tool excluded in read-only mode by default",
+			args:            []string{"run"},
+			unexpectedTools: []string{environments.CreateEnvironmentDef.McpTool.Name},
+		},
+		{
+			name:          "write tool included when disable-read-only flag is set",
+			args:          []string{"run", "--disable-read-only"},
+			expectedTools: []string{environments.CreateEnvironmentDef.McpTool.Name},
+		},
+		{
+			name:            "write tool explicitly included but still excluded in read-only mode",
+			args:            []string{"run", "--include-tools", environments.CreateEnvironmentDef.McpTool.Name},
+			unexpectedTools: []string{environments.CreateEnvironmentDef.McpTool.Name},
+		},
+		{
+			name:          "write tool explicitly included and allowed with disable-read-only",
+			args:          []string{"run", "--disable-read-only", "--include-tools", environments.CreateEnvironmentDef.McpTool.Name},
+			expectedTools: []string{environments.CreateEnvironmentDef.McpTool.Name},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			serverTransport, clientTransport := mcp.NewInMemoryTransports()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			var wg sync.WaitGroup
+			wg.Go(func() {
+				err := testutils.ExecuteCliRunCommand(t, ctx, testutils.NewInMemoryTokenStoreWithDefaultSession(), sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), serverTransport, tt.args...)
+				assert.ErrorIs(t, err, context.Canceled, "server should stop due to context cancellation")
+			})
+
+			// Give the server a moment to start up.
+			time.Sleep(100 * time.Millisecond)
+
+			client := testutils.TestMcpClient(t)
+
+			session, err := client.Connect(t.Context(), clientTransport, nil)
+			require.NoError(t, err)
+			defer session.Close()
+
+			toolsResult, err := session.ListTools(t.Context(), &mcp.ListToolsParams{})
+			require.NoError(t, err)
+
+			toolNames := make([]string, len(toolsResult.Tools))
+			for i, tool := range toolsResult.Tools {
+				toolNames[i] = tool.Name
+			}
+
+			for _, expectedTool := range tt.expectedTools {
+				assert.Contains(t, toolNames, expectedTool)
+			}
+
+			for _, unexpectedTool := range tt.unexpectedTools {
+				assert.NotContains(t, toolNames, unexpectedTool)
+			}
+
+			// Cancel the context to signal the server to shut down.
+			cancel()
+			wg.Wait()
+		})
+	}
+}

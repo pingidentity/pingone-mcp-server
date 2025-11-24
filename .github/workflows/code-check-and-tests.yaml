@@ -1,0 +1,90 @@
+name: Code Check and Tests
+
+# Disable automatic triggers
+on:
+  workflow_dispatch:
+# on:
+#   pull_request:
+#     paths:
+#       - ".github/workflows/code-check-and-tests.yaml"
+#       - "**.go"
+#       - "go.mod"
+#       - "go.sum"
+#       - "Makefile"
+#   push:
+#     branches:
+#       - "main"
+
+permissions:
+  contents: read
+
+jobs:
+  # Ensure the project can build first
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+          cache: true
+      - name: Get dependencies
+        run: |
+          go mod tidy
+          git diff --compact-summary --exit-code || \
+            (echo; echo "Unexpected difference after 'go mod tidy'. Run 'go mod tidy' command and commit."; exit 1)
+      - name: Build
+        run: |
+          make build
+  fmt:
+    name: go fmt
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+          cache: true
+      - run: |
+          if [ "$(go fmt ./... | wc -l)" -gt 0 ]; then
+            echo "::error::'go fmt' found required formatting changes. Run 'go fmt ./...' on your branch."
+            exit 1;
+          fi
+  vet:
+    name: go vet
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+          cache: true
+      - run: go vet ./...
+  lint:
+    name: lint
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+          cache: true
+      - run: make lint
+  test:
+    name: Tests
+    needs:
+      [fmt, vet, lint]
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+          cache: true
+      - run: make test

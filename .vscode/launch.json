@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug PingOne MCP Server",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/main.go",
+            "console": "integratedTerminal",
+            "args": "${input:commandLineArgs}",
+            "envFile": "${workspaceFolder}/bin/mcp.env",
+            "showLog": true,
+            "trace": "verbose"
+        }
+    ],
+    "inputs": [
+        {
+        "id": "commandLineArgs",
+        "type": "promptString",
+        "description": "Enter command line arguments for the program.",
+        "default": ""
+        }
+    ]
+}
