@@ -42,6 +42,13 @@ func TestRunCommand_FromRoot_NoServerRun(t *testing.T) {
 			errorContains: "unknown flag",
 			description:   "Run command should return error for invalid flag",
 		},
+		{
+			name:          "run invalid grant-type value",
+			args:          []string{"run", "--grant-type", "invalid"},
+			expectError:   true,
+			errorContains: "unable to parse grant type",
+			description:   "Run command should return error for invalid flag",
+		},
 	}
 
 	for _, tt := range tests {
