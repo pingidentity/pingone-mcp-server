@@ -15,6 +15,9 @@ pingone-mcp-server
 go.work
 go.work.sum
 
+# Vendor directory
+vendor/
+
 # Mac metadata
 **/.DS_Store
 
