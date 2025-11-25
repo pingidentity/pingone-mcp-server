@@ -16,7 +16,6 @@ Know that:
 ### Prerequisites
 
 - [Go](https://golang.org/doc/install) 1.25+ (to build and test the server)
-- [golangci-lint](https://golangci-lint.run/usage/install/) (for code linting)
 - Access to a PingOne environment for testing
 
 ### Development Setup
