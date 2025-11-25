@@ -32,9 +32,9 @@ func NewRootCommand(serverVersion string) *cobra.Command {
 	// Create default client factories and token store
 	clientFactory := sdk.NewDefaultClientFactory(serverVersion)
 	legacyClientFactory := legacy.NewDefaultClientFactory(serverVersion)
-	tokenStore := tokenstore.NewKeychainTokenStore()
+	tokenStoreFactory := tokenstore.NewDefaultTokenStoreFactory()
 	// Always run on stdio transport
-	result.AddCommand(run.NewCommand(tokenStore, clientFactory, legacyClientFactory, &mcp.StdioTransport{}))
+	result.AddCommand(run.NewCommand(tokenStoreFactory, clientFactory, legacyClientFactory, &mcp.StdioTransport{}))
 
 	// Create login dependencies
 
@@ -46,10 +46,10 @@ func NewRootCommand(serverVersion string) *cobra.Command {
 	mcpEnvironmentId := os.Getenv(mcpEnvironmentIdEnvVar)
 
 	authClientFactory := client.NewPingOneClientAuthWrapperFactory(serverVersion, mcpEnvironmentId)
-	result.AddCommand(login.NewCommand(authClientFactory, tokenStore))
+	result.AddCommand(login.NewCommand(authClientFactory, tokenStoreFactory))
 
-	result.AddCommand(logout.NewCommand(tokenStore))
+	result.AddCommand(logout.NewCommand(tokenStoreFactory))
 
-	result.AddCommand(session.NewCommand(tokenStore))
+	result.AddCommand(session.NewCommand(tokenStoreFactory))
 	return result
 }

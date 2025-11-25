@@ -17,7 +17,9 @@ import (
 
 const commandName = "session"
 
-func NewCommand(tokenStore tokenstore.TokenStore) *cobra.Command {
+func NewCommand(tokenStoreFactory tokenstore.TokenStoreFactory) *cobra.Command {
+	var storeTypeFlag string
+
 	cmd := &cobra.Command{
 		Use:   commandName,
 		Short: "Display current session information",
@@ -26,8 +28,18 @@ func NewCommand(tokenStore tokenstore.TokenStore) *cobra.Command {
 			logger.InitCommandLogger(cmd, commandName)
 			logger.FromContext(cmd.Context()).Debug("Command invoked")
 
-			if tokenStore == nil {
-				return errs.NewCommandError(commandName, errors.New("provided tokenStore is nil in session command"))
+			if tokenStoreFactory == nil {
+				return errs.NewCommandError(commandName, errors.New("provided tokenStoreFactory is nil in session command"))
+			}
+
+			storeType, err := tokenstore.ParseStoreType(storeTypeFlag)
+			if err != nil {
+				return errs.NewCommandError(commandName, err)
+			}
+
+			tokenStore, err := tokenStoreFactory.NewTokenStore(storeType)
+			if err != nil {
+				return errs.NewCommandError(commandName, err)
 			}
 
 			sessionExists, err := tokenStore.HasSession()
@@ -63,6 +75,8 @@ func NewCommand(tokenStore tokenstore.TokenStore) *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVar(&storeTypeFlag, "store-type", tokenstore.StoreTypeKeychain.String(), "Token store type to use (keychain or file)")
 
 	return cmd
 }

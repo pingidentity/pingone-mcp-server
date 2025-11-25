@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
+	"github.com/pingidentity/pingone-mcp-server/internal/tokenstore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
@@ -87,9 +88,10 @@ func TestLoginCommand_Direct_Success(t *testing.T) {
 			defer cancel()
 
 			tokenStore := testutils.NewInMemoryTokenStore()
+			tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithStore(tokenStore)
 			clientFactory := testutils.NewMockAuthClientFactory(nil, tt.tokenSource, nil)
 
-			err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStore)
+			err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStoreFactory)
 
 			require.NoError(t, err, tt.description)
 
@@ -104,6 +106,7 @@ func TestLoginCommand_Direct_Success(t *testing.T) {
 			assert.NotEmpty(t, storedSession.SessionId, "Session ID should not be empty")
 			_, err = uuid.Parse(storedSession.SessionId)
 			require.NoError(t, err, "Session ID should be a valid UUID")
+			tokenStoreFactory.AssertExpectations(t)
 		})
 	}
 }
@@ -118,26 +121,29 @@ func TestLoginCommand_Direct_SessionStoreError(t *testing.T) {
 	// Use a mock token store that returns errors
 	tokenStore := testutils.NewInMemoryTokenStore()
 	tokenStore.PutSessionError = assert.AnError
+	tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithStore(tokenStore)
 
-	err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStore)
+	err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStoreFactory)
 
 	require.Error(t, err, "Login should fail when session store returns error")
 	assert.True(t, errors.Is(err, assert.AnError), "Error should contain the mock error")
+	tokenStoreFactory.AssertExpectations(t)
 }
 
 func TestLoginCommand_Direct_NilAuthClientFactory(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tokenStore := testutils.NewInMemoryTokenStore()
+	tokenStoreFactory := testutils.NewMockTokenStoreFactory()
 
-	err := testutils.ExecuteCliLoginCommand(t, ctx, nil, tokenStore)
+	err := testutils.ExecuteCliLoginCommand(t, ctx, nil, tokenStoreFactory)
 
 	require.Error(t, err, "Login should fail with nil client")
 	assert.Contains(t, err.Error(), "authClientFactory is nil", "Error should indicate nil auth client factory")
+	tokenStoreFactory.AssertExpectations(t)
 }
 
-func TestLoginCommand_Direct_NilTokenStore(t *testing.T) {
+func TestLoginCommand_Direct_NilTokenStoreFactory(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -146,8 +152,8 @@ func TestLoginCommand_Direct_NilTokenStore(t *testing.T) {
 
 	err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, nil)
 
-	require.Error(t, err, "Login should fail with nil token store")
-	assert.Contains(t, err.Error(), "tokenStore is nil", "Error should indicate nil token store")
+	require.Error(t, err, "Login should fail with nil token store factory")
+	assert.Contains(t, err.Error(), "tokenStoreFactory is nil", "Error should indicate nil token store factory")
 }
 
 func TestLoginCommand_Direct_ReAuthWithUnexpiredSession(t *testing.T) {
@@ -157,6 +163,7 @@ func TestLoginCommand_Direct_ReAuthWithUnexpiredSession(t *testing.T) {
 	tokenSource := testutils.NewDefaultStaticTokenSource()
 	clientFactory := testutils.NewMockAuthClientFactory(nil, tokenSource, nil)
 	tokenStore := testutils.NewInMemoryTokenStore()
+	tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithStore(tokenStore)
 
 	// Setup an existing unexpired session
 	existingTokenValue := &oauth2.Token{
@@ -171,7 +178,7 @@ func TestLoginCommand_Direct_ReAuthWithUnexpiredSession(t *testing.T) {
 
 	require.True(t, existingSession.Expiry.After(time.Now()), "Existing session should be unexpired")
 
-	err = testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStore)
+	err = testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStoreFactory)
 	require.NoError(t, err, "Login should succeed and re-authenticate even with existing unexpired session")
 
 	// Verify the session has been refreshed
@@ -181,6 +188,7 @@ func TestLoginCommand_Direct_ReAuthWithUnexpiredSession(t *testing.T) {
 	assert.NotEqual(t, existingSession.AccessToken, storedSession.AccessToken, "Access token should be updated")
 	assert.NotEqual(t, existingSession.RefreshToken, storedSession.RefreshToken, "Refresh token should be updated")
 	assert.NotEqual(t, existingSession.Expiry, storedSession.Expiry, "Expiry should be updated")
+	tokenStoreFactory.AssertExpectations(t)
 }
 
 func TestLoginCommand_Direct_ReAuthWithExpiredSession(t *testing.T) {
@@ -190,6 +198,7 @@ func TestLoginCommand_Direct_ReAuthWithExpiredSession(t *testing.T) {
 	tokenSource := testutils.NewDefaultStaticTokenSource()
 	clientFactory := testutils.NewMockAuthClientFactory(nil, tokenSource, nil)
 	tokenStore := testutils.NewInMemoryTokenStore()
+	tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithStore(tokenStore)
 
 	// Setup an existing expired session
 	expiredToken := oauth2.Token{
@@ -201,7 +210,7 @@ func TestLoginCommand_Direct_ReAuthWithExpiredSession(t *testing.T) {
 	err := tokenStore.PutSession(expiredSession)
 	require.NoError(t, err)
 
-	err = testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStore)
+	err = testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStoreFactory)
 	require.NoError(t, err, "Login should succeed when existing session is expired")
 
 	// Verify a new session was created
@@ -212,6 +221,7 @@ func TestLoginCommand_Direct_ReAuthWithExpiredSession(t *testing.T) {
 	assert.NotEqual(t, expiredSession.AccessToken, storedSession.AccessToken, "Should have new access token from token source")
 	assert.NotEqual(t, expiredSession.RefreshToken, storedSession.RefreshToken, "Should have new refresh token from token source")
 	assert.NotEqual(t, expiredSession.Expiry, storedSession.Expiry, "Should have new expiry from token source")
+	tokenStoreFactory.AssertExpectations(t)
 }
 
 func TestLoginCommand_Direct_GrantTypeSelection(t *testing.T) {
@@ -263,9 +273,10 @@ func TestLoginCommand_Direct_GrantTypeSelection(t *testing.T) {
 			})
 
 			tokenStore := testutils.NewInMemoryTokenStore()
+			tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithStore(tokenStore)
 			clientFactory := testutils.NewMockAuthClientFactory(nil, authzCodeTokenSource, deviceCodeTokenSource)
 
-			err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStore, tt.args...)
+			err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStoreFactory, tt.args...)
 			require.NoError(t, err, tt.description)
 
 			// Verify the correct token source was used based on grant type
@@ -274,6 +285,81 @@ func TestLoginCommand_Direct_GrantTypeSelection(t *testing.T) {
 
 			assert.Equal(t, tt.expectedAccessToken, storedSession.AccessToken, "Access token should match expected grant type token source")
 			assert.Equal(t, tt.expectedRefreshToken, storedSession.RefreshToken, "Refresh token should match expected grant type token source")
+			tokenStoreFactory.AssertExpectations(t)
 		})
 	}
+}
+
+func TestLoginCommand_Direct_TokenStoreFactoryError(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	expectedError := assert.AnError
+	tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithError(expectedError)
+	tokenSource := testutils.NewDefaultStaticTokenSource()
+	clientFactory := testutils.NewMockAuthClientFactory(nil, tokenSource, nil)
+
+	err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStoreFactory)
+	require.Error(t, err, "Login should fail when token store factory returns error")
+	assert.Contains(t, err.Error(), expectedError.Error(), "Error should contain the factory error")
+	tokenStoreFactory.AssertExpectations(t)
+}
+
+func TestLoginCommand_Direct_StoreTypeSelection(t *testing.T) {
+	tests := []struct {
+		name              string
+		args              []string
+		expectedStoreType tokenstore.StoreType
+		description       string
+	}{
+		{
+			name:              "default store type is keychain",
+			args:              []string{},
+			expectedStoreType: tokenstore.StoreTypeKeychain,
+			description:       "Login should use keychain store type by default",
+		},
+		{
+			name:              "explicit keychain store type",
+			args:              []string{"--store-type", "keychain"},
+			expectedStoreType: tokenstore.StoreTypeKeychain,
+			description:       "Login should use keychain store type when explicitly specified",
+		},
+		{
+			name:              "file store type",
+			args:              []string{"--store-type", "file"},
+			expectedStoreType: tokenstore.StoreTypeFile,
+			description:       "Login should use file store type when specified",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			tokenStore := testutils.NewInMemoryTokenStore()
+			tokenStoreFactory := testutils.NewMockTokenStoreFactory()
+			tokenStoreFactory.On("NewTokenStore", tt.expectedStoreType).Return(tokenStore, nil)
+			tokenSource := testutils.NewDefaultStaticTokenSource()
+			clientFactory := testutils.NewMockAuthClientFactory(nil, tokenSource, nil)
+
+			err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStoreFactory, tt.args...)
+			require.NoError(t, err, tt.description)
+			// Verify token store was created with expected store type
+			tokenStoreFactory.AssertExpectations(t)
+		})
+	}
+}
+
+func TestLoginCommand_Direct_InvalidStoreType(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	tokenStoreFactory := testutils.NewMockTokenStoreFactory()
+	tokenSource := testutils.NewDefaultStaticTokenSource()
+	clientFactory := testutils.NewMockAuthClientFactory(nil, tokenSource, nil)
+
+	err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStoreFactory, "--store-type", "invalid")
+	require.Error(t, err, "Login should fail with invalid store type")
+	assert.Contains(t, err.Error(), "unable to parse store type from string: invalid", "Error should indicate invalid store type")
 }

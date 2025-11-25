@@ -37,37 +37,37 @@ func ExecuteCliRootCommand(t *testing.T, ctx context.Context, args ...string) (e
 	return root.ExecuteContext(ctx)
 }
 
-func ExecuteCliRunCommand(t *testing.T, ctx context.Context, tokenStore tokenstore.TokenStore, clientFactory sdk.ClientFactory, legacyClientFactory legacy.ClientFactory, transport mcp.Transport, args ...string) (err error) {
+func ExecuteCliRunCommand(t *testing.T, ctx context.Context, tokenStoreFactory tokenstore.TokenStoreFactory, clientFactory sdk.ClientFactory, legacyClientFactory legacy.ClientFactory, transport mcp.Transport, args ...string) (err error) {
 	t.Helper()
 
-	runCmd := run.NewCommand(tokenStore, clientFactory, legacyClientFactory, transport)
+	runCmd := run.NewCommand(tokenStoreFactory, clientFactory, legacyClientFactory, transport)
 	prepareTestCommand(runCmd, args...)
 
 	return runCmd.ExecuteContext(ctx)
 }
 
-func ExecuteCliLoginCommand(t *testing.T, ctx context.Context, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, args ...string) (err error) {
+func ExecuteCliLoginCommand(t *testing.T, ctx context.Context, authClientFactory client.AuthClientFactory, tokenStoreFactory tokenstore.TokenStoreFactory, args ...string) (err error) {
 	t.Helper()
 
-	loginCmd := login.NewCommand(authClientFactory, tokenStore)
+	loginCmd := login.NewCommand(authClientFactory, tokenStoreFactory)
 	prepareTestCommand(loginCmd, args...)
 
 	return loginCmd.ExecuteContext(ctx)
 }
 
-func ExecuteCliLogoutCommand(t *testing.T, ctx context.Context, tokenStore tokenstore.TokenStore, args ...string) (err error) {
+func ExecuteCliLogoutCommand(t *testing.T, ctx context.Context, tokenStoreFactory tokenstore.TokenStoreFactory, args ...string) (err error) {
 	t.Helper()
 
-	logoutCmd := logout.NewCommand(tokenStore)
+	logoutCmd := logout.NewCommand(tokenStoreFactory)
 	prepareTestCommand(logoutCmd, args...)
 
 	return logoutCmd.ExecuteContext(ctx)
 }
 
-func ExecuteCliSessionCommand(t *testing.T, ctx context.Context, tokenStore tokenstore.TokenStore, args ...string) (err error) {
+func ExecuteCliSessionCommand(t *testing.T, ctx context.Context, tokenStoreFactory tokenstore.TokenStoreFactory, args ...string) (err error) {
 	t.Helper()
 
-	sessionCmd := session.NewCommand(tokenStore)
+	sessionCmd := session.NewCommand(tokenStoreFactory)
 	prepareTestCommand(sessionCmd, args...)
 
 	return sessionCmd.ExecuteContext(ctx)

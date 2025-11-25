@@ -20,12 +20,13 @@ import (
 
 const commandName = "run"
 
-func NewCommand(tokenStore tokenstore.TokenStore, clientFactory sdk.ClientFactory, legacyClientFactory legacy.ClientFactory, transport mcp.Transport) *cobra.Command {
+func NewCommand(tokenStoreFactory tokenstore.TokenStoreFactory, clientFactory sdk.ClientFactory, legacyClientFactory legacy.ClientFactory, transport mcp.Transport) *cobra.Command {
 	var includedTools []string
 	var excludedTools []string
 	var includedToolCollections []string
 	var excludedToolCollections []string
 	var disableReadOnly bool
+	var storeTypeFlag string
 
 	cmd := &cobra.Command{
 		Use:   commandName,
@@ -35,8 +36,18 @@ The server will communicate over stdin/stdout.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			logger.InitCommandLogger(cmd, commandName)
 			logger.FromContext(cmd.Context()).Debug("Command invoked")
-			if tokenStore == nil {
-				return errs.NewCommandError(commandName, errors.New("provided tokenStore is nil in run command"))
+			if tokenStoreFactory == nil {
+				return errs.NewCommandError(commandName, errors.New("provided tokenStoreFactory is nil in run command"))
+			}
+
+			storeType, err := tokenstore.ParseStoreType(storeTypeFlag)
+			if err != nil {
+				return errs.NewCommandError(commandName, err)
+			}
+
+			tokenStore, err := tokenStoreFactory.NewTokenStore(storeType)
+			if err != nil {
+				return errs.NewCommandError(commandName, err)
 			}
 
 			hasSession, err := tokenStore.HasSession()
@@ -83,6 +94,7 @@ The server will communicate over stdin/stdout.`,
 	cmd.Flags().StringSliceVar(&includedToolCollections, "include-tool-collections", []string{}, "A list of tool collections to enable")
 	cmd.Flags().StringSliceVar(&excludedToolCollections, "exclude-tool-collections", []string{}, "A list of tool collections to disable")
 	cmd.Flags().BoolVar(&disableReadOnly, "disable-read-only", false, "Disable read-only mode to include write tools")
+	cmd.Flags().StringVar(&storeTypeFlag, "store-type", tokenstore.StoreTypeKeychain.String(), "Token store type to use (keychain or file)")
 
 	return cmd
 }

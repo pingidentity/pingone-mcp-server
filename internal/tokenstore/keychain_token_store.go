@@ -21,8 +21,13 @@ var (
 // KeychainTokenStore provides a keychain-based implementation of TokenStore
 type KeychainTokenStore struct{}
 
-func NewKeychainTokenStore() *KeychainTokenStore {
-	return &KeychainTokenStore{}
+func NewKeychainTokenStore() (*KeychainTokenStore, error) {
+	// Validate that the keychain is accessible
+	_, err := keyring.Get(keychainServiceName, keychainUsername)
+	if err != nil && !errors.Is(err, keyring.ErrNotFound) {
+		return nil, fmt.Errorf("keychain is not accessible: %w", err)
+	}
+	return &KeychainTokenStore{}, nil
 }
 
 func (k *KeychainTokenStore) PutSession(session auth.AuthSession) error {
