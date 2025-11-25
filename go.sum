@@ -452,8 +452,8 @@ github.com/pelletier/go-toml v1.9.5 h1:4yBQzkHv+7BHq2PQUZF3Mx0IYxG7LsP222s7Agd3v
 github.com/pelletier/go-toml v1.9.5/go.mod h1:u1nR/EPcESfeI/szUZKdtJ0xRNbUoANCkoOuaOx1Y+c=
 github.com/pelletier/go-toml/v2 v2.2.3 h1:YmeHyLY8mFWbdkNWwpr+qIL2bEqT0o95WSdkNHvL12M=
 github.com/pelletier/go-toml/v2 v2.2.3/go.mod h1:MfCQTFTvCcUyyvvwm1+G6H/jORL20Xlb6rzQu9GuUkc=
-github.com/pingidentity/pingone-go-client v0.3.1-0.20251119221833-4bf362590fbd h1:aFw2BzbU5N38bC7i1RfSF/Y6p2VpInndEiD53gW7KOI=
-github.com/pingidentity/pingone-go-client v0.3.1-0.20251119221833-4bf362590fbd/go.mod h1:RF7XMiFAipjVvn37mYWnsiW+CP4g3Tqkn1ynwFpO81c=
+github.com/pingidentity/pingone-go-client v0.3.1-0.20251125171653-06279866035b h1:LQbYeaASv6lF9LDtLJDQrfbMc32/AKKhSSQOI/AtyPU=
+github.com/pingidentity/pingone-go-client v0.3.1-0.20251125171653-06279866035b/go.mod h1:RF7XMiFAipjVvn37mYWnsiW+CP4g3Tqkn1ynwFpO81c=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
