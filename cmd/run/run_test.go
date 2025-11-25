@@ -14,6 +14,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
+	"github.com/pingidentity/pingone-mcp-server/internal/tokenstore"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/populations"
 	"github.com/stretchr/testify/assert"
@@ -68,6 +69,9 @@ func TestRunCommand_FromSubcommand_RunServer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	tokenStore := testutils.NewInMemoryTokenStoreWithDefaultSession()
+	tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithStore(tokenStore)
+
 	r, w, _ := os.Pipe()
 	os.Stdin = r
 	os.Stdout = w
@@ -75,7 +79,7 @@ func TestRunCommand_FromSubcommand_RunServer(t *testing.T) {
 	// Run the server in a goroutine so the test doesn't block.
 	var wg sync.WaitGroup
 	wg.Go(func() {
-		err := testutils.ExecuteCliRunCommand(t, ctx, testutils.NewInMemoryTokenStoreWithDefaultSession(), sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), &mcp.StdioTransport{})
+		err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), &mcp.StdioTransport{})
 		assert.ErrorIs(t, err, context.Canceled, "server should stop due to context cancellation")
 	})
 
@@ -85,6 +89,7 @@ func TestRunCommand_FromSubcommand_RunServer(t *testing.T) {
 	// Cancel the context to signal the server to shut down.
 	cancel()
 	wg.Wait()
+	tokenStoreFactory.AssertExpectations(t)
 }
 
 func TestRunCommand_FromSubcommand_NoValidSession(t *testing.T) {
@@ -96,11 +101,12 @@ func TestRunCommand_FromSubcommand_NoValidSession(t *testing.T) {
 	os.Stdout = w
 
 	emptyTokenStore := testutils.NewInMemoryTokenStore()
+	tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithStore(emptyTokenStore)
 
 	// Run the server in a goroutine so the test doesn't block.
 	var wg sync.WaitGroup
 	wg.Go(func() {
-		err := testutils.ExecuteCliRunCommand(t, ctx, emptyTokenStore, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), &mcp.StdioTransport{})
+		err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), &mcp.StdioTransport{})
 		assert.ErrorIs(t, err, context.Canceled, "server should stop due to context cancellation")
 	})
 
@@ -110,6 +116,90 @@ func TestRunCommand_FromSubcommand_NoValidSession(t *testing.T) {
 	// Cancel the context to signal the server to shut down.
 	cancel()
 	wg.Wait()
+	tokenStoreFactory.AssertExpectations(t)
+}
+
+func TestRunCommand_FromSubcommand_TokenStoreFactoryError(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	expectedError := assert.AnError
+	tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithError(expectedError)
+
+	err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), &mcp.StdioTransport{})
+	require.Error(t, err, "Run should fail when token store factory returns error")
+	assert.Contains(t, err.Error(), expectedError.Error(), "Error should contain the factory error")
+	tokenStoreFactory.AssertExpectations(t)
+}
+
+func TestRunCommand_FromSubcommand_StoreTypeSelection(t *testing.T) {
+	tests := []struct {
+		name              string
+		args              []string
+		expectedStoreType tokenstore.StoreType
+		description       string
+	}{
+		{
+			name:              "default store type is keychain",
+			args:              []string{},
+			expectedStoreType: tokenstore.StoreTypeKeychain,
+			description:       "Run should use keychain store type by default",
+		},
+		{
+			name:              "explicit keychain store type",
+			args:              []string{"--store-type", "keychain"},
+			expectedStoreType: tokenstore.StoreTypeKeychain,
+			description:       "Run should use keychain store type when explicitly specified",
+		},
+		{
+			name:              "file store type",
+			args:              []string{"--store-type", "file"},
+			expectedStoreType: tokenstore.StoreTypeFile,
+			description:       "Run should use file store type when specified",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			tokenStore := testutils.NewInMemoryTokenStoreWithDefaultSession()
+			tokenStoreFactory := testutils.NewMockTokenStoreFactory()
+			tokenStoreFactory.On("NewTokenStore", tt.expectedStoreType).Return(tokenStore, nil)
+
+			r, w, _ := os.Pipe()
+			os.Stdin = r
+			os.Stdout = w
+
+			// Run the server in a goroutine so the test doesn't block.
+			var wg sync.WaitGroup
+			wg.Go(func() {
+				err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), &mcp.StdioTransport{}, tt.args...)
+				assert.ErrorIs(t, err, context.Canceled, "server should stop due to context cancellation")
+			})
+
+			// Give the server a moment to start up.
+			time.Sleep(100 * time.Millisecond)
+
+			// Cancel the context to signal the server to shut down.
+			cancel()
+			wg.Wait()
+			// Verify token store was created with expected store type
+			tokenStoreFactory.AssertExpectations(t)
+		})
+	}
+}
+
+func TestRunCommand_FromSubcommand_InvalidStoreType(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	tokenStoreFactory := testutils.NewMockTokenStoreFactory()
+
+	err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), &mcp.StdioTransport{}, "--store-type", "invalid")
+	require.Error(t, err, "Run should fail with invalid store type")
+	assert.Contains(t, err.Error(), "unable to parse store type from string: invalid", "Error should indicate invalid store type")
 }
 
 func TestRunCommand_FromSubcommand_ToolFiltering(t *testing.T) {
@@ -233,9 +323,12 @@ func TestRunCommand_FromSubcommand_ToolFiltering(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
+			tokenStore := testutils.NewInMemoryTokenStoreWithDefaultSession()
+			tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithStore(tokenStore)
+
 			var wg sync.WaitGroup
 			wg.Go(func() {
-				err := testutils.ExecuteCliRunCommand(t, ctx, testutils.NewInMemoryTokenStoreWithDefaultSession(), sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), serverTransport, tt.args...)
+				err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), serverTransport, tt.args...)
 				assert.ErrorIs(t, err, context.Canceled, "server should stop due to context cancellation")
 			})
 
@@ -267,6 +360,7 @@ func TestRunCommand_FromSubcommand_ToolFiltering(t *testing.T) {
 			// Cancel the context to signal the server to shut down.
 			cancel()
 			wg.Wait()
+			tokenStoreFactory.AssertExpectations(t)
 		})
 	}
 }

@@ -101,8 +101,7 @@ nfpms:
     # Your app's homepage.
     #
     # Default: inferred from global metadata.
-    #TODO update for real repo
-    homepage: "https://github.com/henryrecker_pingidentity/pingone-mcp-server"
+    homepage: "https://github.com/pingidentity/pingone-mcp-server"
 
     # Your app's maintainer (probably you).
     #
@@ -143,8 +142,7 @@ nfpms:
       # Additional fields for the control file. Empty fields are ignored.
       # This will expand any env vars you set in the field values, e.g. Vcs-Browser: ${CI_PROJECT_URL}
       fields:
-        #TODO update for real repo
-        Bugs: "https://github.com/henryrecker_pingidentity/pingone-mcp-server/issues"
+        Bugs: "https://github.com/pingidentity/pingone-mcp-server/issues"
 
     apk:
       # The package is signed if a key_file is set

@@ -15,7 +15,9 @@ import (
 
 const commandName = "logout"
 
-func NewCommand(tokenStore tokenstore.TokenStore) *cobra.Command {
+func NewCommand(tokenStoreFactory tokenstore.TokenStoreFactory) *cobra.Command {
+	var storeTypeFlag string
+
 	cmd := &cobra.Command{
 		Use:   commandName,
 		Short: "Logout from PingOne",
@@ -25,11 +27,21 @@ func NewCommand(tokenStore tokenstore.TokenStore) *cobra.Command {
 			logger.FromContext(cmd.Context()).Debug("Command invoked")
 			log.Println("Logging out from PingOne...")
 
-			if tokenStore == nil {
-				return errs.NewCommandError(commandName, errors.New("provided tokenStore is nil in logout command"))
+			if tokenStoreFactory == nil {
+				return errs.NewCommandError(commandName, errors.New("provided tokenStoreFactory is nil in logout command"))
 			}
 
-			err := logout.Logout(cmd.Context(), tokenStore)
+			storeType, err := tokenstore.ParseStoreType(storeTypeFlag)
+			if err != nil {
+				return errs.NewCommandError(commandName, err)
+			}
+
+			tokenStore, err := tokenStoreFactory.NewTokenStore(storeType)
+			if err != nil {
+				return errs.NewCommandError(commandName, err)
+			}
+
+			err = logout.Logout(cmd.Context(), tokenStore)
 			if err != nil {
 				return errs.NewCommandError(commandName, err)
 			}
@@ -38,6 +50,8 @@ func NewCommand(tokenStore tokenstore.TokenStore) *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVar(&storeTypeFlag, "store-type", tokenstore.StoreTypeKeychain.String(), "Token store type to use (keychain or file)")
 
 	return cmd
 }

@@ -17,9 +17,21 @@ FROM alpine:latest
 
 WORKDIR /root/
 
+# Environment variables for PingOne MCP Server configuration
+ENV PINGONE_TOP_LEVEL_DOMAIN="" \
+    PINGONE_REGION_CODE="" \
+    PINGONE_MCP_ENVIRONMENT_ID="" \
+    PINGONE_DEVICE_CODE_CLIENT_ID="" \
+    PINGONE_DEVICE_CODE_SCOPES="" \
+    PINGONE_MCP_DEBUG=""
+
 # Copy the binary from the builder stage
 COPY --from=builder /app/pingone-mcp-server .
 
-RUN chmod +x ./pingone-mcp-server
+# Copy the entrypoint script
+COPY docker-entrypoint.sh .
 
-ENTRYPOINT ["./pingone-mcp-server"]
+RUN chmod +x ./pingone-mcp-server && \
+    chmod +x ./docker-entrypoint.sh
+
+ENTRYPOINT ["./docker-entrypoint.sh"]
