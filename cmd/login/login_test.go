@@ -14,6 +14,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
 	"github.com/pingidentity/pingone-mcp-server/internal/tokenstore"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 )
@@ -89,7 +90,7 @@ func TestLoginCommand_Direct_Success(t *testing.T) {
 
 			tokenStore := testutils.NewInMemoryTokenStore()
 			tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithStore(tokenStore)
-			clientFactory := testutils.NewMockAuthClientFactory(nil, tt.tokenSource, nil)
+			clientFactory := testutils.NewMockAuthClientFactory(tt.tokenSource)
 
 			err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStoreFactory)
 
@@ -116,7 +117,7 @@ func TestLoginCommand_Direct_SessionStoreError(t *testing.T) {
 	defer cancel()
 
 	tokenSource := testutils.NewDefaultStaticTokenSource()
-	clientFactory := testutils.NewMockAuthClientFactory(nil, tokenSource, nil)
+	clientFactory := testutils.NewMockAuthClientFactory(tokenSource)
 
 	// Use a mock token store that returns errors
 	tokenStore := testutils.NewInMemoryTokenStore()
@@ -148,7 +149,7 @@ func TestLoginCommand_Direct_NilTokenStoreFactory(t *testing.T) {
 	defer cancel()
 
 	tokenSource := testutils.NewDefaultStaticTokenSource()
-	clientFactory := testutils.NewMockAuthClientFactory(nil, tokenSource, nil)
+	clientFactory := testutils.NewMockAuthClientFactory(tokenSource)
 
 	err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, nil)
 
@@ -161,7 +162,7 @@ func TestLoginCommand_Direct_ReAuthWithUnexpiredSession(t *testing.T) {
 	defer cancel()
 
 	tokenSource := testutils.NewDefaultStaticTokenSource()
-	clientFactory := testutils.NewMockAuthClientFactory(nil, tokenSource, nil)
+	clientFactory := testutils.NewMockAuthClientFactory(tokenSource)
 	tokenStore := testutils.NewInMemoryTokenStore()
 	tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithStore(tokenStore)
 
@@ -196,7 +197,7 @@ func TestLoginCommand_Direct_ReAuthWithExpiredSession(t *testing.T) {
 	defer cancel()
 
 	tokenSource := testutils.NewDefaultStaticTokenSource()
-	clientFactory := testutils.NewMockAuthClientFactory(nil, tokenSource, nil)
+	clientFactory := testutils.NewMockAuthClientFactory(tokenSource)
 	tokenStore := testutils.NewInMemoryTokenStore()
 	tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithStore(tokenStore)
 
@@ -274,9 +275,13 @@ func TestLoginCommand_Direct_GrantTypeSelection(t *testing.T) {
 
 			tokenStore := testutils.NewInMemoryTokenStore()
 			tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithStore(tokenStore)
-			clientFactory := testutils.NewMockAuthClientFactory(nil, authzCodeTokenSource, deviceCodeTokenSource)
+			mockClient := testutils.MockAuthClient{}
+			mockClient.On("TokenSource", mock.Anything, auth.GrantTypeAuthorizationCode).Return(authzCodeTokenSource, nil)
+			mockClient.On("TokenSource", mock.Anything, auth.GrantTypeDeviceCode).Return(deviceCodeTokenSource, nil)
+			mockClientFactory := &testutils.MockAuthClientFactory{}
+			mockClientFactory.On("NewAuthClient").Return(&mockClient, nil)
 
-			err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStoreFactory, tt.args...)
+			err := testutils.ExecuteCliLoginCommand(t, ctx, mockClientFactory, tokenStoreFactory, tt.args...)
 			require.NoError(t, err, tt.description)
 
 			// Verify the correct token source was used based on grant type
@@ -297,7 +302,7 @@ func TestLoginCommand_Direct_TokenStoreFactoryError(t *testing.T) {
 	expectedError := assert.AnError
 	tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithError(expectedError)
 	tokenSource := testutils.NewDefaultStaticTokenSource()
-	clientFactory := testutils.NewMockAuthClientFactory(nil, tokenSource, nil)
+	clientFactory := testutils.NewMockAuthClientFactory(tokenSource)
 
 	err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStoreFactory)
 	require.Error(t, err, "Login should fail when token store factory returns error")
@@ -341,7 +346,7 @@ func TestLoginCommand_Direct_StoreTypeSelection(t *testing.T) {
 			tokenStoreFactory := testutils.NewMockTokenStoreFactory()
 			tokenStoreFactory.On("NewTokenStore", tt.expectedStoreType).Return(tokenStore, nil)
 			tokenSource := testutils.NewDefaultStaticTokenSource()
-			clientFactory := testutils.NewMockAuthClientFactory(nil, tokenSource, nil)
+			clientFactory := testutils.NewMockAuthClientFactory(tokenSource)
 
 			err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStoreFactory, tt.args...)
 			require.NoError(t, err, tt.description)
@@ -357,7 +362,7 @@ func TestLoginCommand_Direct_InvalidStoreType(t *testing.T) {
 
 	tokenStoreFactory := testutils.NewMockTokenStoreFactory()
 	tokenSource := testutils.NewDefaultStaticTokenSource()
-	clientFactory := testutils.NewMockAuthClientFactory(nil, tokenSource, nil)
+	clientFactory := testutils.NewMockAuthClientFactory(tokenSource)
 
 	err := testutils.ExecuteCliLoginCommand(t, ctx, clientFactory, tokenStoreFactory, "--store-type", "invalid")
 	require.Error(t, err, "Login should fail with invalid store type")
