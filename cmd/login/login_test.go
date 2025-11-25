@@ -291,6 +291,7 @@ func TestLoginCommand_Direct_GrantTypeSelection(t *testing.T) {
 			assert.Equal(t, tt.expectedAccessToken, storedSession.AccessToken, "Access token should match expected grant type token source")
 			assert.Equal(t, tt.expectedRefreshToken, storedSession.RefreshToken, "Refresh token should match expected grant type token source")
 			tokenStoreFactory.AssertExpectations(t)
+			mockClientFactory.AssertExpectations(t)
 		})
 	}
 }
