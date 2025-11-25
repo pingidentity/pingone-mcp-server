@@ -8,6 +8,8 @@ import (
 	"log/slog"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/pingidentity/pingone-mcp-server/internal/auth"
+	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/tokenstore"
@@ -27,7 +29,7 @@ func (c *EnvironmentsCollection) Name() string {
 	return CollectionName
 }
 
-func (c *EnvironmentsCollection) RegisterTools(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, tokenStore tokenstore.TokenStore, toolFilter *filter.Filter) error {
+func (c *EnvironmentsCollection) RegisterTools(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, toolFilter *filter.Filter, grantType auth.GrantType) error {
 	if clientFactory == nil {
 		return fmt.Errorf("PingOne API client factory is nil")
 	}
@@ -36,7 +38,7 @@ func (c *EnvironmentsCollection) RegisterTools(ctx context.Context, server *mcp.
 	}
 
 	environmentsClientFactory := NewPingOneClientEnvironmentsWrapperFactory(clientFactory, tokenStore)
-	initializeAuthContext := initialize.AuthContextInitializer(tokenStore)
+	initializeAuthContext := initialize.AuthContextInitializer(authClientFactory, tokenStore, grantType)
 
 	if toolFilter.ShouldIncludeTool(ListEnvironmentsDef.McpTool.Name, ListEnvironmentsDef.IsReadOnly) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", ListEnvironmentsDef.McpTool.Name))

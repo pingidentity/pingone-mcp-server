@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/pingidentity/pingone-mcp-server/internal/auth"
+	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
@@ -20,12 +22,13 @@ import (
 
 const commandName = "run"
 
-func NewCommand(tokenStoreFactory tokenstore.TokenStoreFactory, clientFactory sdk.ClientFactory, legacyClientFactory legacy.ClientFactory, transport mcp.Transport) *cobra.Command {
+func NewCommand(tokenStoreFactory tokenstore.TokenStoreFactory, clientFactory sdk.ClientFactory, legacyClientFactory legacy.ClientFactory, authClientFactory client.AuthClientFactory, transport mcp.Transport) *cobra.Command {
 	var includedTools []string
 	var excludedTools []string
 	var includedToolCollections []string
 	var excludedToolCollections []string
 	var disableReadOnly bool
+	var grantTypeFlag string
 	var storeTypeFlag string
 
 	cmd := &cobra.Command{
@@ -39,6 +42,12 @@ The server will communicate over stdin/stdout.`,
 			if tokenStoreFactory == nil {
 				return errs.NewCommandError(commandName, errors.New("provided tokenStoreFactory is nil in run command"))
 			}
+
+			grantType, err := auth.ParseGrantType(grantTypeFlag)
+			if err != nil {
+				return errs.NewCommandError(commandName, err)
+			}
+			logger.FromContext(cmd.Context()).Debug("Using grant type", slog.String("grantType", grantType.String()))
 
 			storeType, err := tokenstore.ParseStoreType(storeTypeFlag)
 			if err != nil {
@@ -81,7 +90,7 @@ The server will communicate over stdin/stdout.`,
 				slog.Any("includedToolCollections", includedToolCollections),
 				slog.Any("excludedToolCollections", excludedToolCollections))
 
-			err = server.Start(cmd.Context(), transport, clientFactory, legacyClientFactory, tokenStore, toolFilter)
+			err = server.Start(cmd.Context(), transport, clientFactory, legacyClientFactory, authClientFactory, tokenStore, toolFilter, grantType)
 			if err != nil {
 				return errs.NewCommandError(commandName, err)
 			}
@@ -94,6 +103,7 @@ The server will communicate over stdin/stdout.`,
 	cmd.Flags().StringSliceVar(&includedToolCollections, "include-tool-collections", []string{}, "A list of tool collections to enable")
 	cmd.Flags().StringSliceVar(&excludedToolCollections, "exclude-tool-collections", []string{}, "A list of tool collections to disable")
 	cmd.Flags().BoolVar(&disableReadOnly, "disable-read-only", false, "Disable read-only mode to include write tools")
+	cmd.Flags().StringVar(&grantTypeFlag, "grant-type", auth.GrantTypeAuthorizationCode.String(), "OAuth grant type to use for authentication (authorization_code or device_code)")
 	cmd.Flags().StringVar(&storeTypeFlag, "store-type", tokenstore.StoreTypeKeychain.String(), "Token store type to use (keychain or file)")
 
 	return cmd
