@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
@@ -14,6 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const defaultGrantType = auth.GrantTypeAuthorizationCode
 
 func TestEnvironmentsCollection_Name(t *testing.T) {
 	collection := &environments.EnvironmentsCollection{}
@@ -44,7 +47,7 @@ func TestEnvironmentsCollection_RegisterTools_NilClientFactory(t *testing.T) {
 	toolFilter := filter.PassthroughFilter()
 
 	// Attempt to register tools with nil client
-	err := collection.RegisterTools(t.Context(), server, nil, testutils.NewInMemoryTokenStore(), toolFilter)
+	err := collection.RegisterTools(t.Context(), server, nil, testutils.NewEmptyMockAuthClientFactory(), testutils.NewInMemoryTokenStore(), toolFilter, defaultGrantType)
 
 	// Should return an error
 	require.Error(t, err)
@@ -60,7 +63,7 @@ func TestEnvironmentsCollection_RegisterTools_NilTokenStore(t *testing.T) {
 	toolFilter := filter.PassthroughFilter()
 
 	// Attempt to register tools with nil token store
-	err := collection.RegisterTools(t.Context(), server, sdk.NewEmptyClientFactory(), nil, toolFilter)
+	err := collection.RegisterTools(t.Context(), server, sdk.NewEmptyClientFactory(), testutils.NewEmptyMockAuthClientFactory(), nil, toolFilter, defaultGrantType)
 
 	// Should return an error
 	require.Error(t, err)

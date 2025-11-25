@@ -79,7 +79,7 @@ func TestRunCommand_FromSubcommand_RunServer(t *testing.T) {
 	// Run the server in a goroutine so the test doesn't block.
 	var wg sync.WaitGroup
 	wg.Go(func() {
-		err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), &mcp.StdioTransport{})
+		err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), testutils.NewEmptyMockAuthClientFactory(), &mcp.StdioTransport{})
 		assert.ErrorIs(t, err, context.Canceled, "server should stop due to context cancellation")
 	})
 
@@ -106,7 +106,7 @@ func TestRunCommand_FromSubcommand_NoValidSession(t *testing.T) {
 	// Run the server in a goroutine so the test doesn't block.
 	var wg sync.WaitGroup
 	wg.Go(func() {
-		err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), &mcp.StdioTransport{})
+		err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), testutils.NewEmptyMockAuthClientFactory(), &mcp.StdioTransport{})
 		assert.ErrorIs(t, err, context.Canceled, "server should stop due to context cancellation")
 	})
 
@@ -126,7 +126,7 @@ func TestRunCommand_FromSubcommand_TokenStoreFactoryError(t *testing.T) {
 	expectedError := assert.AnError
 	tokenStoreFactory := testutils.NewMockTokenStoreFactoryWithError(expectedError)
 
-	err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), &mcp.StdioTransport{})
+	err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), testutils.NewEmptyMockAuthClientFactory(), &mcp.StdioTransport{})
 	require.Error(t, err, "Run should fail when token store factory returns error")
 	assert.Contains(t, err.Error(), expectedError.Error(), "Error should contain the factory error")
 	tokenStoreFactory.AssertExpectations(t)
@@ -175,7 +175,7 @@ func TestRunCommand_FromSubcommand_StoreTypeSelection(t *testing.T) {
 			// Run the server in a goroutine so the test doesn't block.
 			var wg sync.WaitGroup
 			wg.Go(func() {
-				err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), &mcp.StdioTransport{}, tt.args...)
+				err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), testutils.NewEmptyMockAuthClientFactory(), &mcp.StdioTransport{}, tt.args...)
 				assert.ErrorIs(t, err, context.Canceled, "server should stop due to context cancellation")
 			})
 
@@ -197,7 +197,7 @@ func TestRunCommand_FromSubcommand_InvalidStoreType(t *testing.T) {
 
 	tokenStoreFactory := testutils.NewMockTokenStoreFactory()
 
-	err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), &mcp.StdioTransport{}, "--store-type", "invalid")
+	err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), testutils.NewEmptyMockAuthClientFactory(), &mcp.StdioTransport{}, "--store-type", "invalid")
 	require.Error(t, err, "Run should fail with invalid store type")
 	assert.Contains(t, err.Error(), "unable to parse store type from string: invalid", "Error should indicate invalid store type")
 }
@@ -328,7 +328,7 @@ func TestRunCommand_FromSubcommand_ToolFiltering(t *testing.T) {
 
 			var wg sync.WaitGroup
 			wg.Go(func() {
-				err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), serverTransport, tt.args...)
+				err := testutils.ExecuteCliRunCommand(t, ctx, tokenStoreFactory, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), testutils.NewEmptyMockAuthClientFactory(), serverTransport, tt.args...)
 				assert.ErrorIs(t, err, context.Canceled, "server should stop due to context cancellation")
 			})
 

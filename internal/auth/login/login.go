@@ -18,7 +18,15 @@ import (
 
 const authTimeout = 5 * time.Minute
 
+func ForceLogin(ctx context.Context, authClient client.AuthClient, tokenStore tokenstore.TokenStore, grantType auth.GrantType) (*auth.AuthSession, error) {
+	return login(ctx, authClient, tokenStore, grantType, true)
+}
+
 func LoginIfNecessary(ctx context.Context, authClient client.AuthClient, tokenStore tokenstore.TokenStore, grantType auth.GrantType) (*auth.AuthSession, error) {
+	return login(ctx, authClient, tokenStore, grantType, false)
+}
+
+func login(ctx context.Context, authClient client.AuthClient, tokenStore tokenstore.TokenStore, grantType auth.GrantType, forceReAuth bool) (*auth.AuthSession, error) {
 	hasSession, err := tokenStore.HasSession()
 	if err != nil {
 		return nil, err
@@ -32,7 +40,7 @@ func LoginIfNecessary(ctx context.Context, authClient client.AuthClient, tokenSt
 			// Shouldn't happen
 			return nil, errors.New("token store indicated session exists but returned nil session")
 		}
-		if activeSession.Expiry.After(time.Now()) { //TODO handle token refresh
+		if !forceReAuth && activeSession.Expiry.After(time.Now()) { //TODO handle token refresh
 			// Session is still valid
 			logger.FromContext(ctx).Debug("An existing local auth session was found and is still valid", slog.String("sessionId", activeSession.SessionId), slog.String("expiry", activeSession.Expiry.Format(time.RFC3339)))
 			return activeSession, nil

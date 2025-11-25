@@ -50,3 +50,14 @@ func NewMockAuthClientFactory(returnErr error, authorizationCodeTokenSource, dev
 func (f *mockAuthClientFactory) NewAuthClient() (client.AuthClient, error) {
 	return NewMockAuthClient(f.returnErr, f.authorizationCodeTokenSource, f.deviceCodeTokenSource), nil
 }
+
+// Auth client factory that does not actually do anything - useful to meet interface requirments in tests that don't have to use it
+type emptyMockAuthClientFactory struct{}
+
+func NewEmptyMockAuthClientFactory() *emptyMockAuthClientFactory {
+	return &emptyMockAuthClientFactory{}
+}
+
+func (f *emptyMockAuthClientFactory) NewAuthClient() (client.AuthClient, error) {
+	return &mockAuthClient{}, errors.ErrUnsupported
+}

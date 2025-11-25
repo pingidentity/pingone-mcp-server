@@ -6,7 +6,6 @@ import (
 	"errors"
 	"log"
 	"log/slog"
-	"time"
 
 	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
@@ -18,7 +17,6 @@ import (
 )
 
 const commandName = "login"
-const authTimeout = 5 * time.Minute
 
 func NewCommand(authClientFactory client.AuthClientFactory, tokenStoreFactory tokenstore.TokenStoreFactory) *cobra.Command {
 	var grantTypeFlag string
@@ -65,7 +63,7 @@ func NewCommand(authClientFactory client.AuthClientFactory, tokenStoreFactory to
 				return errs.NewCommandError(commandName, err)
 			}
 
-			_, err = login.LoginIfNecessary(cmd.Context(), authClient, tokenStore, grantType)
+			_, err = login.ForceLogin(cmd.Context(), authClient, tokenStore, grantType)
 			if err != nil {
 				return errs.NewCommandError(commandName, err)
 			}
