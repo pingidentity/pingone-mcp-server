@@ -42,7 +42,7 @@ func InitializeAuthContext(ctx context.Context, authClient client.AuthClient, to
 			return nil, fmt.Errorf("failed to check for auth session: %w", err)
 		}
 		if !hasSession {
-			return nil, fmt.Errorf("no active auth session found. Use the login command to authenticate")
+			return nil, fmt.Errorf("no active auth session found and a browser can't be used for login. Use the login command to authenticate")
 		}
 		authSession, err = tokenStore.GetSession()
 		if err != nil {
