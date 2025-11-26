@@ -45,7 +45,7 @@ func login(ctx context.Context, authClient client.AuthClient, tokenStore tokenst
 			logger.FromContext(ctx).Debug("An existing local auth session was found and is still valid", slog.String("sessionId", activeSession.SessionId), slog.String("expiry", activeSession.Expiry.Format(time.RFC3339)))
 			return activeSession, nil
 		}
-		logger.FromContext(ctx).Info("An existing local auth session was found. Logging out")
+		logger.FromContext(ctx).Info("An existing local auth session was found. Logging out before re-authenticating", slog.String("sessionId", activeSession.SessionId))
 		err = logout.Logout(ctx, tokenStore)
 		if err != nil {
 			return nil, err
