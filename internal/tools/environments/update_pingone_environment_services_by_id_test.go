@@ -127,6 +127,65 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 			},
 		},
 		{
+			name: "Success - Update environment services with PING_ONE_NEO expands to Verify and Credentials",
+			input: environments.UpdateEnvironmentServicesByIdInput{
+				EnvironmentId: testEnv1.id,
+				Services: []string{
+					string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE),
+					environments.NeoServiceValue,
+				},
+			},
+			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
+				matcher := func(req *pingone.EnvironmentBillOfMaterialsReplaceRequest) bool {
+					// Should have 3 products: BASE, VERIFY, and CREDENTIALS
+					if len(req.Products) != 3 {
+						return false
+					}
+					// Check that all three expected types are present
+					hasBase := false
+					hasVerify := false
+					hasCredentials := false
+					for _, product := range req.Products {
+						switch product.Type {
+						case pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE:
+							hasBase = true
+						case pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_VERIFY:
+							hasVerify = true
+						case pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_CREDENTIALS:
+							hasCredentials = true
+						}
+					}
+					return hasBase && hasVerify && hasCredentials
+				}
+				expectedServices := pingone.EnvironmentBillOfMaterialsResponse{
+					Products: []pingone.EnvironmentBillOfMaterialsProduct{
+						{
+							Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE,
+						},
+						{
+							Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_VERIFY,
+						},
+						{
+							Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_CREDENTIALS,
+						},
+					},
+				}
+				mockUpdateEnvironmentServicesByIdSetup(m, envID, matcher, &expectedServices, 200, nil)
+			},
+			validateOutput: func(t *testing.T, output *environments.UpdateEnvironmentServicesByIdOutput) {
+				assert.NotNil(t, output.Services)
+				require.Equal(t, 3, len(output.Services.Products))
+				// Verify all three expected types are present
+				productTypes := make(map[pingone.EnvironmentBillOfMaterialsProductType]bool)
+				for _, product := range output.Services.Products {
+					productTypes[product.Type] = true
+				}
+				assert.True(t, productTypes[pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE])
+				assert.True(t, productTypes[pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_VERIFY])
+				assert.True(t, productTypes[pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_CREDENTIALS])
+			},
+		},
+		{
 			name: "Error - Environment not found (404)",
 			input: environments.UpdateEnvironmentServicesByIdInput{
 				EnvironmentId: testEnv1.id,
