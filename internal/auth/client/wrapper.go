@@ -86,22 +86,36 @@ func (p *PingOneClientAuthWrapper) configureHeadlessHandlers(ctx context.Context
 			log.Info("Device authorization required",
 				"verification_uri", verificationURI,
 				"user_code", userCode)
-			fmt.Printf("\n=== PingOne MCP Server Authentication ===\n")
-			fmt.Printf("Please open this URL in your browser:\n")
-			fmt.Printf("  %s\n\n", verificationURI)
-			fmt.Printf("Enter this code when prompted:\n")
-			fmt.Printf("  %s\n\n", userCode)
+			fmt.Printf("\n=== PingOne MCP Server OAuth 2.0 Authorization ===\n")
 
 			// Try to open browser if available
+			browserOpened := false
 			if canOpenBrowser {
-				fmt.Printf("Opening browser automatically...\n")
 				if err := browser.Open(fullURL); err != nil {
-					// Browser open failed, but that's okay - user has printed instructions
+					// Browser open failed
 					log.Warn("Failed to open browser automatically", "error", err)
-					fmt.Printf("(Browser failed to open automatically - please use the URL above)\n")
+				} else {
+					browserOpened = true
 				}
+			}
+
+			if browserOpened {
+				// Browser opened successfully
+				fmt.Printf("Browser opened automatically.\n\n")
+				fmt.Printf("If the browser window does not open automatically, please open this URL to complete authentication:\n")
+				fmt.Printf("  %s\n\n", fullURL)
+				fmt.Printf("Alternatively, open this URL to enter the code manually:\n")
+				fmt.Printf("  %s\n\n", verificationURI)
+				fmt.Printf("Enter this code when prompted:\n")
+				fmt.Printf("  %s\n\n", userCode)
 			} else {
-				fmt.Printf("(No browser available - please use the URL above)\n")
+				// Browser failed to open or not available - show manual instructions
+				fmt.Printf("Please open this URL in your browser to complete authentication:\n")
+				fmt.Printf("  %s\n\n", fullURL)
+				fmt.Printf("Alternatively, open this URL to enter the code manually:\n")
+				fmt.Printf("  %s\n\n", verificationURI)
+				fmt.Printf("Enter this code when prompted:\n")
+				fmt.Printf("  %s\n\n", userCode)
 			}
 
 			fmt.Printf("Waiting for authorization...\n")
@@ -123,10 +137,8 @@ func (p *PingOneClientAuthWrapper) configureHeadlessHandlers(ctx context.Context
 				return fmt.Errorf("authorization code flow requires a browser, but no browser is available in this environment")
 			}
 
-			// We have a browser - print message and open it
-			fmt.Printf("\n=== PingOne MCP Server Authentication ===\n")
-			fmt.Printf("Opening browser for authentication...\n")
-			fmt.Printf("URL: %s\n\n", url)
+			// We have a browser - try to open it
+			fmt.Printf("\n=== PingOne MCP Server OAuth 2.0 Authorization ===\n")
 
 			if err := browser.Open(url); err != nil {
 				// Browser open failed - this is a critical error for auth code flow
@@ -134,6 +146,10 @@ func (p *PingOneClientAuthWrapper) configureHeadlessHandlers(ctx context.Context
 				return fmt.Errorf("failed to open browser for authorization: %w", err)
 			}
 
+			// Browser opened successfully
+			fmt.Printf("Browser opened automatically.\n")
+			fmt.Printf("If the browser window does not open automatically, please open this URL to complete authentication:\n")
+			fmt.Printf("  %s\n\n", url)
 			fmt.Printf("Waiting for authorization callback...\n")
 			return nil
 		}
