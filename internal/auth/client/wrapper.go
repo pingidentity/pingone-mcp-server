@@ -5,7 +5,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/pingidentity/pingone-go-client/config"
 	pingoneOauth2 "github.com/pingidentity/pingone-go-client/oauth2"
@@ -50,8 +49,6 @@ func (p *PingOneClientAuthWrapper) TokenSource(ctx context.Context, grantType au
 		WithEnvironmentID(p.environmentId).
 		WithGrantType(clientGrantType).
 		WithStorageType(config.StorageTypeNone) // keychain storage will be managed by the mcp server
-
-	log.Printf("We're on new code")
 
 	// Configure custom UX handlers for headless operation
 	p.configureHeadlessHandlers(ctx, clientConfig, grantType)
