@@ -32,15 +32,9 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 			name: "Success - Update environment services",
 			input: environments.UpdateEnvironmentServicesByIdInput{
 				EnvironmentId: testEnv1.id,
-				Services: pingone.EnvironmentBillOfMaterialsReplaceRequest{
-					Products: []pingone.EnvironmentBillOfMaterialsProduct{
-						{
-							Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE,
-						},
-						{
-							Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_MFA,
-						},
-					},
+				Services: []string{
+					string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE),
+					string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_MFA),
 				},
 			},
 			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
@@ -72,12 +66,8 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 			name: "Success - Update environment services with single product",
 			input: environments.UpdateEnvironmentServicesByIdInput{
 				EnvironmentId: testEnv1.id,
-				Services: pingone.EnvironmentBillOfMaterialsReplaceRequest{
-					Products: []pingone.EnvironmentBillOfMaterialsProduct{
-						{
-							Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE,
-						},
-					},
+				Services: []string{
+					string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE),
 				},
 			},
 			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
@@ -103,18 +93,10 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 			name: "Success - Update environment services with multiple products",
 			input: environments.UpdateEnvironmentServicesByIdInput{
 				EnvironmentId: testEnv1.id,
-				Services: pingone.EnvironmentBillOfMaterialsReplaceRequest{
-					Products: []pingone.EnvironmentBillOfMaterialsProduct{
-						{
-							Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE,
-						},
-						{
-							Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_MFA,
-						},
-						{
-							Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_RISK,
-						},
-					},
+				Services: []string{
+					string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE),
+					string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_MFA),
+					string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_RISK),
 				},
 			},
 			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
@@ -148,12 +130,8 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 			name: "Error - Environment not found (404)",
 			input: environments.UpdateEnvironmentServicesByIdInput{
 				EnvironmentId: testEnv1.id,
-				Services: pingone.EnvironmentBillOfMaterialsReplaceRequest{
-					Products: []pingone.EnvironmentBillOfMaterialsProduct{
-						{
-							Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE,
-						},
-					},
+				Services: []string{
+					string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE),
 				},
 			},
 			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
@@ -166,12 +144,8 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 			name: "Error - API returns nil response with no error",
 			input: environments.UpdateEnvironmentServicesByIdInput{
 				EnvironmentId: testEnv1.id,
-				Services: pingone.EnvironmentBillOfMaterialsReplaceRequest{
-					Products: []pingone.EnvironmentBillOfMaterialsProduct{
-						{
-							Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE,
-						},
-					},
+				Services: []string{
+					string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE),
 				},
 			},
 			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
@@ -266,12 +240,8 @@ func TestUpdateEnvironmentServicesByIdHandler_ContextCancellation(t *testing.T) 
 	req := &mcp.CallToolRequest{}
 	input := environments.UpdateEnvironmentServicesByIdInput{
 		EnvironmentId: testEnv1.id,
-		Services: pingone.EnvironmentBillOfMaterialsReplaceRequest{
-			Products: []pingone.EnvironmentBillOfMaterialsProduct{
-				{
-					Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE,
-				},
-			},
+		Services: []string{
+			string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE),
 		},
 	}
 
@@ -293,12 +263,8 @@ func TestUpdateEnvironmentServicesByIdHandler_APIErrors(t *testing.T) {
 	envID := testEnv1.id
 	input := environments.UpdateEnvironmentServicesByIdInput{
 		EnvironmentId: testEnv1.id,
-		Services: pingone.EnvironmentBillOfMaterialsReplaceRequest{
-			Products: []pingone.EnvironmentBillOfMaterialsProduct{
-				{
-					Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE,
-				},
-			},
+		Services: []string{
+			string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE),
 		},
 	}
 
@@ -326,10 +292,8 @@ func TestUpdateEnvironmentServicesByIdHandler_GetAuthenticatedClientError(t *tes
 	req := &mcp.CallToolRequest{}
 	input := environments.UpdateEnvironmentServicesByIdInput{
 		EnvironmentId: testEnv1.id,
-		Services: pingone.EnvironmentBillOfMaterialsReplaceRequest{
-			Products: []pingone.EnvironmentBillOfMaterialsProduct{
-				{Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE},
-			},
+		Services: []string{
+			string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE),
 		},
 	}
 
@@ -348,10 +312,8 @@ func TestUpdateEnvironmentServicesByIdHandler_InitializeAuthContextError(t *test
 	req := &mcp.CallToolRequest{}
 	input := environments.UpdateEnvironmentServicesByIdInput{
 		EnvironmentId: testEnv1.id,
-		Services: pingone.EnvironmentBillOfMaterialsReplaceRequest{
-			Products: []pingone.EnvironmentBillOfMaterialsProduct{
-				{Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE},
-			},
+		Services: []string{
+			string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE),
 		},
 	}
 
@@ -386,11 +348,16 @@ func TestUpdateEnvironmentServicesByIdHandler_RealClient(t *testing.T) {
 
 	// Update with the same services (no-op update)
 	handler := environments.UpdateEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(clientWrapper, nil), testutils.MockContextInitializer())
+
+	// Convert products to string slice
+	var services []string
+	for _, product := range getOutput.Services.Products {
+		services = append(services, string(product.Type))
+	}
+
 	input := environments.UpdateEnvironmentServicesByIdInput{
 		EnvironmentId: testEnvID,
-		Services: pingone.EnvironmentBillOfMaterialsReplaceRequest{
-			Products: getOutput.Services.Products,
-		},
+		Services:      services,
 	}
 
 	// Execute
