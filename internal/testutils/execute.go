@@ -37,10 +37,10 @@ func ExecuteCliRootCommand(t *testing.T, ctx context.Context, args ...string) (e
 	return root.ExecuteContext(ctx)
 }
 
-func ExecuteCliRunCommand(t *testing.T, ctx context.Context, tokenStoreFactory tokenstore.TokenStoreFactory, clientFactory sdk.ClientFactory, legacyClientFactory legacy.ClientFactory, transport mcp.Transport, args ...string) (err error) {
+func ExecuteCliRunCommand(t *testing.T, ctx context.Context, tokenStoreFactory tokenstore.TokenStoreFactory, clientFactory sdk.ClientFactory, legacyClientFactory legacy.ClientFactory, authClientFactory client.AuthClientFactory, transport mcp.Transport, args ...string) (err error) {
 	t.Helper()
 
-	runCmd := run.NewCommand(tokenStoreFactory, clientFactory, legacyClientFactory, transport)
+	runCmd := run.NewCommand(tokenStoreFactory, clientFactory, legacyClientFactory, authClientFactory, transport)
 	prepareTestCommand(runCmd, args...)
 
 	return runCmd.ExecuteContext(ctx)

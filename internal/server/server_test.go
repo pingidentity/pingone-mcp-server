@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
 	"github.com/pingidentity/pingone-mcp-server/internal/server"
@@ -18,13 +19,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const defaultGrantType = auth.GrantTypeAuthorizationCode
+
 func TestServer_MCPClient(t *testing.T) {
 	serverTransport, clientTransport := mcp.NewInMemoryTransports()
 
 	serverDone := make(chan error, 1)
 	go func() {
 		// Pass in dummy client for now, not testing tool functionality
-		err := server.Start(context.Background(), serverTransport, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), testutils.NewInMemoryTokenStore(), filter.PassthroughFilter())
+		err := server.Start(context.Background(), serverTransport, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), testutils.NewEmptyMockAuthClientFactory(), testutils.NewInMemoryTokenStore(), filter.PassthroughFilter(), defaultGrantType)
 		serverDone <- err
 	}()
 
@@ -117,7 +120,7 @@ func TestServer_ToolFiltering(t *testing.T) {
 			serverDone := make(chan error, 1)
 			go func() {
 				toolFilter := filter.NewFilter(tt.readOnly, tt.includedTools, tt.excludedTools, tt.includedToolCollections, tt.excludedToolCollections)
-				err := server.Start(context.Background(), serverTransport, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), testutils.NewInMemoryTokenStore(), toolFilter)
+				err := server.Start(context.Background(), serverTransport, sdk.NewEmptyClientFactory(), legacy.NewEmptyClientFactory(), testutils.NewEmptyMockAuthClientFactory(), testutils.NewInMemoryTokenStore(), toolFilter, defaultGrantType)
 				serverDone <- err
 			}()
 
