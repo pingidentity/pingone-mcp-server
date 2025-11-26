@@ -9,16 +9,20 @@ import (
 	"net/http"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/patrickcping/pingone-go-sdk-v2/management"
+	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/populations"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
 )
 
 func TestCreatePopulationHandler_MockClient(t *testing.T) {
@@ -331,6 +335,80 @@ func TestCreatePopulationHandler_InitializeAuthContextError(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to initialize auth context")
 	assert.Nil(t, mcpResult)
 	assert.Nil(t, output)
+}
+
+func TestCreatePopulationHandler_InitializeAuthContext(t *testing.T) {
+	testCases := []struct {
+		name                       string
+		setupTokenStore            func() *testutils.InMemoryTokenStore
+		setupAuthClient            func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory)
+		expectTokenSourceRetrieval bool
+	}{
+		{
+			name: "Auto auth - no existing session",
+			setupTokenStore: func() *testutils.InMemoryTokenStore {
+				return testutils.NewInMemoryTokenStore()
+			},
+			setupAuthClient: func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory) {
+				authzCodeTokenSource := testutils.NewStaticTokenSource(&oauth2.Token{
+					AccessToken:  "authz-code-access-token",
+					RefreshToken: "authz-code-refresh-token",
+					Expiry:       time.Now().Add(time.Hour),
+				})
+				mockAuthClient := &testutils.MockAuthClient{}
+				mockAuthClient.On("TokenSource", mock.Anything, auth.GrantTypeAuthorizationCode).Return(authzCodeTokenSource, nil)
+				mockAuthClient.On("BrowserLoginAvailable", auth.GrantTypeAuthorizationCode).Return(true)
+				mockClientFactory := &testutils.MockAuthClientFactory{}
+				mockClientFactory.On("NewAuthClient").Return(mockAuthClient, nil)
+				return mockAuthClient, mockClientFactory
+			},
+			expectTokenSourceRetrieval: true,
+		},
+		{
+			name: "Use existing auth session",
+			setupTokenStore: func() *testutils.InMemoryTokenStore {
+				return testutils.NewInMemoryTokenStoreWithDefaultSession()
+			},
+			setupAuthClient: func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory) {
+				mockAuthClient := &testutils.MockAuthClient{}
+				mockAuthClient.On("BrowserLoginAvailable", auth.GrantTypeAuthorizationCode).Return(true)
+				mockClientFactory := &testutils.MockAuthClientFactory{}
+				mockClientFactory.On("NewAuthClient").Return(mockAuthClient, nil)
+				return mockAuthClient, mockClientFactory
+			},
+			expectTokenSourceRetrieval: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Set up a mock create response
+			mockClient := &mockPingOneClientPopulationsWrapper{}
+			mockClient.On("CreatePopulation", mock.Anything, testEnvironmentId, mock.Anything).Return(
+				&testPop1, &http.Response{StatusCode: 201}, nil)
+
+			// Set up auth mocks
+			tokenStore := tc.setupTokenStore()
+			mockAuthClient, mockClientFactory := tc.setupAuthClient()
+			authContextInitializer := initialize.AuthContextInitializer(mockClientFactory, tokenStore, auth.GrantTypeAuthorizationCode)
+
+			// Create handler and execute
+			handler := populations.CreatePopulationHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, nil), authContextInitializer)
+			req := &mcp.CallToolRequest{}
+			input := populations.CreatePopulationInput{
+				EnvironmentId: testEnvironmentId,
+				Name:          "Test Population",
+			}
+
+			_, _, err := handler(context.Background(), req, input)
+
+			require.NoError(t, err)
+
+			// Verify expectations
+			mockClientFactory.AssertExpectations(t)
+			mockAuthClient.AssertExpectations(t)
+		})
+	}
 }
 
 func TestCreatePopulationHandler_RealClient(t *testing.T) {

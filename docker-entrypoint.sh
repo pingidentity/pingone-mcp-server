@@ -22,4 +22,4 @@ else
 fi
 
 echo "Starting MCP server..."
-exec ./pingone-mcp-server run --store-type=file "$@"
+exec ./pingone-mcp-server run --grant-type=device_code --store-type=file "$@"

@@ -7,16 +7,20 @@ import (
 	"encoding/json"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-go-client/pingone"
+	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
 )
 
 func TestUpdateEnvironmentByIdHandler_MockClient(t *testing.T) {
@@ -534,6 +538,87 @@ func TestUpdateEnvironmentByIdHandler_InitializeAuthContextError(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to initialize auth context")
 	assert.Nil(t, mcpResult)
 	assert.Nil(t, output)
+}
+
+func TestUpdateEnvironmentByIdHandler_InitializeAuthContext(t *testing.T) {
+	testCases := []struct {
+		name                       string
+		setupTokenStore            func() *testutils.InMemoryTokenStore
+		setupAuthClient            func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory)
+		expectTokenSourceRetrieval bool
+	}{
+		{
+			name: "Auto auth - no existing session",
+			setupTokenStore: func() *testutils.InMemoryTokenStore {
+				return testutils.NewInMemoryTokenStore()
+			},
+			setupAuthClient: func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory) {
+				authzCodeTokenSource := testutils.NewStaticTokenSource(&oauth2.Token{
+					AccessToken:  "authz-code-access-token",
+					RefreshToken: "authz-code-refresh-token",
+					Expiry:       time.Now().Add(time.Hour),
+				})
+				mockAuthClient := &testutils.MockAuthClient{}
+				mockAuthClient.On("TokenSource", mock.Anything, auth.GrantTypeAuthorizationCode).Return(authzCodeTokenSource, nil)
+				mockAuthClient.On("BrowserLoginAvailable", auth.GrantTypeAuthorizationCode).Return(true)
+				mockClientFactory := &testutils.MockAuthClientFactory{}
+				mockClientFactory.On("NewAuthClient").Return(mockAuthClient, nil)
+				return mockAuthClient, mockClientFactory
+			},
+			expectTokenSourceRetrieval: true,
+		},
+		{
+			name: "Use existing auth session",
+			setupTokenStore: func() *testutils.InMemoryTokenStore {
+				return testutils.NewInMemoryTokenStoreWithDefaultSession()
+			},
+			setupAuthClient: func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory) {
+				mockAuthClient := &testutils.MockAuthClient{}
+				mockAuthClient.On("BrowserLoginAvailable", auth.GrantTypeAuthorizationCode).Return(true)
+				mockClientFactory := &testutils.MockAuthClientFactory{}
+				mockClientFactory.On("NewAuthClient").Return(mockAuthClient, nil)
+				return mockAuthClient, mockClientFactory
+			},
+			expectTokenSourceRetrieval: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Set up a mock update response
+			mockClient := &mockPingOneClientEnvironmentsWrapper{}
+			expectedEnv := pingone.EnvironmentResponse{
+				Id:     testEnv1.id,
+				Name:   "Updated Environment",
+				Region: testEnv1.region,
+				Type:   testEnv1.envType,
+			}
+			mockUpdateEnvironmentByIdSetup(mockClient, testEnv1.id, nil, &expectedEnv, 200, nil)
+
+			// Set up auth mocks
+			tokenStore := tc.setupTokenStore()
+			mockAuthClient, mockClientFactory := tc.setupAuthClient()
+			authContextInitializer := initialize.AuthContextInitializer(mockClientFactory, tokenStore, auth.GrantTypeAuthorizationCode)
+
+			// Create handler and execute
+			handler := environments.UpdateEnvironmentByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(mockClient, nil), authContextInitializer)
+			req := &mcp.CallToolRequest{}
+			input := environments.UpdateEnvironmentByIdInput{
+				EnvironmentId: testEnv1.id,
+				Name:          "Updated Environment",
+				Region:        testEnv1.region,
+				Type:          testEnv1.envType,
+			}
+
+			_, _, err := handler(context.Background(), req, input)
+
+			require.NoError(t, err)
+
+			// Verify expectations
+			mockClientFactory.AssertExpectations(t)
+			mockAuthClient.AssertExpectations(t)
+		})
+	}
 }
 
 func TestUpdateEnvironmentByIdHandler_RealClient(t *testing.T) {

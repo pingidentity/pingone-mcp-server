@@ -4,49 +4,57 @@ package testutils
 
 import (
 	"context"
-	"errors"
 
 	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
+	"github.com/stretchr/testify/mock"
 	"golang.org/x/oauth2"
 )
 
-var _ client.AuthClient = &mockAuthClient{}
-var _ client.AuthClientFactory = &mockAuthClientFactory{}
+var _ client.AuthClient = &MockAuthClient{}
+var _ client.AuthClientFactory = &MockAuthClientFactory{}
 
-type mockAuthClient struct {
-	returnErr                    error
-	authorizationCodeTokenSource oauth2.TokenSource
-	deviceCodeTokenSource        oauth2.TokenSource
+type MockAuthClient struct {
+	mock.Mock
 }
 
-func NewMockAuthClient(returnErr error, authorizationCodeTokenSource, deviceCodeTokenSource oauth2.TokenSource) *mockAuthClient {
-	return &mockAuthClient{returnErr: returnErr, authorizationCodeTokenSource: authorizationCodeTokenSource, deviceCodeTokenSource: deviceCodeTokenSource}
+func NewMockAuthClient(tokenSource oauth2.TokenSource) *MockAuthClient {
+	result := &MockAuthClient{}
+	result.On("TokenSource", mock.Anything, mock.Anything).Return(tokenSource, nil)
+	return result
 }
 
-func (m *mockAuthClient) TokenSource(_ context.Context, grantType auth.GrantType) (oauth2.TokenSource, error) {
-	if m.returnErr != nil {
-		return nil, m.returnErr
+func (m *MockAuthClient) TokenSource(ctx context.Context, grantType auth.GrantType) (oauth2.TokenSource, error) {
+	args := m.Called(ctx, grantType)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
 	}
-	switch grantType {
-	case auth.GrantTypeAuthorizationCode:
-		return m.authorizationCodeTokenSource, nil
-	case auth.GrantTypeDeviceCode:
-		return m.deviceCodeTokenSource, nil
+	return args.Get(0).(oauth2.TokenSource), args.Error(1)
+}
+
+func (m *MockAuthClient) BrowserLoginAvailable(grantType auth.GrantType) bool {
+	args := m.Called(grantType)
+	return args.Bool(0)
+}
+
+type MockAuthClientFactory struct {
+	mock.Mock
+}
+
+func NewMockAuthClientFactory(tokenSource oauth2.TokenSource) *MockAuthClientFactory {
+	result := &MockAuthClientFactory{}
+	result.On("NewAuthClient").Return(NewMockAuthClient(tokenSource), nil)
+	return result
+}
+
+func (f *MockAuthClientFactory) NewAuthClient() (client.AuthClient, error) {
+	args := f.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
 	}
-	return nil, errors.New("unsupported grant type in mock auth client")
+	return args.Get(0).(client.AuthClient), args.Error(1)
 }
 
-type mockAuthClientFactory struct {
-	returnErr                    error
-	authorizationCodeTokenSource oauth2.TokenSource
-	deviceCodeTokenSource        oauth2.TokenSource
-}
-
-func NewMockAuthClientFactory(returnErr error, authorizationCodeTokenSource, deviceCodeTokenSource oauth2.TokenSource) *mockAuthClientFactory {
-	return &mockAuthClientFactory{returnErr: returnErr, authorizationCodeTokenSource: authorizationCodeTokenSource, deviceCodeTokenSource: deviceCodeTokenSource}
-}
-
-func (f *mockAuthClientFactory) NewAuthClient() (client.AuthClient, error) {
-	return NewMockAuthClient(f.returnErr, f.authorizationCodeTokenSource, f.deviceCodeTokenSource), nil
+func NewEmptyMockAuthClientFactory() *MockAuthClientFactory {
+	return &MockAuthClientFactory{}
 }

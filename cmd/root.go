@@ -33,11 +33,6 @@ func NewRootCommand(serverVersion string) *cobra.Command {
 	clientFactory := sdk.NewDefaultClientFactory(serverVersion)
 	legacyClientFactory := legacy.NewDefaultClientFactory(serverVersion)
 	tokenStoreFactory := tokenstore.NewDefaultTokenStoreFactory()
-	// Always run on stdio transport
-	result.AddCommand(run.NewCommand(tokenStoreFactory, clientFactory, legacyClientFactory, &mcp.StdioTransport{}))
-
-	// Create login dependencies
-
 	// Have to workaround mutually exclusive requirement in legacy SDK that
 	// prevents setting both access token and environment ID by using an mcp-specific
 	// environment variable here, and unsetting the environment variable
@@ -46,6 +41,9 @@ func NewRootCommand(serverVersion string) *cobra.Command {
 	mcpEnvironmentId := os.Getenv(mcpEnvironmentIdEnvVar)
 
 	authClientFactory := client.NewPingOneClientAuthWrapperFactory(serverVersion, mcpEnvironmentId)
+	// Always run on stdio transport
+	result.AddCommand(run.NewCommand(tokenStoreFactory, clientFactory, legacyClientFactory, authClientFactory, &mcp.StdioTransport{}))
+
 	result.AddCommand(login.NewCommand(authClientFactory, tokenStoreFactory))
 
 	result.AddCommand(logout.NewCommand(tokenStoreFactory))

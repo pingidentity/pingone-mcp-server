@@ -11,11 +11,11 @@ require (
 	github.com/modelcontextprotocol/go-sdk v0.7.0
 	github.com/patrickcping/pingone-go-sdk-v2 v0.14.0
 	github.com/patrickcping/pingone-go-sdk-v2/management v0.60.0
-	github.com/pingidentity/pingone-go-client v0.3.1-0.20251125171653-06279866035b
+	github.com/pingidentity/pingone-go-client v0.3.2-0.20251126183323-527681e5fdce
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
 	github.com/zalando/go-keyring v0.2.6
-	golang.org/x/oauth2 v0.32.0
+	golang.org/x/oauth2 v0.33.0
 )
 
 require (
