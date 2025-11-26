@@ -59,6 +59,16 @@ func (p *PingOneClientAuthWrapper) TokenSource(ctx context.Context, grantType au
 	return pingoneConfig.Service.TokenSource(ctx)
 }
 
+func (p *PingOneClientAuthWrapper) BrowserLoginAvailable(grantType auth.GrantType) bool {
+	switch grantType {
+	case auth.GrantTypeAuthorizationCode, auth.GrantTypeDeviceCode:
+		// These grant types can use browser login if a browser is available
+		return browser.CanOpen()
+	default:
+		return false
+	}
+}
+
 // configureHeadlessHandlers sets up custom UX handlers for headless MCP server operation.
 // This provides environment-aware browser handling:
 // - If browser is available: opens browser for both auth code and device code flows

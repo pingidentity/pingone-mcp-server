@@ -30,8 +30,8 @@ func AuthContextInitializer(authClientFactory client.AuthClientFactory, tokenSto
 func InitializeAuthContext(ctx context.Context, authClient client.AuthClient, tokenStore tokenstore.TokenStore, grantType auth.GrantType) (context.Context, error) {
 	var authSession *auth.AuthSession
 	var err error
-	// If grant type is authorization code, we can attempt to auto-login if no valid session exists
-	if grantType == auth.GrantTypeAuthorizationCode {
+	// If browser login is available, we can attempt to auto-login if no valid session exists
+	if authClient.BrowserLoginAvailable(grantType) {
 		authSession, err = login.LoginIfNecessary(ctx, authClient, tokenStore, grantType)
 		if err != nil {
 			return nil, fmt.Errorf("failed to login: %w", err)

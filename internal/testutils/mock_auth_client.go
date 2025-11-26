@@ -32,6 +32,11 @@ func (m *MockAuthClient) TokenSource(ctx context.Context, grantType auth.GrantTy
 	return args.Get(0).(oauth2.TokenSource), args.Error(1)
 }
 
+func (m *MockAuthClient) BrowserLoginAvailable(grantType auth.GrantType) bool {
+	args := m.Called(grantType)
+	return args.Bool(0)
+}
+
 type MockAuthClientFactory struct {
 	mock.Mock
 }

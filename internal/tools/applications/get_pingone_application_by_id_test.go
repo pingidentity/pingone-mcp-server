@@ -363,6 +363,7 @@ func TestGetApplicationByIdHandler_InitializeAuthContext(t *testing.T) {
 				})
 				mockAuthClient := &testutils.MockAuthClient{}
 				mockAuthClient.On("TokenSource", mock.Anything, auth.GrantTypeAuthorizationCode).Return(authzCodeTokenSource, nil)
+				mockAuthClient.On("BrowserLoginAvailable", auth.GrantTypeAuthorizationCode).Return(true)
 				mockClientFactory := &testutils.MockAuthClientFactory{}
 				mockClientFactory.On("NewAuthClient").Return(mockAuthClient, nil)
 				return mockAuthClient, mockClientFactory
@@ -376,6 +377,7 @@ func TestGetApplicationByIdHandler_InitializeAuthContext(t *testing.T) {
 			},
 			setupAuthClient: func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory) {
 				mockAuthClient := &testutils.MockAuthClient{}
+				mockAuthClient.On("BrowserLoginAvailable", auth.GrantTypeAuthorizationCode).Return(true)
 				mockClientFactory := &testutils.MockAuthClientFactory{}
 				mockClientFactory.On("NewAuthClient").Return(mockAuthClient, nil)
 				return mockAuthClient, mockClientFactory

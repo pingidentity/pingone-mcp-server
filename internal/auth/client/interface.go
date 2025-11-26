@@ -11,4 +11,5 @@ import (
 
 type AuthClient interface {
 	TokenSource(ctx context.Context, grantType auth.GrantType) (oauth2.TokenSource, error)
+	BrowserLoginAvailable(grantType auth.GrantType) bool
 }
