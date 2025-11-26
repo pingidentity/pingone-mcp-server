@@ -19,10 +19,16 @@ import (
 
 const authTimeout = 5 * time.Minute
 
+// Login with the given authClient for the specified grant type. The resulting auth session
+// will be stored in the provided tokenStore.
+// This method will always re-authenticate, even if a valid session already exists.
 func ForceLogin(ctx context.Context, authClient client.AuthClient, tokenStore tokenstore.TokenStore, grantType auth.GrantType) (*auth.AuthSession, error) {
 	return login(ctx, authClient, tokenStore, grantType, true)
 }
 
+// Login with the given authClient for the specified grant type. The resulting auth session
+// will be stored in the provided tokenStore.
+// If a valid session already exists, it will be returned without re-authenticating.
 func LoginIfNecessary(ctx context.Context, authClient client.AuthClient, tokenStore tokenstore.TokenStore, grantType auth.GrantType) (*auth.AuthSession, error) {
 	return login(ctx, authClient, tokenStore, grantType, false)
 }
