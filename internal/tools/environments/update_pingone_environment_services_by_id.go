@@ -89,13 +89,34 @@ func UpdateEnvironmentServicesByIdHandler(environmentsClientFactory Environments
 			return nil, nil, toolErr
 		}
 
-		// Build list of EnvironmentBillOfMaterialsProductType values
-		productTypes := make(map[pingone.EnvironmentBillOfMaterialsProductType]struct{})
+		// First, get current environment services to preserve existing configurations
+		currentServices, httpResponse, err := client.GetEnvironmentServicesById(ctx, input.EnvironmentId)
+		logger.LogHttpResponse(ctx, httpResponse)
+
+		if err != nil {
+			apiErr := errs.NewApiError(httpResponse, err)
+			errs.Log(ctx, apiErr)
+			return nil, nil, apiErr
+		}
+
+		if currentServices == nil {
+			apiErr := errs.NewApiError(httpResponse, fmt.Errorf("no services data in response from get"))
+			errs.Log(ctx, apiErr)
+			return nil, nil, apiErr
+		}
+
+		currentProductsByType := make(map[pingone.EnvironmentBillOfMaterialsProductType]pingone.EnvironmentBillOfMaterialsProduct)
+		for _, product := range currentServices.Products {
+			currentProductsByType[product.Type] = product
+		}
+
+		// Build list of desired EnvironmentBillOfMaterialsProductType values
+		desiredProductTypes := make(map[pingone.EnvironmentBillOfMaterialsProductType]struct{})
 		for _, service := range input.Services {
 			if service == NeoServiceValue {
 				// Expand Neo into its constituent services
-				productTypes[pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_CREDENTIALS] = struct{}{}
-				productTypes[pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_VERIFY] = struct{}{}
+				desiredProductTypes[pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_CREDENTIALS] = struct{}{}
+				desiredProductTypes[pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_VERIFY] = struct{}{}
 			} else {
 				productType, err := pingone.NewEnvironmentBillOfMaterialsProductTypeFromValue(service)
 				if err != nil {
@@ -103,19 +124,25 @@ func UpdateEnvironmentServicesByIdHandler(environmentsClientFactory Environments
 					errs.Log(ctx, toolErr)
 					return nil, nil, toolErr
 				}
-				productTypes[*productType] = struct{}{}
+				desiredProductTypes[*productType] = struct{}{}
 			}
 		}
 
 		logger.FromContext(ctx).Debug("Updating environment services",
 			slog.String("environmentId", input.EnvironmentId.String()),
-			slog.Int("productCount", len(productTypes)))
+			slog.Int("productCount", len(desiredProductTypes)))
 
-		// Build request struct
+		// Build request struct, preserving existing product configurations where they exist
 		var replaceRequest pingone.EnvironmentBillOfMaterialsReplaceRequest
-		for productType := range productTypes {
-			product := pingone.NewEnvironmentBillOfMaterialsProduct(productType)
-			replaceRequest.Products = append(replaceRequest.Products, *product)
+		for productType := range desiredProductTypes {
+			if existingProduct, exists := currentProductsByType[productType]; exists {
+				// Preserve the existing product configuration
+				replaceRequest.Products = append(replaceRequest.Products, existingProduct)
+			} else {
+				// Create a new product with default configuration
+				product := pingone.NewEnvironmentBillOfMaterialsProduct(productType)
+				replaceRequest.Products = append(replaceRequest.Products, *product)
+			}
 		}
 
 		// Call the API to update the environment services
