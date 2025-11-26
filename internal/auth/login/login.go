@@ -5,6 +5,7 @@ package login
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -58,6 +59,9 @@ func login(ctx context.Context, authClient client.AuthClient, tokenStore tokenst
 
 	tokenSource, err := authClient.TokenSource(authCtx, grantType)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, fmt.Errorf("authentication timed out after %v", authTimeout)
+		}
 		return nil, err
 	}
 	if tokenSource == nil {
