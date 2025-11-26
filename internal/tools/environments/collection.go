@@ -36,6 +36,9 @@ func (c *EnvironmentsCollection) RegisterTools(ctx context.Context, server *mcp.
 	if tokenStore == nil {
 		return fmt.Errorf("token store is nil")
 	}
+	if authClientFactory == nil {
+		return fmt.Errorf("auth client factory is nil")
+	}
 
 	environmentsClientFactory := NewPingOneClientEnvironmentsWrapperFactory(clientFactory, tokenStore)
 	initializeAuthContext := initialize.AuthContextInitializer(authClientFactory, tokenStore, grantType)
