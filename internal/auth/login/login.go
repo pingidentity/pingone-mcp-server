@@ -53,6 +53,7 @@ func login(ctx context.Context, authClient client.AuthClient, tokenStore tokenst
 		}
 	}
 
+	logger.FromContext(ctx).Info("Initiating authentication flow")
 	// Add a long timeout to the context for the auth process
 	authCtx, cancel := context.WithTimeout(ctx, authTimeout)
 	defer cancel()
