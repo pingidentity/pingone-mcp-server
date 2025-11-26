@@ -159,7 +159,7 @@ func (p *PingOneClientAuthWrapper) configureHeadlessHandlers(ctx context.Context
 		cfg.Auth.AuthorizationCode.CustomPageDataSuccess = &config.AuthResultPageData{
 			ProjectName: projectName,
 			Heading:     "Authorization Successful",
-			Message:     "You have successfully authenticated and authorized the MCP server to access PingOne management APIs.",
+			Message:     fmt.Sprintf("The %s can now access PingOne management APIs with your role permissions.", projectName),
 		}
 		cfg.Auth.AuthorizationCode.CustomPageDataError = &config.AuthResultPageData{
 			ProjectName: projectName,
