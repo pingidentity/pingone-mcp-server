@@ -154,9 +154,18 @@ func (p *PingOneClientAuthWrapper) configureHeadlessHandlers(ctx context.Context
 			return nil
 		}
 
-		// Simple custom HTML messages
-		cfg.Auth.AuthorizationCode.CustomHTMLSuccess = "<html><body><h1>PingOne MCP Server</h1><p>Authentication successful! You can close this window.</p></body></html>"
-		cfg.Auth.AuthorizationCode.CustomHTMLError = "<html><body><h1>PingOne MCP Server</h1><p>Authentication failed. Please try again.</p></body></html>"
+		// Custom page data for authorization result pages
+		projectName := "PingOne MCP Server"
+		cfg.Auth.AuthorizationCode.CustomPageDataSuccess = &config.AuthResultPageData{
+			ProjectName: projectName,
+			Heading:     "Authorization Successful",
+			Message:     "You have successfully authenticated and authorized the MCP server to access PingOne management APIs.",
+		}
+		cfg.Auth.AuthorizationCode.CustomPageDataError = &config.AuthResultPageData{
+			ProjectName: projectName,
+			Heading:     "Authorization Failed",
+			Message:     "An error occurred.",
+		}
 	}
 }
 
