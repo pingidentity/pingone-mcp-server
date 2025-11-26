@@ -103,7 +103,7 @@ The server will communicate over stdin/stdout.`,
 	cmd.Flags().StringSliceVar(&includedToolCollections, "include-tool-collections", []string{}, "A list of tool collections to enable")
 	cmd.Flags().StringSliceVar(&excludedToolCollections, "exclude-tool-collections", []string{}, "A list of tool collections to disable")
 	cmd.Flags().BoolVar(&disableReadOnly, "disable-read-only", false, "Disable read-only mode to include write tools")
-	cmd.Flags().StringVar(&grantTypeFlag, "grant-type", auth.GrantTypeAuthorizationCode.String(), "OAuth grant type to use for authentication (authorization_code or device_code)")
+	cmd.Flags().StringVar(&grantTypeFlag, "grant-type", auth.GrantTypeAuthorizationCode.String(), "OAuth grant type to use for authentication (authorization_code or device_code). device_code is recommended in headless or CI/CD environments")
 	cmd.Flags().StringVar(&storeTypeFlag, "store-type", tokenstore.StoreTypeKeychain.String(), "Token store type to use (keychain or file)")
 
 	return cmd
