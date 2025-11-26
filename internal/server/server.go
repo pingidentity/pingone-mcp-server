@@ -19,7 +19,9 @@ func Start(ctx context.Context, transport mcp.Transport, clientFactory sdk.Clien
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "pingone-mcp-server",
 		Version: "v0.0.1",
-	}, nil)
+	}, &mcp.ServerOptions{
+		Logger: logger.FromContext(ctx),
+	})
 
 	logger.FromContext(ctx).Debug("Registering MCP tool collections")
 	err := tools.RegisterCollections(ctx, server, clientFactory, legacySdkClientFactory, tokenStore, toolFilter)
