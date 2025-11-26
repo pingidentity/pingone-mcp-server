@@ -10,6 +10,7 @@ import (
 	"github.com/pingidentity/pingone-go-client/config"
 	pingoneOauth2 "github.com/pingidentity/pingone-go-client/oauth2"
 	"github.com/pingidentity/pingone-go-client/pingone"
+	"github.com/pingidentity/pingone-go-client/utils/browser"
 	"github.com/pingidentity/pingone-mcp-server/internal/audit"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
@@ -62,9 +63,14 @@ func (p *PingOneClientAuthWrapper) TokenSource(ctx context.Context, grantType au
 }
 
 // configureHeadlessHandlers sets up custom UX handlers for headless MCP server operation.
-// This prevents automatic browser opening and provides custom branded callback pages.
+// This provides environment-aware browser handling:
+// - If browser is available: opens browser for both auth code and device code flows
+// - If no browser: auth code fails (requires browser), device code prints instructions
 func (p *PingOneClientAuthWrapper) configureHeadlessHandlers(ctx context.Context, cfg *config.Configuration, grantType auth.GrantType) {
 	log := logger.FromContext(ctx)
+
+	// Check if we're in an environment with browser support
+	canOpenBrowser := browser.CanOpen()
 
 	switch grantType {
 	case auth.GrantTypeDeviceCode:
@@ -73,8 +79,13 @@ func (p *PingOneClientAuthWrapper) configureHeadlessHandlers(ctx context.Context
 			cfg.Auth.DeviceCode = &config.DeviceCode{}
 		}
 
-		// Set custom device code prompt handler - don't auto-open browser, just log the URL
+		// Set custom device code prompt handler
 		cfg.Auth.DeviceCode.OnDisplayPrompt = func(verificationURI, userCode string) error {
+			// For device code, we have a VerificationURIComplete (full URL with code embedded)
+			// Construct it by appending the user code as a query parameter
+			fullURL := fmt.Sprintf("%s?user_code=%s", verificationURI, userCode)
+
+			// Always log the instructions
 			log.Info("Device authorization required",
 				"verification_uri", verificationURI,
 				"user_code", userCode)
@@ -83,6 +94,19 @@ func (p *PingOneClientAuthWrapper) configureHeadlessHandlers(ctx context.Context
 			fmt.Printf("  %s\n\n", verificationURI)
 			fmt.Printf("Enter this code when prompted:\n")
 			fmt.Printf("  %s\n\n", userCode)
+
+			// Try to open browser if available
+			if canOpenBrowser {
+				fmt.Printf("Opening browser automatically...\n")
+				if err := browser.Open(fullURL); err != nil {
+					// Browser open failed, but that's okay - user has printed instructions
+					log.Warn("Failed to open browser automatically", "error", err)
+					fmt.Printf("(Browser failed to open automatically - please use the URL above)\n")
+				}
+			} else {
+				fmt.Printf("(No browser available - please use the URL above)\n")
+			}
+
 			fmt.Printf("Waiting for authorization...\n")
 			return nil
 		}
@@ -93,12 +117,26 @@ func (p *PingOneClientAuthWrapper) configureHeadlessHandlers(ctx context.Context
 			cfg.Auth.AuthorizationCode = &config.AuthorizationCode{}
 		}
 
-		// Set custom authorization code handlers - don't auto-open browser, provide custom HTML
+		// Set custom authorization code handler
 		cfg.Auth.AuthorizationCode.OnOpenBrowser = func(url string) error {
 			log.Info("Authorization required", "authorization_url", url)
+
+			// Authorization code flow REQUIRES a browser
+			if !canOpenBrowser {
+				return fmt.Errorf("authorization code flow requires a browser, but no browser is available in this environment")
+			}
+
+			// We have a browser - print message and open it
 			fmt.Printf("\n=== PingOne MCP Server Authentication ===\n")
-			fmt.Printf("Please open this URL in your browser to authenticate:\n")
-			fmt.Printf("  %s\n\n", url)
+			fmt.Printf("Opening browser for authentication...\n")
+			fmt.Printf("URL: %s\n\n", url)
+
+			if err := browser.Open(url); err != nil {
+				// Browser open failed - this is a critical error for auth code flow
+				log.Error("Failed to open browser", "error", err)
+				return fmt.Errorf("failed to open browser for authorization: %w", err)
+			}
+
 			fmt.Printf("Waiting for authorization callback...\n")
 			return nil
 		}
