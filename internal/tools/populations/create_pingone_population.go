@@ -22,7 +22,7 @@ var CreatePopulationDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
 		Name:         "create_population",
 		Title:        "Create PingOne Population",
-		Description:  "Create a population in an environment. Populations group users and define authentication policies. Only 'name' and 'environmentId' are required.",
+		Description:  "Create a population in an environment. Populations group users logically in an environment and allow per population customization of branding theme, password policy, preferred language. Only 'name' and 'environmentId' are required.",
 		InputSchema:  schema.MustGenerateSchema[CreatePopulationInput](),
 		OutputSchema: schema.MustGenerateSchema[CreatePopulationOutput](),
 		Annotations: &mcp.ToolAnnotations{

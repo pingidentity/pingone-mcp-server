@@ -22,7 +22,7 @@ var CreateApplicationDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
 		Name:         "create_application",
 		Title:        "Create PingOne Application",
-		Description:  "Create an application (choose one type: OIDC/OAuth2 for modern apps, SAML for enterprise SSO, or External Link). The 'application' field must contain exactly one application type object (applicationOIDC, applicationSAML, applicationExternalLink, or applicationWSFED).",
+		Description:  "Create an application (choose one type: OIDC/OAuth2 for modern apps, SAML typically for enterprise SSO, or External Link to show on the PingOne application portal). The 'application' field must contain exactly one application type object (applicationOIDC, applicationSAML, applicationExternalLink, or applicationWSFED).",
 		InputSchema:  mustGenerateCreateApplicationSchema[CreateApplicationInput](),
 		OutputSchema: mustGenerateCreateApplicationSchema[CreateApplicationOutput](),
 		Annotations: &mcp.ToolAnnotations{
