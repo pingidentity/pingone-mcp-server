@@ -24,6 +24,9 @@ var CreateEnvironmentDef = types.ToolDefinition{
 		Description:  "Create a new sandbox PingOne environment. Only sandbox types can be created, production type environments are not supported.",
 		InputSchema:  schema.MustGenerateSchema[CreateEnvironmentInput](),
 		OutputSchema: schema.MustGenerateSchema[CreateEnvironmentOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			DestructiveHint: func() *bool { b := false; return &b }(),
+		},
 	},
 }
 

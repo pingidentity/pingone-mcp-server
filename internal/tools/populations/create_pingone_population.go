@@ -25,6 +25,9 @@ var CreatePopulationDef = types.ToolDefinition{
 		Description:  "Create a new PingOne population within a specified PingOne environment.",
 		InputSchema:  schema.MustGenerateSchema[CreatePopulationInput](),
 		OutputSchema: schema.MustGenerateSchema[CreatePopulationOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			DestructiveHint: func() *bool { b := false; return &b }(),
+		},
 	},
 }
 

@@ -25,6 +25,9 @@ var CreateApplicationDef = types.ToolDefinition{
 		Description:  "Create a new OAuth 2.0, SAML, or external link application within a specified PingOne environment.",
 		InputSchema:  mustGenerateCreateApplicationSchema[CreateApplicationInput](),
 		OutputSchema: mustGenerateCreateApplicationSchema[CreateApplicationOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			DestructiveHint: func() *bool { b := false; return &b }(),
+		},
 	},
 }
 
