@@ -22,7 +22,7 @@ var ListPopulationsDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
 		Name:         "list_populations",
 		Title:        "List PingOne Populations",
-		Description:  "Lists PingOne populations in a specified PingOne environment. Supports optional SCIM filtering to narrow results on the `id` and `name` attributes.  The `id` attribute supports the `eq` (equals) operator, and the `name` attribute supports the `sw` (starts with) operator.",
+		Description:  "Lists populations in an environment. Use to find population IDs or review configurations. Filter examples: name sw \"External\", id eq \"pop-uuid\". Supported: 'id' with 'eq', 'name' with 'sw'.",
 		InputSchema:  schema.MustGenerateSchema[ListPopulationsInput](),
 		OutputSchema: schema.MustGenerateSchema[ListPopulationsOutput](),
 		Annotations: &mcp.ToolAnnotations{
@@ -32,8 +32,8 @@ var ListPopulationsDef = types.ToolDefinition{
 }
 
 type ListPopulationsInput struct {
-	EnvironmentId uuid.UUID `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
-	Filter        *string   `json:"filter,omitempty" jsonschema:"OPTIONAL. A SCIM filter string to filter populations based on attributes. Supports optional SCIM filtering to narrow results on the 'id' and 'name' attributes. The 'id' attribute supports the 'eq' (equals) operator, and the 'name' attribute supports the 'sw' (starts with) operator."`
+	EnvironmentId uuid.UUID `json:"environmentId" jsonschema:"REQUIRED. Environment UUID."`
+	Filter        *string   `json:"filter,omitempty" jsonschema:"OPTIONAL. SCIM filter. Supported: 'id' with 'eq', 'name' with 'sw'."`
 }
 
 type ListPopulationsOutput struct {

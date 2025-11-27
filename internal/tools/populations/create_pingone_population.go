@@ -22,7 +22,7 @@ var CreatePopulationDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
 		Name:         "create_population",
 		Title:        "Create PingOne Population",
-		Description:  "Create a new PingOne population within a specified PingOne environment.",
+		Description:  "Create a population in an environment. Populations group users and define authentication policies. Only 'name' and 'environmentId' are required.",
 		InputSchema:  schema.MustGenerateSchema[CreatePopulationInput](),
 		OutputSchema: schema.MustGenerateSchema[CreatePopulationOutput](),
 		Annotations: &mcp.ToolAnnotations{
@@ -32,13 +32,13 @@ var CreatePopulationDef = types.ToolDefinition{
 }
 
 type CreatePopulationInput struct {
-	EnvironmentId          uuid.UUID                            `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
-	Name                   string                               `json:"name" jsonschema:"REQUIRED. The population name, which must be unique within the environment."`
-	AlternativeIdentifiers []string                             `json:"alternativeIdentifiers,omitempty" jsonschema:"OPTIONAL. Alternative identifiers that can be used to search for populations besides name."`
-	Description            *string                              `json:"description,omitempty" jsonschema:"OPTIONAL. A description of the population."`
-	PreferredLanguage      *string                              `json:"preferredLanguage,omitempty" jsonschema:"OPTIONAL. The language locale for the population. If absent, the environment default is used."`
-	PasswordPolicy         *management.PopulationPasswordPolicy `json:"passwordPolicy,omitempty" jsonschema:"OPTIONAL. The object reference to the password policy resource for the population."`
-	Theme                  *management.PopulationTheme          `json:"theme,omitempty" jsonschema:"OPTIONAL. The object reference to the theme resource for the population."`
+	EnvironmentId          uuid.UUID                            `json:"environmentId" jsonschema:"REQUIRED. Environment UUID."`
+	Name                   string                               `json:"name" jsonschema:"REQUIRED. Population name, must be unique within environment."`
+	AlternativeIdentifiers []string                             `json:"alternativeIdentifiers,omitempty" jsonschema:"OPTIONAL. Alternative search identifiers."`
+	Description            *string                              `json:"description,omitempty" jsonschema:"OPTIONAL. Description."`
+	PreferredLanguage      *string                              `json:"preferredLanguage,omitempty" jsonschema:"OPTIONAL. Locale code (e.g., 'en', 'fr'). Defaults to environment setting if omitted."`
+	PasswordPolicy         *management.PopulationPasswordPolicy `json:"passwordPolicy,omitempty" jsonschema:"OPTIONAL. Reference to password policy."`
+	Theme                  *management.PopulationTheme          `json:"theme,omitempty" jsonschema:"OPTIONAL. Reference to theme."`
 }
 
 type CreatePopulationOutput struct {
