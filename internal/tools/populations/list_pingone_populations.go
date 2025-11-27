@@ -25,6 +25,9 @@ var ListPopulationsDef = types.ToolDefinition{
 		Description:  "Lists PingOne populations in a specified PingOne environment. Supports optional SCIM filtering to narrow results on the `id` and `name` attributes.  The `id` attribute supports the `eq` (equals) operator, and the `name` attribute supports the `sw` (starts with) operator.",
 		InputSchema:  schema.MustGenerateSchema[ListPopulationsInput](),
 		OutputSchema: schema.MustGenerateSchema[ListPopulationsOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
 	},
 }
 

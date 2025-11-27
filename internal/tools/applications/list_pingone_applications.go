@@ -25,6 +25,9 @@ var ListApplicationsDef = types.ToolDefinition{
 		Description:  "Lists PingOne applications in a specified PingOne environment.",
 		InputSchema:  schema.MustGenerateSchema[ListApplicationsInput](),
 		OutputSchema: MustGenerateListApplicationsOutputSchema(),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
 	},
 }
 

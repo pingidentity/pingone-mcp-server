@@ -25,6 +25,9 @@ var GetApplicationByIdDef = types.ToolDefinition{
 		Description:  "Retrieve an application's configuration by its unique ID within a specified PingOne environment.",
 		InputSchema:  schema.MustGenerateSchema[GetApplicationByIdInput](),
 		OutputSchema: MustGenerateGetApplicationByIdOutputSchema(),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
 	},
 }
 

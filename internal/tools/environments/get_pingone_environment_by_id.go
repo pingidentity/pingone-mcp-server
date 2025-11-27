@@ -25,6 +25,9 @@ var GetEnvironmentByIdDef = types.ToolDefinition{
 		Description:  "Retrieve an environment's configuration by it's unique ID.",
 		InputSchema:  schema.MustGenerateSchema[GetEnvironmentByIdInput](),
 		OutputSchema: schema.MustGenerateSchema[GetEnvironmentByIdOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
 	},
 }
 
