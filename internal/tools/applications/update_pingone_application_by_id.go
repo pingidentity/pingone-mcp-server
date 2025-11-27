@@ -20,9 +20,11 @@ import (
 var UpdateApplicationByIdDef = types.ToolDefinition{
 	IsReadOnly: false,
 	McpTool: &mcp.Tool{
-		Name:         "update_application_by_id",
-		Title:        "Update PingOne Application by ID",
-		Description:  "Update an existing application within a specified PingOne environment.",
+		Name:  "update_application_by_id",
+		Title: "Update PingOne Application by ID",
+		Description: `Update an existing application within a specified PingOne environment.
+
+VERY IMPORTANT: Before updating, first get the latest application configuration using the 'get_application_by_id' tool to avoid overwriting pre-existing optional configuration values.`,
 		InputSchema:  mustGenerateUpdateApplicationByIdSchema[UpdateApplicationByIdInput](),
 		OutputSchema: mustGenerateUpdateApplicationByIdSchema[UpdateApplicationByIdOutput](),
 	},

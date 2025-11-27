@@ -20,9 +20,11 @@ import (
 var UpdateEnvironmentByIdDef = types.ToolDefinition{
 	IsReadOnly: false,
 	McpTool: &mcp.Tool{
-		Name:         "update_environment_by_id",
-		Title:        "Update PingOne Environment by ID",
-		Description:  "Update an environment's configuration by its unique ID.",
+		Name:  "update_environment_by_id",
+		Title: "Update PingOne Environment by ID",
+		Description: `Update an environment's configuration by its unique ID.
+		
+VERY IMPORTANT: Before updating, first get the latest environment configuration using the 'get_environment_by_id' tool to avoid overwriting pre-existing optional configuration values.`,
 		InputSchema:  schema.MustGenerateSchema[UpdateEnvironmentByIdInput](),
 		OutputSchema: schema.MustGenerateSchema[UpdateEnvironmentByIdOutput](),
 	},

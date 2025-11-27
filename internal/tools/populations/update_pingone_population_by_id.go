@@ -20,9 +20,11 @@ import (
 var UpdatePopulationByIdDef = types.ToolDefinition{
 	IsReadOnly: false,
 	McpTool: &mcp.Tool{
-		Name:         "update_population_by_id",
-		Title:        "Update PingOne Population by ID",
-		Description:  "Update a population's configuration by its unique ID within a specified PingOne environment.",
+		Name:  "update_population_by_id",
+		Title: "Update PingOne Population by ID",
+		Description: `Update a population's configuration by its unique ID within a specified PingOne environment.
+
+VERY IMPORTANT: Before updating, first get the latest population configuration using the 'get_population_by_id' tool to avoid overwriting pre-existing optional configuration values.`,
 		InputSchema:  schema.MustGenerateSchema[UpdatePopulationByIdInput](),
 		OutputSchema: schema.MustGenerateSchema[UpdatePopulationByIdOutput](),
 	},
