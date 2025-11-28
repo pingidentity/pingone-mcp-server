@@ -145,6 +145,26 @@ func TestCachingEnvironmentValidator_ValidateEnvironment_ClientFactoryError(t *t
 	assert.Contains(t, err.Error(), "failed to get authenticated client")
 }
 
+func TestCachingEnvironmentValidator_ValidateEnvironment_NilEnvironmentResponse(t *testing.T) {
+	ctx := context.Background()
+	envId := uuid.New()
+
+	mockClient := new(mockEnvironmentsClient)
+	mockFactory := &mockEnvironmentsClientFactory{client: mockClient}
+
+	resp := &http.Response{StatusCode: 200}
+
+	// API returns success but nil environment (should not happen in practice but code handles it)
+	mockClient.On("GetEnvironmentById", ctx, envId).Return(nil, resp, nil)
+
+	validator := NewCachingEnvironmentValidator(mockFactory)
+
+	err := validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "environment response is nil")
+	mockClient.AssertExpectations(t)
+}
+
 func TestCachingEnvironmentValidator_ClearCache(t *testing.T) {
 	ctx := context.Background()
 	envId := uuid.New()
@@ -261,37 +281,6 @@ func TestCachingEnvironmentValidator_ProductionEnvironment_WriteBlocked(t *testi
 	mockClient.AssertExpectations(t)
 }
 
-func TestCachingEnvironmentValidator_ProductionEnvironment_WriteCached(t *testing.T) {
-	ctx := context.Background()
-	envId := uuid.New()
-
-	mockClient := new(mockEnvironmentsClient)
-	mockFactory := &mockEnvironmentsClientFactory{client: mockClient}
-
-	env := &pingone.EnvironmentResponse{
-		Id:   envId,
-		Name: "Production Environment",
-		Type: pingone.ENVIRONMENTTYPEVALUE_PRODUCTION,
-	}
-	resp := &http.Response{StatusCode: 200}
-
-	mockClient.On("GetEnvironmentById", ctx, envId).Return(env, resp, nil).Once()
-
-	validator := NewCachingEnvironmentValidator(mockFactory)
-
-	// First read operation caches the environment
-	err := validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
-	assert.NoError(t, err)
-
-	// Write operation should use cached data and still block
-	err = validator.ValidateEnvironment(ctx, envId, OperationTypeWrite)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "to safeguard against unintended or breaking changes to PRODUCTION environments, write operations are not allowed")
-
-	// Only one API call should have been made
-	mockClient.AssertExpectations(t)
-}
-
 func TestCachingEnvironmentValidator_SandboxEnvironment_WriteAllowed(t *testing.T) {
 	ctx := context.Background()
 	envId := uuid.New()
@@ -366,7 +355,7 @@ func TestCachingEnvironmentValidator_ProductionEnvironment_IsCached(t *testing.T
 
 	validator := NewCachingEnvironmentValidator(mockFactory)
 
-	// First read operation
+	// First read operation - populates cache
 	err := validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
 	assert.NoError(t, err)
 
@@ -378,6 +367,11 @@ func TestCachingEnvironmentValidator_ProductionEnvironment_IsCached(t *testing.T
 	err = validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
 	assert.NoError(t, err)
 
-	// Verify only one API call was made
+	// Write operation should use cached data and block
+	err = validator.ValidateEnvironment(ctx, envId, OperationTypeWrite)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "to safeguard against unintended or breaking changes to PRODUCTION environments, write operations are not allowed")
+
+	// Verify only one API call was made (all subsequent calls used cache)
 	mockClient.AssertExpectations(t)
 }

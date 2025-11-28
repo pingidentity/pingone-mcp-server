@@ -79,25 +79,6 @@ func TestNewToolRegistry(t *testing.T) {
 	assert.Nil(t, registry.GetTool("nonexistent_tool"))
 }
 
-func TestToolRegistry_GetTool(t *testing.T) {
-	readTool := types.ToolDefinition{
-		IsReadOnly: true,
-		McpTool: &mcp.Tool{
-			Name: "read_tool",
-		},
-	}
-
-	registry := NewToolRegistry([]types.ToolDefinition{readTool})
-
-	result := registry.GetTool("read_tool")
-	require.NotNil(t, result)
-	assert.Equal(t, "read_tool", result.McpTool.Name)
-	assert.True(t, result.IsReadOnly)
-
-	notFound := registry.GetTool("missing_tool")
-	assert.Nil(t, notFound)
-}
-
 // Test extractEnvironmentId
 
 func TestExtractEnvironmentId_Success(t *testing.T) {
@@ -178,6 +159,57 @@ func TestExtractEnvironmentId_InvalidJSON(t *testing.T) {
 	assert.Error(t, err)
 	assert.False(t, found)
 	assert.Equal(t, uuid.UUID{}, result)
+}
+
+// Test shouldSkipEnvironmentValidation
+
+func TestShouldSkipEnvironmentValidation(t *testing.T) {
+	tests := []struct {
+		name     string
+		toolDef  *types.ToolDefinition
+		expected bool
+	}{
+		{
+			name:     "nil tool definition",
+			toolDef:  nil,
+			expected: true,
+		},
+		{
+			name: "tool with skip flag set to true",
+			toolDef: &types.ToolDefinition{
+				Validation: &types.ToolValidation{
+					SkipProductionEnvironmentWriteValidation: true,
+				},
+				McpTool: &mcp.Tool{Name: "exempt_tool"},
+			},
+			expected: true,
+		},
+		{
+			name: "tool with skip flag set to false",
+			toolDef: &types.ToolDefinition{
+				Validation: &types.ToolValidation{
+					SkipProductionEnvironmentWriteValidation: false,
+				},
+				McpTool: &mcp.Tool{Name: "normal_tool"},
+			},
+			expected: false,
+		},
+		{
+			name: "tool with nil validation",
+			toolDef: &types.ToolDefinition{
+				Validation: nil,
+				McpTool:    &mcp.Tool{Name: "no_validation_tool"},
+			},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := shouldSkipEnvironmentValidation(tt.toolDef)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
 }
 
 // Test determineOperationType
@@ -364,7 +396,7 @@ func TestEnvironmentValidationMiddleware_ReadOperation_Success(t *testing.T) {
 	mockReg.AssertExpectations(t)
 }
 
-func TestEnvironmentValidationMiddleware_WriteOperation_Production_Blocked(t *testing.T) {
+func TestEnvironmentValidationMiddleware_WriteOperation_Success(t *testing.T) {
 	envId := uuid.New()
 	mockVal := new(mockValidatorMiddleware)
 	mockReg := new(mockToolRegistry)
