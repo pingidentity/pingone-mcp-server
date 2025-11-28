@@ -18,6 +18,9 @@ import (
 
 var CreateEnvironmentDef = types.ToolDefinition{
 	IsReadOnly: false,
+	Validation: &types.ToolValidation{
+		SkipProductionEnvironmentWriteValidation: true, // Tool does not act on an existing environment
+	},
 	McpTool: &mcp.Tool{
 		Name:         "create_environment",
 		Title:        "Create PingOne Environment",

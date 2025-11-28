@@ -18,6 +18,9 @@ import (
 
 var ListEnvironmentsDef = types.ToolDefinition{
 	IsReadOnly: true,
+	Validation: &types.ToolValidation{
+		SkipProductionEnvironmentWriteValidation: true, // Tool not applicable to a single environment
+	},
 	McpTool: &mcp.Tool{
 		Name:  "list_environments",
 		Title: "List PingOne Environments",
