@@ -292,6 +292,15 @@ func TestEnvironmentValidationMiddleware_ToolWithoutEnvironmentId(t *testing.T) 
 	mockVal := new(mockValidatorMiddleware)
 	mockReg := new(mockToolRegistry)
 
+	// Mock tool definition that doesn't skip validation
+	toolDef := &types.ToolDefinition{
+		IsReadOnly: true,
+		McpTool: &mcp.Tool{
+			Name: "list_environments",
+		},
+	}
+	mockReg.On("GetTool", "list_environments").Return(toolDef)
+
 	middleware := NewEnvironmentValidationMiddleware(mockVal, mockReg)
 
 	nextCalled := false
@@ -314,6 +323,7 @@ func TestEnvironmentValidationMiddleware_ToolWithoutEnvironmentId(t *testing.T) 
 	assert.Nil(t, result)
 	assert.False(t, nextCalled, "next handler should not be called when validation fails")
 	mockVal.AssertNotCalled(t, "ValidateEnvironment")
+	mockReg.AssertExpectations(t)
 }
 
 func TestEnvironmentValidationMiddleware_ReadOperation_Success(t *testing.T) {
@@ -485,10 +495,8 @@ func TestEnvironmentValidationMiddleware_UnknownTool(t *testing.T) {
 	mockVal := new(mockValidatorMiddleware)
 	mockReg := new(mockToolRegistry)
 
-	// Tool not found in registry
+	// Tool not found in registry - when nil, validation is skipped
 	mockReg.On("GetTool", "unknown_tool").Return((*types.ToolDefinition)(nil))
-	// When tool is unknown, it defaults to READ operation
-	mockVal.On("ValidateEnvironment", mock.Anything, envId, OperationTypeRead).Return(nil)
 
 	middleware := NewEnvironmentValidationMiddleware(mockVal, mockReg)
 
@@ -506,15 +514,25 @@ func TestEnvironmentValidationMiddleware_UnknownTool(t *testing.T) {
 
 	_, err := handler(context.Background(), "tools/call", req)
 
+	// When tool definition is nil, validation is skipped and request proceeds
 	assert.NoError(t, err)
 	assert.True(t, nextCalled)
-	mockVal.AssertExpectations(t)
+	mockVal.AssertNotCalled(t, "ValidateEnvironment")
 	mockReg.AssertExpectations(t)
 }
 
 func TestEnvironmentValidationMiddleware_InvalidJSON(t *testing.T) {
 	mockVal := new(mockValidatorMiddleware)
 	mockReg := new(mockToolRegistry)
+
+	// Mock tool definition
+	toolDef := &types.ToolDefinition{
+		IsReadOnly: true,
+		McpTool: &mcp.Tool{
+			Name: "test_tool",
+		},
+	}
+	mockReg.On("GetTool", "test_tool").Return(toolDef)
 
 	middleware := NewEnvironmentValidationMiddleware(mockVal, mockReg)
 
@@ -541,6 +559,7 @@ func TestEnvironmentValidationMiddleware_InvalidJSON(t *testing.T) {
 	assert.Nil(t, result)
 	assert.False(t, nextCalled)
 	mockVal.AssertNotCalled(t, "ValidateEnvironment")
+	mockReg.AssertExpectations(t)
 }
 
 func TestNewEnvironmentValidationMiddleware(t *testing.T) {
