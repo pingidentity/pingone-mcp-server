@@ -15,6 +15,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/tokenstore"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/applications"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/collections"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/directory"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/filter"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/populations"
@@ -22,11 +23,12 @@ import (
 )
 
 var defaultCollections = []collections.Collection{
+	&directory.DirectoryCollection{},
 	&environments.EnvironmentsCollection{},
 }
 var defaultLegacySdkCollections = []collections.LegacySdkCollection{
-	&populations.PopulationsCollection{},
 	&applications.ApplicationsCollection{},
+	&populations.PopulationsCollection{},
 }
 
 func RegisterCollections(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, legacySdkClientFactory legacy.ClientFactory, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, toolFilter *filter.Filter, grantType auth.GrantType) error {

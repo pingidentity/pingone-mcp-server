@@ -5,6 +5,7 @@ package schema
 import (
 	"reflect"
 	"slices"
+	"time"
 
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/google/uuid"
@@ -25,6 +26,10 @@ func MustGenerateSchema[T any]() *jsonschema.Schema {
 			reflect.TypeFor[uuid.UUID](): {
 				Type:   "string",
 				Format: "uuid",
+			},
+			reflect.TypeFor[time.Time](): {
+				Type:   "string",
+				Format: "date-time",
 			},
 		},
 	}
