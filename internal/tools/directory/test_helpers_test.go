@@ -28,8 +28,20 @@ func createTotalIdentitiesResponse(t testing.TB) pingone.DirectoryTotalIdentitie
 	t.Helper()
 
 	count := int32(100)
+	size := int32(1)
+
+	// Create the inner response with identity count
+	totalIdentity := pingone.DirectoryTotalIdentitiesCountResponse{}
+
+	// Create the embedded structure
+	embedded := pingone.DirectoryTotalIdentitiesCountCollectionResponseEmbedded{
+		TotalIdentities: []pingone.DirectoryTotalIdentitiesCountResponse{totalIdentity},
+	}
+
 	return pingone.DirectoryTotalIdentitiesCountCollectionResponse{
-		Count: &count,
+		Count:    &count,
+		Size:     &size,
+		Embedded: &embedded,
 	}
 }
 
@@ -40,25 +52,34 @@ func mockGetTotalIdentitiesByEnvironmentIdSetup(m *mockPingOneClientDirectoryWra
 }
 
 // calculateFilter calculates the filter string based on input dates
+// Matches the logic in GetTotalIdentitiesByEnvironmentIdHandler
 func calculateFilter(input directory.GetTotalIdentitiesByEnvironmentIdInput) string {
-	var startDate, endDate time.Time
-
-	if input.EndDate == nil {
-		endDate = time.Now().UTC()
-		endDate = time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 23, 59, 59, 0, time.UTC)
-	} else {
-		endDate = input.EndDate.UTC()
+	// If neither date is provided, default to today at midnight UTC with no endDate
+	if input.StartDate == nil && input.EndDate == nil {
+		now := time.Now().UTC()
+		startDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+		startDateStr := startDate.Format("2006-01-02T15:04:05-07:00")
+		return fmt.Sprintf("startDate eq \"%s\"", startDateStr)
 	}
 
-	if input.StartDate == nil {
-		startDate = endDate.AddDate(0, 0, -32)
-		startDate = time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.UTC)
-	} else {
-		startDate = input.StartDate.UTC()
+	// If both dates are provided
+	if input.StartDate != nil && input.EndDate != nil {
+		startDateStr := input.StartDate.UTC().Format("2006-01-02T15:04:05-07:00")
+		endDateStr := input.EndDate.UTC().Format("2006-01-02T15:04:05-07:00")
+		return fmt.Sprintf("startDate eq \"%s\" and endDate eq \"%s\"", startDateStr, endDateStr)
 	}
 
-	startDateStr := startDate.Format("2006-01-02T15:04:05-07:00")
-	endDateStr := endDate.Format("2006-01-02T15:04:05-07:00")
+	// If only startDate is provided
+	if input.StartDate != nil {
+		startDateStr := input.StartDate.UTC().Format("2006-01-02T15:04:05-07:00")
+		return fmt.Sprintf("startDate eq \"%s\"", startDateStr)
+	}
 
-	return fmt.Sprintf("startDate eq \"%s\" and endDate eq \"%s\"", startDateStr, endDateStr)
+	// If only endDate is provided
+	if input.EndDate != nil {
+		endDateStr := input.EndDate.UTC().Format("2006-01-02T15:04:05-07:00")
+		return fmt.Sprintf("endDate eq \"%s\"", endDateStr)
+	}
+
+	return ""
 }

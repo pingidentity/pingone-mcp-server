@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,7 +24,7 @@ var GetTotalIdentitiesByEnvironmentIdDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
 		Name:         "get_total_identities_by_environment_id",
 		Title:        "Get Total Identities Count for PingOne Environment",
-		Description:  "Retrieve the total count of user identities in a PingOne environment within a specified date range. Returns aggregated identity count data for reporting and analytics purposes. If no dates are provided, defaults to a 32-day period ending today.",
+		Description:  "Retrieve the total count of user identities in a PingOne environment within a specified date range. Returns aggregated identity count data for reporting and analytics purposes. If no dates are provided, defaults to today at midnight UTC (showing a single day result). If specifying dates, at least one date must be provided.",
 		InputSchema:  schema.MustGenerateSchema[GetTotalIdentitiesByEnvironmentIdInput](),
 		OutputSchema: schema.MustGenerateSchema[GetTotalIdentitiesByEnvironmentIdOutput](),
 	},
@@ -32,13 +33,13 @@ var GetTotalIdentitiesByEnvironmentIdDef = types.ToolDefinition{
 // GetTotalIdentitiesByEnvironmentIdInput defines the input parameters for retrieving total identities count by environment ID
 type GetTotalIdentitiesByEnvironmentIdInput struct {
 	EnvironmentId uuid.UUID  `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) of the PingOne environment to query for identity counts."`
-	StartDate     *time.Time `json:"startDate,omitempty" jsonschema:"OPTIONAL. The start date of the date range for counting identities in ISO 8601 format with timezone (e.g., '2024-01-01T00:00:00Z'). If not provided, defaults to 32 days before the end date."`
-	EndDate       *time.Time `json:"endDate,omitempty" jsonschema:"OPTIONAL. The end date of the date range for counting identities in ISO 8601 format with timezone (e.g., '2024-12-31T23:59:59Z'). If not provided, defaults to today's date at 23:59:59 UTC."`
+	StartDate     *time.Time `json:"startDate,omitempty" jsonschema:"OPTIONAL. The start date of the date range for counting identities in ISO 8601 format with timezone (e.g., '2024-01-01T00:00:00Z'). If neither date is provided, defaults to today at midnight UTC. If dates are specified, at least one must be set."`
+	EndDate       *time.Time `json:"endDate,omitempty" jsonschema:"OPTIONAL. The end date of the date range for counting identities in ISO 8601 format with timezone (e.g., '2024-12-31T23:59:59Z'). If neither date is provided, remains unset. If dates are specified, at least one must be set."`
 }
 
 // GetTotalIdentitiesByEnvironmentIdOutput represents the result of retrieving total identities count for an environment
 type GetTotalIdentitiesByEnvironmentIdOutput struct {
-	TotalIdentitiesReport pingone.DirectoryTotalIdentitiesCountCollectionResponse `json:"totalIdentitiesReport" jsonschema:"The total identities count report containing the aggregated number of user identities in the environment for the specified date range, along with related metadata such as timestamps and environment information."`
+	TotalIdentitiesReport []pingone.DirectoryTotalIdentitiesCountResponse `json:"totalIdentitiesReport" jsonschema:"A list of total identities reports, by day, containing the aggregated number of user identities in the environment for the specified date range."`
 }
 
 // GetTotalIdentitiesByEnvironmentIdHandler retrieves the total identities count for a PingOne environment within a specified date range using the provided client
@@ -69,36 +70,39 @@ func GetTotalIdentitiesByEnvironmentIdHandler(directoryClientFactory DirectoryCl
 
 		logger.FromContext(ctx).Debug("Retrieving total identities by environment", slog.String("environmentId", input.EnvironmentId.String()))
 
-		// Apply default dates if not provided
-		var startDate, endDate time.Time
-
-		if input.EndDate == nil {
-			// Default to today at 23:59:59 UTC
-			endDate = time.Now().UTC()
-			// Set to end of day
-			endDate = time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 23, 59, 59, 0, time.UTC)
-		} else {
-			endDate = input.EndDate.UTC()
-		}
-
-		if input.StartDate == nil {
-			// Default to 32 days before endDate at 00:00:00 UTC
-			startDate = endDate.AddDate(0, 0, -32)
-			// Set to start of day
-			startDate = time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.UTC)
-		} else {
-			startDate = input.StartDate.UTC()
+		// Validate and apply default dates
+		// If neither date is provided, default to today at midnight UTC with no endDate
+		// If at least one date is provided, validation passes
+		if input.StartDate == nil && input.EndDate == nil {
+			// Default behavior: startDate = today at midnight UTC, endDate = nil (unset)
+			now := time.Now().UTC()
+			startDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+			input.StartDate = &startDate
+			logger.FromContext(ctx).Debug("No dates provided, using default",
+				slog.Time("startDate", startDate),
+				slog.String("endDate", "unset"))
 		}
 
 		// Format dates for the API filter
-		startDateStr := startDate.Format("2006-01-02T15:04:05-07:00")
-		endDateStr := endDate.Format("2006-01-02T15:04:05-07:00")
+		var filterBuilder strings.Builder
+		var logAttrs []slog.Attr
 
-		filter := fmt.Sprintf("startDate eq \"%s\" and endDate eq \"%s\"", startDateStr, endDateStr)
-		logger.FromContext(ctx).Debug("Using filter",
-			slog.String("filter", filter),
-			slog.Time("startDate", startDate),
-			slog.Time("endDate", endDate))
+		if input.StartDate != nil {
+			fmt.Fprintf(&filterBuilder, "startDate eq \"%s\"", input.StartDate.UTC().Format("2006-01-02T15:04:05-07:00"))
+			logAttrs = append(logAttrs, slog.Time("startDate", *input.StartDate))
+		}
+
+		if input.EndDate != nil {
+			if filterBuilder.Len() > 0 {
+				filterBuilder.WriteString(" and ")
+			}
+			fmt.Fprintf(&filterBuilder, "endDate eq \"%s\"", input.EndDate.UTC().Format("2006-01-02T15:04:05-07:00"))
+			logAttrs = append(logAttrs, slog.Time("endDate", *input.EndDate))
+		}
+
+		filter := filterBuilder.String()
+		logAttrs = append([]slog.Attr{slog.String("filter", filter)}, logAttrs...)
+		logger.FromContext(ctx).LogAttrs(ctx, slog.LevelDebug, "Using filter", logAttrs...)
 
 		// Call the API to retrieve the totalIdentitiesReport
 		totalIdentitiesReport, httpResponse, err := client.GetTotalIdentitiesByEnvironmentId(ctx, input.EnvironmentId, filter)
@@ -121,7 +125,7 @@ func GetTotalIdentitiesByEnvironmentIdHandler(directoryClientFactory DirectoryCl
 		)
 
 		result := &GetTotalIdentitiesByEnvironmentIdOutput{
-			TotalIdentitiesReport: *totalIdentitiesReport,
+			TotalIdentitiesReport: totalIdentitiesReport.Embedded.TotalIdentities,
 		}
 
 		return nil, result, nil
