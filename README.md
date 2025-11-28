@@ -80,8 +80,7 @@ docker build -t pingone-mcp-server .
 The following environment variables are needed when running in docker:
 
 ```bash
-PINGONE_TOP_LEVEL_DOMAIN=com
-PINGONE_REGION_CODE=NA
+PINGONE_ROOT_DOMAIN=pingone.com
 PINGONE_MCP_ENVIRONMENT_ID=your-environment-id
 PINGONE_DEVICE_CODE_CLIENT_ID=your-device-code-client-id
 PINGONE_DEVICE_CODE_SCOPES=openid
@@ -102,8 +101,7 @@ Alternatively, pass environment variables directly:
 
 ```bash
 docker run -i --rm \
-  -e PINGONE_TOP_LEVEL_DOMAIN=com \
-  -e PINGONE_REGION_CODE=NA \
+  -e PINGONE_ROOT_DOMAIN=pingone.com \
   -e PINGONE_MCP_ENVIRONMENT_ID=your-environment-id \
   -e PINGONE_DEVICE_CODE_CLIENT_ID=your-device-code-client-id \
   -e PINGONE_DEVICE_CODE_SCOPES=openid \

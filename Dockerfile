@@ -18,8 +18,7 @@ FROM alpine:latest
 WORKDIR /root/
 
 # Environment variables for PingOne MCP Server configuration
-ENV PINGONE_TOP_LEVEL_DOMAIN="" \
-    PINGONE_REGION_CODE="" \
+ENV PINGONE_ROOT_DOMAIN="" \
     PINGONE_MCP_ENVIRONMENT_ID="" \
     PINGONE_DEVICE_CODE_CLIENT_ID="" \
     PINGONE_DEVICE_CODE_SCOPES="" \
