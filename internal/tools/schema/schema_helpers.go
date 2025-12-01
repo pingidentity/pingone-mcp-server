@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/google/uuid"
+	"github.com/pingidentity/pingone-go-client/types"
 )
 
 // MustGenerateSchema generates a JSON schema for type T.
@@ -30,6 +31,10 @@ func MustGenerateSchema[T any]() *jsonschema.Schema {
 			reflect.TypeFor[time.Time](): {
 				Type:   "string",
 				Format: "date-time",
+			},
+			reflect.TypeFor[types.UnixTime](): {
+				Type:   "integer",
+				Format: "date-time-unix",
 			},
 		},
 	}

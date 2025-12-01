@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"net/url"
 	"strings"
 	"time"
 
@@ -106,7 +105,7 @@ func GetTotalIdentitiesByEnvironmentIdHandler(directoryClientFactory DirectoryCl
 		logger.FromContext(ctx).LogAttrs(ctx, slog.LevelDebug, "Using filter", logAttrs...)
 
 		// Call the API to retrieve the totalIdentitiesReport
-		totalIdentitiesReport, httpResponse, err := client.GetTotalIdentitiesByEnvironmentId(ctx, input.EnvironmentId, url.QueryEscape(filter))
+		totalIdentitiesReport, httpResponse, err := client.GetTotalIdentitiesByEnvironmentId(ctx, input.EnvironmentId, filter)
 		logger.LogHttpResponse(ctx, httpResponse)
 
 		if err != nil {
