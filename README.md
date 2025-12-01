@@ -67,3 +67,48 @@ To see all available commands:
 ./bin/pingone-mcp-server --help
 ```
 
+## Docker
+
+### Building the Docker image
+
+```bash
+docker build -t pingone-mcp-server .
+```
+
+### Running in Docker
+
+The following environment variables are needed when running in docker:
+
+```bash
+PINGONE_TOP_LEVEL_DOMAIN=com
+PINGONE_REGION_CODE=NA
+PINGONE_MCP_ENVIRONMENT_ID=your-environment-id
+PINGONE_DEVICE_CODE_CLIENT_ID=your-device-code-client-id
+PINGONE_DEVICE_CODE_SCOPES=openid
+# Optional - will add more debug console output
+PINGONE_MCP_DEBUG=true
+```
+
+Run the container (the --disable-read-only argument is optional):
+
+```bash
+docker run -i --rm \
+  --env-file ./mcp.env \
+  pingone-mcp-server \
+  --disable-read-only
+```
+
+Alternatively, pass environment variables directly:
+
+```bash
+docker run -i --rm \
+  -e PINGONE_TOP_LEVEL_DOMAIN=com \
+  -e PINGONE_REGION_CODE=NA \
+  -e PINGONE_MCP_ENVIRONMENT_ID=your-environment-id \
+  -e PINGONE_DEVICE_CODE_CLIENT_ID=your-device-code-client-id \
+  -e PINGONE_DEVICE_CODE_SCOPES=openid \
+  -e PINGONE_MCP_DEBUG=true \
+  pingone-mcp-server \
+  --disable-read-only
+```
+
