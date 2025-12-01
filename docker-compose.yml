@@ -1,9 +1,0 @@
-version: '3.8'
-
-services:
-  pingone-mcp-server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: pingone-mcp-server:latest
-    container_name: pingone-mcp-server
