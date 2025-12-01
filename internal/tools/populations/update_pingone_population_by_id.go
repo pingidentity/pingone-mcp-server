@@ -104,6 +104,9 @@ func UpdatePopulationByIdHandler(populationsClientFactory PopulationsClientFacto
 			slog.String("populationId", input.PopulationId.String()),
 		)
 
+		// Filter out _links field from response
+		populationResponse.Links = nil
+
 		result := &UpdatePopulationByIdOutput{
 			Population: *populationResponse,
 		}

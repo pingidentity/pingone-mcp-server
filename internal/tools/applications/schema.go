@@ -34,8 +34,32 @@ type UpdateApplicationModel struct {
 	ApplicationWSFED              *management.ApplicationWSFED              `json:"applicationWSFED,omitempty"`
 }
 
+// filterApplicationLinks removes _links field from all application types
+func filterApplicationLinks(model ReadApplicationModel) ReadApplicationModel {
+	if model.ApplicationExternalLink != nil {
+		model.ApplicationExternalLink.Links = nil
+	}
+	if model.ApplicationOIDC != nil {
+		model.ApplicationOIDC.Links = nil
+	}
+	// ApplicationPingOneAdminConsole doesn't have Links field
+	if model.ApplicationPingOnePortal != nil {
+		model.ApplicationPingOnePortal.Links = nil
+	}
+	if model.ApplicationPingOneSelfService != nil {
+		model.ApplicationPingOneSelfService.Links = nil
+	}
+	if model.ApplicationSAML != nil {
+		model.ApplicationSAML.Links = nil
+	}
+	if model.ApplicationWSFED != nil {
+		model.ApplicationWSFED.Links = nil
+	}
+	return model
+}
+
 func ReadApplicationModelFromSDKReadResponse(sdkApp management.ReadOneApplication200Response) ReadApplicationModel {
-	return ReadApplicationModel{
+	model := ReadApplicationModel{
 		ApplicationExternalLink:        sdkApp.ApplicationExternalLink,
 		ApplicationOIDC:                sdkApp.ApplicationOIDC,
 		ApplicationPingOneAdminConsole: sdkApp.ApplicationPingOneAdminConsole,
@@ -44,15 +68,30 @@ func ReadApplicationModelFromSDKReadResponse(sdkApp management.ReadOneApplicatio
 		ApplicationSAML:                sdkApp.ApplicationSAML,
 		ApplicationWSFED:               sdkApp.ApplicationWSFED,
 	}
+	return filterApplicationLinks(model)
 }
 
 func CreateApplicationModelFromSDKCreateResponse(sdkApp management.CreateApplication201Response) CreateApplicationModel {
-	return CreateApplicationModel{
+	model := CreateApplicationModel{
 		ApplicationExternalLink: sdkApp.ApplicationExternalLink,
 		ApplicationOIDC:         sdkApp.ApplicationOIDC,
 		ApplicationSAML:         sdkApp.ApplicationSAML,
 		ApplicationWSFED:        sdkApp.ApplicationWSFED,
 	}
+	// Filter out _links field from all application types
+	if model.ApplicationExternalLink != nil {
+		model.ApplicationExternalLink.Links = nil
+	}
+	if model.ApplicationOIDC != nil {
+		model.ApplicationOIDC.Links = nil
+	}
+	if model.ApplicationSAML != nil {
+		model.ApplicationSAML.Links = nil
+	}
+	if model.ApplicationWSFED != nil {
+		model.ApplicationWSFED.Links = nil
+	}
+	return model
 }
 
 func CreateApplicationModelToSDKCreateRequest(model CreateApplicationModel) management.CreateApplicationRequest {
@@ -65,7 +104,7 @@ func CreateApplicationModelToSDKCreateRequest(model CreateApplicationModel) mana
 }
 
 func UpdateApplicationModelFromSDKReadResponse(sdkApp management.ReadOneApplication200Response) UpdateApplicationModel {
-	return UpdateApplicationModel{
+	model := UpdateApplicationModel{
 		ApplicationExternalLink:       sdkApp.ApplicationExternalLink,
 		ApplicationOIDC:               sdkApp.ApplicationOIDC,
 		ApplicationPingOnePortal:      sdkApp.ApplicationPingOnePortal,
@@ -73,6 +112,26 @@ func UpdateApplicationModelFromSDKReadResponse(sdkApp management.ReadOneApplicat
 		ApplicationSAML:               sdkApp.ApplicationSAML,
 		ApplicationWSFED:              sdkApp.ApplicationWSFED,
 	}
+	// Filter out _links field from all application types
+	if model.ApplicationExternalLink != nil {
+		model.ApplicationExternalLink.Links = nil
+	}
+	if model.ApplicationOIDC != nil {
+		model.ApplicationOIDC.Links = nil
+	}
+	if model.ApplicationPingOnePortal != nil {
+		model.ApplicationPingOnePortal.Links = nil
+	}
+	if model.ApplicationPingOneSelfService != nil {
+		model.ApplicationPingOneSelfService.Links = nil
+	}
+	if model.ApplicationSAML != nil {
+		model.ApplicationSAML.Links = nil
+	}
+	if model.ApplicationWSFED != nil {
+		model.ApplicationWSFED.Links = nil
+	}
+	return model
 }
 
 func UpdateApplicationModelToSDKUpdateRequest(model UpdateApplicationModel) management.UpdateApplicationRequest {
