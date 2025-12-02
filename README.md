@@ -66,4 +66,3 @@ To see all available commands:
 ```bash
 ./bin/pingone-mcp-server --help
 ```
-
