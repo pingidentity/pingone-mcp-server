@@ -58,9 +58,13 @@ func (c *ApplicationsCollection) RegisterTools(ctx context.Context, server *mcp.
 		mcp.AddTool(server, CreateApplicationDef.McpTool, CreateApplicationHandler(applicationsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(UpdateApplicationByIdDef.McpTool.Name, UpdateApplicationByIdDef.IsReadOnly) {
-		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", UpdateApplicationByIdDef.McpTool.Name))
-		mcp.AddTool(server, UpdateApplicationByIdDef.McpTool, UpdateApplicationByIdHandler(applicationsClientFactory, initializeAuthContext))
+	// if toolFilter.ShouldIncludeTool(UpdateApplicationByIdDef.McpTool.Name, UpdateApplicationByIdDef.IsReadOnly) {
+	// 	logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", UpdateApplicationByIdDef.McpTool.Name))
+	// 	mcp.AddTool(server, UpdateApplicationByIdDef.McpTool, UpdateApplicationByIdHandler(applicationsClientFactory, initializeAuthContext))
+	// }
+	if toolFilter.ShouldIncludeTool(PatchApplicationByIdDef.McpTool.Name, PatchApplicationByIdDef.IsReadOnly) {
+		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", PatchApplicationByIdDef.McpTool.Name))
+		mcp.AddTool(server, PatchApplicationByIdDef.McpTool, PatchApplicationByIdHandler(applicationsClientFactory, initializeAuthContext))
 	}
 
 	return nil
