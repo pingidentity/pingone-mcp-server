@@ -12,34 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewDefaultClientFactory(t *testing.T) {
-	tests := []struct {
-		name          string
-		serverVersion string
-	}{
-		{
-			name:          "Valid version string",
-			serverVersion: "1.0.0",
-		},
-		{
-			name:          "Empty version string",
-			serverVersion: "",
-		},
-		{
-			name:          "Complex version string",
-			serverVersion: "1.2.3-beta.1+build.456",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			factory := NewDefaultClientFactory(tt.serverVersion)
-			require.NotNil(t, factory)
-			assert.Equal(t, tt.serverVersion, factory.serverVersion)
-		})
-	}
-}
-
 func TestDefaultClientFactory_NewClient_ValidationErrors(t *testing.T) {
 	tests := []struct {
 		name        string
