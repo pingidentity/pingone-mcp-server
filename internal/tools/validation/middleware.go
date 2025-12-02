@@ -112,6 +112,12 @@ func (m *EnvironmentValidationMiddleware) Handler(next mcp.MethodHandler) mcp.Me
 				slog.String("tool", toolName))
 			return nil, fmt.Errorf("environment validation failed: %w", err)
 		}
+		if environmentId == nil {
+			// Tool does use environmentId, but for whatever reason wasn't returned, validation is mandatory, so we fail the call
+			logger.FromContext(ctx).Error("Tool requires environment validation, environmentId is expected, but no environmentId was found",
+				slog.String("tool", toolName))
+			return nil, fmt.Errorf("environment validation failed: %w", err)
+		}
 
 		// Determine operation type from tool definition
 		operationType := determineOperationType(toolDef)
@@ -122,7 +128,7 @@ func (m *EnvironmentValidationMiddleware) Handler(next mcp.MethodHandler) mcp.Me
 			slog.String("operationType", string(operationType)))
 
 		// Validate environment
-		if err := m.validator.ValidateEnvironment(ctx, environmentId, operationType); err != nil {
+		if err := m.validator.ValidateEnvironment(ctx, *environmentId, operationType); err != nil {
 			logger.FromContext(ctx).Error("Environment validation failed",
 				slog.String("tool", toolName),
 				slog.String("environmentId", environmentId.String()),
@@ -143,29 +149,32 @@ func (m *EnvironmentValidationMiddleware) Handler(next mcp.MethodHandler) mcp.Me
 // extractEnvironmentId extracts the environmentId from tool call arguments.
 // Returns the UUID, true if found, and any parsing error.
 // Supports both string and direct UUID representations in JSON.
-func extractEnvironmentId(argsJSON json.RawMessage) (uuid.UUID, bool, error) {
+func extractEnvironmentId(argsJSON json.RawMessage) (*uuid.UUID, bool, error) {
 	// Parse JSON into map
 	var args map[string]any
 	if err := json.Unmarshal(argsJSON, &args); err != nil {
-		return uuid.UUID{}, false, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, false, fmt.Errorf("failed to unmarshal arguments: %w", err)
 	}
 
 	// Try direct field access with key "environmentId"
 	if envIdRaw, ok := args["environmentId"]; ok {
 		// Handle string representation
 		if envIdStr, ok := envIdRaw.(string); ok {
-			if parsed, err := uuid.Parse(envIdStr); err == nil {
-				return parsed, true, nil
+			parsed, err := uuid.Parse(envIdStr)
+			if err == nil {
+				return &parsed, true, nil
+			} else {
+				return nil, true, fmt.Errorf("invalid environmentId format: %w", err)
 			}
 		}
 		// Handle direct UUID type (less common but possible)
 		if envIdUUID, ok := envIdRaw.(uuid.UUID); ok {
-			return envIdUUID, true, nil
+			return &envIdUUID, true, nil
 		}
 	}
 
 	// Environment ID not found or invalid format
-	return uuid.UUID{}, false, nil
+	return nil, false, nil
 }
 
 // shouldSkipEnvironmentValidation determines if environment validation should be skipped for a tool.

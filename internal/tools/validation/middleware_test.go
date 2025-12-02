@@ -111,7 +111,8 @@ func TestExtractEnvironmentId_Success(t *testing.T) {
 			result, found, err := extractEnvironmentId(argsJSON)
 			assert.NoError(t, err)
 			assert.True(t, found)
-			assert.Equal(t, envId, result)
+			require.NotNil(t, result)
+			assert.Equal(t, envId, *result)
 		})
 	}
 }
@@ -131,12 +132,6 @@ func TestExtractEnvironmentId_NotFound(t *testing.T) {
 				"otherId": "some-value",
 			},
 		},
-		{
-			name: "invalid UUID string",
-			args: map[string]any{
-				"environmentId": "not-a-uuid",
-			},
-		},
 	}
 
 	for _, tt := range tests {
@@ -147,7 +142,46 @@ func TestExtractEnvironmentId_NotFound(t *testing.T) {
 			result, found, err := extractEnvironmentId(argsJSON)
 			assert.NoError(t, err)
 			assert.False(t, found)
-			assert.Equal(t, uuid.UUID{}, result)
+			assert.Nil(t, result)
+		})
+	}
+}
+
+func TestExtractEnvironmentId_InvalidUUID(t *testing.T) {
+	tests := []struct {
+		name string
+		args map[string]any
+	}{
+		{
+			name: "invalid UUID string",
+			args: map[string]any{
+				"environmentId": "not-a-uuid",
+			},
+		},
+		{
+			name: "empty string",
+			args: map[string]any{
+				"environmentId": "",
+			},
+		},
+		{
+			name: "malformed UUID",
+			args: map[string]any{
+				"environmentId": "123-456-789",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			argsJSON, err := json.Marshal(tt.args)
+			require.NoError(t, err)
+
+			result, found, err := extractEnvironmentId(argsJSON)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "invalid environmentId format")
+			assert.True(t, found)
+			assert.Nil(t, result)
 		})
 	}
 }
@@ -158,7 +192,7 @@ func TestExtractEnvironmentId_InvalidJSON(t *testing.T) {
 	result, found, err := extractEnvironmentId(invalidJSON)
 	assert.Error(t, err)
 	assert.False(t, found)
-	assert.Equal(t, uuid.UUID{}, result)
+	assert.Nil(t, result)
 }
 
 // Test shouldSkipEnvironmentValidation
