@@ -16,8 +16,9 @@ type ToolDefinition struct {
 }
 
 type ToolValidation struct {
-	// SkipProductionEnvironmentWriteValidation when set to true, allows the tool to make write operations on production-type environments.
+	// SkipProductionEnvironmentWriteRestriction when set to true, allows the tool to make write operations on production-type environments.
 	// Typically used where the tool itself performs validation, is trusted or is not acting on environments.
 	// Defaults to false, meaning production environments are protected by default.
-	SkipProductionEnvironmentWriteValidation bool
+	SkipProductionEnvironmentWriteRestriction   bool
+	EnforceProductionEnvironmentReadRestriction bool
 }

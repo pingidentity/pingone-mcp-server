@@ -181,7 +181,7 @@ func extractEnvironmentId(argsJSON json.RawMessage) (*uuid.UUID, bool, error) {
 // Returns true if the tool definition is nil or if the tool explicitly opts out of production environment validation.
 // This allows certain trusted tools or tools that don't operate on environments to bypass validation checks.
 func shouldSkipEnvironmentValidation(toolDef *types.ToolDefinition) bool {
-	if toolDef == nil || (toolDef.Validation != nil && toolDef.Validation.SkipProductionEnvironmentWriteValidation) {
+	if toolDef == nil || (toolDef.Validation != nil && toolDef.Validation.SkipProductionEnvironmentWriteRestriction) {
 		return true
 	}
 	return false

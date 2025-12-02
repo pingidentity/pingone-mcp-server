@@ -212,7 +212,7 @@ func TestShouldSkipEnvironmentValidation(t *testing.T) {
 			name: "tool with skip flag set to true",
 			toolDef: &types.ToolDefinition{
 				Validation: &types.ToolValidation{
-					SkipProductionEnvironmentWriteValidation: true,
+					SkipProductionEnvironmentWriteRestriction: true,
 				},
 				McpTool: &mcp.Tool{Name: "exempt_tool"},
 			},
@@ -222,7 +222,7 @@ func TestShouldSkipEnvironmentValidation(t *testing.T) {
 			name: "tool with skip flag set to false",
 			toolDef: &types.ToolDefinition{
 				Validation: &types.ToolValidation{
-					SkipProductionEnvironmentWriteValidation: false,
+					SkipProductionEnvironmentWriteRestriction: false,
 				},
 				McpTool: &mcp.Tool{Name: "normal_tool"},
 			},
