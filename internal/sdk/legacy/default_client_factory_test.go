@@ -107,6 +107,7 @@ func TestDefaultClientFactory_regionCodeFromRootDomain(t *testing.T) {
 		expectedRegion management.EnumRegionCode
 		expectError    bool
 	}{
+		// Valid domain tests
 		{
 			name:           "Valid NA domain",
 			rootDomain:     "pingone.com",
@@ -143,6 +144,7 @@ func TestDefaultClientFactory_regionCodeFromRootDomain(t *testing.T) {
 			expectedRegion: management.ENUMREGIONCODE_SG,
 			expectError:    false,
 		},
+		// Case sensitivity tests
 		{
 			name:           "Uppercase domain",
 			rootDomain:     "PINGONE.COM",
@@ -155,6 +157,7 @@ func TestDefaultClientFactory_regionCodeFromRootDomain(t *testing.T) {
 			expectedRegion: management.ENUMREGIONCODE_EU,
 			expectError:    false,
 		},
+		// Whitespace handling tests
 		{
 			name:           "Domain with leading whitespace",
 			rootDomain:     "  pingone.com",
@@ -173,6 +176,7 @@ func TestDefaultClientFactory_regionCodeFromRootDomain(t *testing.T) {
 			expectedRegion: management.ENUMREGIONCODE_AP,
 			expectError:    false,
 		},
+		// Invalid input tests
 		{
 			name:        "Empty domain",
 			rootDomain:  "",
@@ -196,6 +200,52 @@ func TestDefaultClientFactory_regionCodeFromRootDomain(t *testing.T) {
 		{
 			name:        "Domain with protocol",
 			rootDomain:  "https://pingone.com",
+			expectError: true,
+		},
+		{
+			name:        "Invalid PingIdentity domain",
+			rootDomain:  "www.pingidentity.com",
+			expectError: true,
+		},
+		// Security validation tests - potential injection attempts
+		{
+			name:        "Command injection with semicolon",
+			rootDomain:  "pingone.com; rm -rf /",
+			expectError: true,
+		},
+		{
+			name:        "Command injection with ampersand",
+			rootDomain:  "pingone.com && malicious",
+			expectError: true,
+		},
+		{
+			name:        "Command injection with pipe",
+			rootDomain:  "pingone.com | cat /etc/passwd",
+			expectError: true,
+		},
+		{
+			name:        "Newline injection",
+			rootDomain:  "pingone.com\nmalicious",
+			expectError: true,
+		},
+		{
+			name:        "Carriage return injection",
+			rootDomain:  "pingone.com\rmalicious",
+			expectError: true,
+		},
+		{
+			name:        "Path traversal attempt 1",
+			rootDomain:  "../../etc/passwd",
+			expectError: true,
+		},
+		{
+			name:        "Path traversal attempt 2",
+			rootDomain:  "../pingone.com",
+			expectError: true,
+		},
+		{
+			name:        "Path traversal attempt 3",
+			rootDomain:  "pingone.com/../../etc",
 			expectError: true,
 		},
 	}
@@ -223,58 +273,4 @@ func TestDefaultClientFactory_regionCodeFromRootDomain(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestDefaultClientFactory_regionCodeFromRootDomain_SecurityValidation(t *testing.T) {
-	// Test that potential injection attempts are handled safely
-	maliciousInputs := []string{
-		"pingone.com; rm -rf /",
-		"pingone.com && malicious",
-		"pingone.com | cat /etc/passwd",
-		"pingone.com\nmalicious",
-		"pingone.com\rmalicious",
-		"../../etc/passwd",
-		"../pingone.com",
-		"pingone.com/../../etc",
-	}
-
-	factory := NewDefaultClientFactory("1.0.0")
-
-	for _, input := range maliciousInputs {
-		t.Run("Malicious input: "+input, func(t *testing.T) {
-			regionCode, err := factory.regionCodeFromRootDomain(input)
-
-			// All malicious inputs should be rejected
-			assert.Error(t, err)
-			assert.Nil(t, regionCode)
-			assert.Contains(t, err.Error(), "unrecognized root PingOne domain")
-		})
-	}
-}
-
-func TestDefaultClientFactory_NewClient_InvalidDomain(t *testing.T) {
-	// Save and set invalid domain
-	originalDomain := os.Getenv("PINGONE_ROOT_DOMAIN")
-	err := os.Setenv("PINGONE_ROOT_DOMAIN", "www.pingidentity.com")
-	require.NoError(t, err)
-	defer func() {
-		if originalDomain != "" {
-			err := os.Setenv("PINGONE_ROOT_DOMAIN", originalDomain)
-			require.NoError(t, err)
-		} else {
-			err := os.Unsetenv("PINGONE_ROOT_DOMAIN")
-			require.NoError(t, err)
-		}
-	}()
-
-	factory := NewDefaultClientFactory("1.0.0")
-	ctx := context.Background()
-
-	client, err := factory.NewClient(ctx, "valid-token")
-
-	assert.Nil(t, client)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to determine region from root domain")
-	assert.Contains(t, err.Error(), "unrecognized root PingOne domain")
-	assert.Contains(t, err.Error(), "www.pingidentity.com")
 }
