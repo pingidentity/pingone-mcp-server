@@ -49,6 +49,22 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 			expectedApplication: testOIDCApp.ApplicationOIDC,
 		},
 		{
+			name:             "Success - Create SPA application",
+			inputApplication: testSinglePageApp.ApplicationOIDC,
+			setupMock: func(mockClient *mockPingOneClientApplicationsWrapper, app *management.ApplicationOIDC) {
+				expectedRequest := management.CreateApplicationRequest{
+					ApplicationOIDC: app,
+				}
+				mockResponse := &management.CreateApplication201Response{
+					ApplicationOIDC: app,
+				}
+				mockClient.On("CreateApplication", mock.Anything, testEnvironmentId, expectedRequest).
+					Return(mockResponse, &http.Response{StatusCode: 201}, nil)
+			},
+			expectError:         false,
+			expectedApplication: testSinglePageApp.ApplicationOIDC,
+		},
+		{
 			name:             "Error - Client returns error",
 			inputApplication: testOIDCApp.ApplicationOIDC,
 			setupMock: func(mockClient *mockPingOneClientApplicationsWrapper, app *management.ApplicationOIDC) {
