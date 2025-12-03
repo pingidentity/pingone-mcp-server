@@ -128,7 +128,7 @@ func TestCachingEnvironmentValidator_ValidateEnvironment_NotFound(t *testing.T) 
 
 	err := validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "does not exist or is not accessible")
+	assert.Contains(t, err.Error(), "environment not found")
 	mockClient.AssertExpectations(t)
 }
 
@@ -161,7 +161,7 @@ func TestCachingEnvironmentValidator_ValidateEnvironment_NilEnvironmentResponse(
 
 	err := validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "environment response is nil")
+	assert.Contains(t, err.Error(), "no environment data in response")
 	mockClient.AssertExpectations(t)
 }
 

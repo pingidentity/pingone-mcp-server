@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pingidentity/pingone-go-client/pingone"
+	"github.com/pingidentity/pingone-mcp-server/internal/errs"
+	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
 )
 
@@ -72,20 +74,30 @@ func (v *CachingEnvironmentValidator) ValidateEnvironment(ctx context.Context, e
 	}
 
 	// Validate with API
-	env, resp, err := client.GetEnvironmentById(ctx, environmentId)
+	envResponse, httpResponse, err := client.GetEnvironmentById(ctx, environmentId)
+	logger.LogHttpResponse(ctx, httpResponse)
+
 	if err != nil {
-		return fmt.Errorf("environment %s does not exist or is not accessible: %w", environmentId, err)
+		apiErr := errs.NewApiError(httpResponse, err)
+		errs.Log(ctx, apiErr)
+		return apiErr
+	}
+
+	if envResponse == nil {
+		apiErr := errs.NewApiError(httpResponse, fmt.Errorf("no environment data in response"))
+		errs.Log(ctx, apiErr)
+		return apiErr
 	}
 
 	// Cache successful validation only for PRODUCTION environments
 	// PRODUCTION environments cannot be downgraded to SANDBOX, so caching is safe
 	// SANDBOX environments can be upgraded to PRODUCTION, so we should not cache them
-	if resp != nil && resp.StatusCode >= 200 && resp.StatusCode < 300 && env != nil && env.Type == pingone.ENVIRONMENTTYPEVALUE_PRODUCTION {
-		v.cache.Store(environmentId, env)
+	if httpResponse != nil && httpResponse.StatusCode >= 200 && httpResponse.StatusCode < 300 && envResponse != nil && envResponse.Type == pingone.ENVIRONMENTTYPEVALUE_PRODUCTION {
+		v.cache.Store(environmentId, envResponse)
 	}
 
 	// Validate environment type for write operations
-	return v.validateEnvironmentType(env, operationType)
+	return v.validateEnvironmentType(envResponse, operationType)
 }
 
 // validateEnvironmentType checks if the operation type is allowed for the given environment.
