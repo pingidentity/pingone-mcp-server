@@ -202,14 +202,3 @@ func assertOIDCApplicationMatches(t *testing.T, expected *management.Application
 		t.Errorf("OIDC application mismatch (-expected +actual):\n%s", diff)
 	}
 }
-
-func assertUpdateApplicationMatches(t *testing.T, expected management.ReadOneApplication200Response, actual applications.UpdateApplicationModel) {
-	t.Helper()
-
-	// Convert expected to UpdateApplicationModel for comparison
-	expectedModel := applications.UpdateApplicationModelFromSDKReadResponse(expected)
-
-	if diff := cmp.Diff(expectedModel, actual); diff != "" {
-		t.Errorf("Update application mismatch (-expected +actual):\n%s", diff)
-	}
-}
