@@ -21,11 +21,9 @@ import (
 var UpdateEnvironmentServicesByIdDef = types.ToolDefinition{
 	IsReadOnly: false,
 	McpTool: &mcp.Tool{
-		Name:  "update_environment_services_by_id",
-		Title: "Update PingOne Environment Services by ID",
-		Description: `Update the services assigned to a PingOne environment (update's the environment's Bill of Materials) by the environment's unique ID.
-
-VERY IMPORTANT: Before updating, first get the latest list of services using the 'get_environment_services_by_id' tool to avoid overwriting pre-existing configuration values.`,
+		Name:         "update_environment_services_by_id",
+		Title:        "Update PingOne Environment Services by ID",
+		Description:  `Update the services assigned to a PingOne environment (update's the environment's Bill of Materials) by the environment's unique ID.`,
 		InputSchema:  mustGenerateUpdateEnvironmentServicesByIdInputSchema(),
 		OutputSchema: schema.MustGenerateSchema[UpdateEnvironmentServicesByIdOutput](),
 	},
