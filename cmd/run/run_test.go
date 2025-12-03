@@ -14,6 +14,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
+	mcptestutils "github.com/pingidentity/pingone-mcp-server/internal/testutils/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/tokenstore"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/populations"
@@ -342,7 +343,7 @@ func TestRunCommand_FromSubcommand_ToolFiltering(t *testing.T) {
 			// Give the server a moment to start up.
 			time.Sleep(100 * time.Millisecond)
 
-			client := testutils.TestMcpClient(t)
+			client := mcptestutils.TestMcpClient(t)
 
 			session, err := client.Connect(t.Context(), clientTransport, nil)
 			require.NoError(t, err)
