@@ -21,8 +21,11 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 )
 
-var defaultCollections = []collections.Collection{
-	&environments.EnvironmentsCollection{},
+// getDefaultCollections creates SDK collections
+func getDefaultCollections() []collections.Collection {
+	return []collections.Collection{
+		&environments.EnvironmentsCollection{},
+	}
 }
 
 // getLegacySdkCollections creates legacy SDK collections
@@ -34,6 +37,9 @@ func getLegacySdkCollections() []collections.LegacySdkCollection {
 }
 
 func RegisterCollections(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, legacySdkClientFactory legacy.ClientFactory, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, toolFilter *filter.Filter, grantType auth.GrantType) error {
+	// Get SDK collections
+	defaultCollections := getDefaultCollections()
+
 	for _, collection := range defaultCollections {
 		if !toolFilter.ShouldIncludeCollection(collection.Name()) {
 			logger.FromContext(ctx).Debug("MCP tool collection skipped", slog.String("collection", collection.Name()))
@@ -65,15 +71,13 @@ func RegisterCollections(ctx context.Context, server *mcp.Server, clientFactory 
 
 func ListTools() []types.ToolDefinition {
 	var tools []types.ToolDefinition
+	defaultCollections := getDefaultCollections()
 	for _, collection := range defaultCollections {
 		tools = append(tools, collection.ListTools()...)
 	}
 
 	// List tools from legacy collections
-	legacyCollections := []collections.LegacySdkCollection{
-		&populations.PopulationsCollection{},
-		&applications.ApplicationsCollection{},
-	}
+	legacyCollections := getLegacySdkCollections()
 	for _, collection := range legacyCollections {
 		tools = append(tools, collection.ListTools()...)
 	}
