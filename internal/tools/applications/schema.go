@@ -27,6 +27,10 @@ type UpdateApplicationModel struct {
 	ApplicationWSFED              *management.ApplicationWSFED              `json:"applicationWSFED,omitempty"`
 }
 
+type OIDCApplicationModel struct {
+	ApplicationOIDC *management.ApplicationOIDC `json:"applicationOIDC,omitempty"`
+}
+
 // filterApplicationLinks removes _links field from all application types
 func filterApplicationLinks(model ReadApplicationModel) ReadApplicationModel {
 	if model.ApplicationExternalLink != nil {

@@ -29,12 +29,12 @@ var CreateApplicationDef = types.ToolDefinition{
 }
 
 type CreateApplicationInput struct {
-	EnvironmentId uuid.UUID                  `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
-	Application   management.ApplicationOIDC `json:"application" jsonschema:"REQUIRED. The OIDC application configuration details"`
+	EnvironmentId     uuid.UUID            `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
+	ApplicationParent OIDCApplicationModel `json:"applicationOIDC" jsonschema:"REQUIRED. The OIDC application configuration details"`
 }
 
 type CreateApplicationOutput struct {
-	Application management.ApplicationOIDC `json:"application" jsonschema:"The created application details"`
+	ApplicationParent OIDCApplicationModel `json:"applicationOIDC" jsonschema:"REQUIRED. The OIDC application configuration details"`
 }
 
 // CreateApplicationHandler creates a new PingOne application using the provided client
@@ -68,7 +68,7 @@ func CreateApplicationHandler(applicationsClientFactory ApplicationsClientFactor
 		)
 
 		createRequest := management.CreateApplicationRequest{
-			ApplicationOIDC: &input.Application,
+			ApplicationOIDC: input.ApplicationParent.ApplicationOIDC,
 		}
 
 		// Call the API to create the application
@@ -92,7 +92,9 @@ func CreateApplicationHandler(applicationsClientFactory ApplicationsClientFactor
 		)
 
 		result := &CreateApplicationOutput{
-			Application: *applicationResponse.ApplicationOIDC,
+			ApplicationParent: OIDCApplicationModel{
+				ApplicationOIDC: applicationResponse.ApplicationOIDC,
+			},
 		}
 
 		return nil, result, nil

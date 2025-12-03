@@ -43,7 +43,9 @@ func TestUpdateApplicationByIdHandler_MockClient(t *testing.T) {
 			input: applications.UpdateApplicationByIdInput{
 				EnvironmentId: testEnvironmentId,
 				ApplicationId: uuid.MustParse(*testOIDCApp.ApplicationOIDC.Id),
-				Application:   *testOIDCApp.ApplicationOIDC,
+				ApplicationParent: applications.OIDCApplicationModel{
+					ApplicationOIDC: testOIDCApp.ApplicationOIDC,
+				},
 			},
 			setupMock: func(m *mockPingOneClientApplicationsWrapper, envID uuid.UUID, appID uuid.UUID) {
 				mockUpdateApplicationByIdSetup(m, envID, appID, &testOIDCApp, 200, nil)
@@ -55,7 +57,9 @@ func TestUpdateApplicationByIdHandler_MockClient(t *testing.T) {
 			input: applications.UpdateApplicationByIdInput{
 				EnvironmentId: testEnvironmentId,
 				ApplicationId: uuid.MustParse(*testSinglePageApp.ApplicationOIDC.Id),
-				Application:   *testSinglePageApp.ApplicationOIDC,
+				ApplicationParent: applications.OIDCApplicationModel{
+					ApplicationOIDC: testSinglePageApp.ApplicationOIDC,
+				},
 			},
 			setupMock: func(m *mockPingOneClientApplicationsWrapper, envID uuid.UUID, appID uuid.UUID) {
 				mockUpdateApplicationByIdSetup(m, envID, appID, &testSinglePageApp, 200, nil)
@@ -67,7 +71,9 @@ func TestUpdateApplicationByIdHandler_MockClient(t *testing.T) {
 			input: applications.UpdateApplicationByIdInput{
 				EnvironmentId: testEnvironmentId,
 				ApplicationId: uuid.MustParse(*testOIDCApp.ApplicationOIDC.Id),
-				Application:   *testOIDCApp.ApplicationOIDC,
+				ApplicationParent: applications.OIDCApplicationModel{
+					ApplicationOIDC: testOIDCApp.ApplicationOIDC,
+				},
 			},
 			setupMock: func(m *mockPingOneClientApplicationsWrapper, envID uuid.UUID, appID uuid.UUID) {
 				mockUpdateApplicationByIdSetup(m, envID, appID, nil, 404, errors.New("application not found"))
@@ -80,7 +86,9 @@ func TestUpdateApplicationByIdHandler_MockClient(t *testing.T) {
 			input: applications.UpdateApplicationByIdInput{
 				EnvironmentId: testEnvironmentId,
 				ApplicationId: uuid.MustParse(*testOIDCApp.ApplicationOIDC.Id),
-				Application:   *testOIDCApp.ApplicationOIDC,
+				ApplicationParent: applications.OIDCApplicationModel{
+					ApplicationOIDC: testOIDCApp.ApplicationOIDC,
+				},
 			},
 			setupMock: func(m *mockPingOneClientApplicationsWrapper, envID uuid.UUID, appID uuid.UUID) {
 				mockUpdateApplicationByIdSetup(m, envID, appID, nil, 200, nil)
@@ -113,7 +121,7 @@ func TestUpdateApplicationByIdHandler_MockClient(t *testing.T) {
 			testutils.AssertHandlerSuccess(t, err, mcpResult, output)
 
 			if tt.expectedResponse != nil {
-				assertOIDCApplicationMatches(t, tt.expectedResponse, &output.Application)
+				assertOIDCApplicationMatches(t, tt.expectedResponse, output.ApplicationParent.ApplicationOIDC)
 			}
 
 			mockClient.AssertExpectations(t)
@@ -153,7 +161,7 @@ func TestUpdateApplicationByIdHandler_MockClient(t *testing.T) {
 			require.NoError(t, err, "Failed to unmarshal structured content")
 
 			if tt.expectedResponse != nil {
-				assertOIDCApplicationMatches(t, tt.expectedResponse, &outputApplication.Application)
+				assertOIDCApplicationMatches(t, tt.expectedResponse, outputApplication.ApplicationParent.ApplicationOIDC)
 			}
 
 			mockClient.AssertExpectations(t)
@@ -177,7 +185,9 @@ func TestUpdateApplicationByIdHandler_ContextCancellation(t *testing.T) {
 	input := applications.UpdateApplicationByIdInput{
 		EnvironmentId: envID,
 		ApplicationId: appID,
-		Application:   *testOIDCApp.ApplicationOIDC,
+		ApplicationParent: applications.OIDCApplicationModel{
+			ApplicationOIDC: testOIDCApp.ApplicationOIDC,
+		},
 	}
 
 	// Execute
@@ -200,7 +210,9 @@ func TestUpdateApplicationByIdHandler_APIErrors(t *testing.T) {
 	input := applications.UpdateApplicationByIdInput{
 		EnvironmentId: envID,
 		ApplicationId: appID,
-		Application:   *testOIDCApp.ApplicationOIDC,
+		ApplicationParent: applications.OIDCApplicationModel{
+			ApplicationOIDC: testOIDCApp.ApplicationOIDC,
+		},
 	}
 
 	for _, tt := range tests {
@@ -228,13 +240,15 @@ func TestUpdateApplicationByIdHandler_GetAuthenticatedClientError(t *testing.T) 
 	input := applications.UpdateApplicationByIdInput{
 		EnvironmentId: testEnvironmentId,
 		ApplicationId: testAppId,
-		Application: management.ApplicationOIDC{
-			Name:                    "Updated App",
-			Enabled:                 true,
-			Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
-			Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
-			GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
-			TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
+		ApplicationParent: applications.OIDCApplicationModel{
+			ApplicationOIDC: &management.ApplicationOIDC{
+				Name:                    "Updated App",
+				Enabled:                 true,
+				Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
+				Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
+				GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
+				TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
+			},
 		},
 	}
 
@@ -254,13 +268,15 @@ func TestUpdateApplicationByIdHandler_InitializeAuthContextError(t *testing.T) {
 	input := applications.UpdateApplicationByIdInput{
 		EnvironmentId: testEnvironmentId,
 		ApplicationId: testAppId,
-		Application: management.ApplicationOIDC{
-			Name:                    "Updated App",
-			Enabled:                 true,
-			Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
-			Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
-			GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
-			TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
+		ApplicationParent: applications.OIDCApplicationModel{
+			ApplicationOIDC: &management.ApplicationOIDC{
+				Name:                    "Updated App",
+				Enabled:                 true,
+				Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
+				Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
+				GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
+				TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
+			},
 		},
 	}
 
@@ -332,7 +348,9 @@ func TestUpdateApplicationByIdHandler_InitializeAuthContext(t *testing.T) {
 			input := applications.UpdateApplicationByIdInput{
 				EnvironmentId: testEnvironmentId,
 				ApplicationId: testAppId,
-				Application:   *testOIDCApp.ApplicationOIDC,
+				ApplicationParent: applications.OIDCApplicationModel{
+					ApplicationOIDC: testOIDCApp.ApplicationOIDC,
+				},
 			}
 
 			_, _, err := handler(context.Background(), req, input)
@@ -366,14 +384,16 @@ func TestUpdateApplicationByIdHandler_RealClient(t *testing.T) {
 	input := applications.UpdateApplicationByIdInput{
 		EnvironmentId: testEnvironmentId,
 		ApplicationId: testApplicationId,
-		Application: management.ApplicationOIDC{
-			Name:                    "Updated Test App",
-			Description:             testutils.Pointer("Updated description"),
-			Enabled:                 true,
-			Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
-			Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
-			GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
-			TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
+		ApplicationParent: applications.OIDCApplicationModel{
+			ApplicationOIDC: &management.ApplicationOIDC{
+				Name:                    "Updated Test App",
+				Description:             testutils.Pointer("Updated description"),
+				Enabled:                 true,
+				Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
+				Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
+				GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
+				TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
+			},
 		},
 	}
 

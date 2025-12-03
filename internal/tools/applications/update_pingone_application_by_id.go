@@ -29,13 +29,13 @@ var UpdateApplicationByIdDef = types.ToolDefinition{
 }
 
 type UpdateApplicationByIdInput struct {
-	EnvironmentId uuid.UUID                  `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
-	ApplicationId uuid.UUID                  `json:"applicationId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne application"`
-	Application   management.ApplicationOIDC `json:"application" jsonschema:"REQUIRED. The OIDC application configuration details"`
+	EnvironmentId     uuid.UUID            `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
+	ApplicationId     uuid.UUID            `json:"applicationId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne application"`
+	ApplicationParent OIDCApplicationModel `json:"applicationOIDC" jsonschema:"REQUIRED. The OIDC application configuration details"`
 }
 
 type UpdateApplicationByIdOutput struct {
-	Application management.ApplicationOIDC `json:"application" jsonschema:"The updated application configuration details"`
+	ApplicationParent OIDCApplicationModel `json:"applicationOIDC" jsonschema:"The updated application configuration details"`
 }
 
 func UpdateApplicationByIdHandler(applicationsClientFactory ApplicationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
@@ -69,7 +69,7 @@ func UpdateApplicationByIdHandler(applicationsClientFactory ApplicationsClientFa
 		)
 
 		updateRequest := management.UpdateApplicationRequest{
-			ApplicationOIDC: &input.Application,
+			ApplicationOIDC: input.ApplicationParent.ApplicationOIDC,
 		}
 
 		// Call the API to update the application
@@ -94,7 +94,9 @@ func UpdateApplicationByIdHandler(applicationsClientFactory ApplicationsClientFa
 		)
 
 		result := &UpdateApplicationByIdOutput{
-			Application: *applicationResponse.ApplicationOIDC,
+			ApplicationParent: OIDCApplicationModel{
+				ApplicationOIDC: applicationResponse.ApplicationOIDC,
+			},
 		}
 
 		return nil, result, nil
