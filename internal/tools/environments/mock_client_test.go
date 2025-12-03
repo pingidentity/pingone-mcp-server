@@ -4,27 +4,22 @@ package environments_test
 
 import (
 	"context"
-	"net/http"
 
-	"github.com/google/uuid"
-	"github.com/pingidentity/pingone-go-client/pingone"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
-	"github.com/stretchr/testify/mock"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments/testutils"
 )
 
-var _ environments.EnvironmentsClient = &mockPingOneClientEnvironmentsWrapper{}
+var _ environments.EnvironmentsClient = &testutils.MockEnvironmentsClient{}
 var _ environments.EnvironmentsClientFactory = &mockPingOneClientEnvironmentsWrapperFactory{}
-
-type mockPingOneClientEnvironmentsWrapper struct {
-	mock.Mock
-}
 
 type mockPingOneClientEnvironmentsWrapperFactory struct {
 	mockClient environments.EnvironmentsClient
 	err        error
 }
 
-// Directly returns the provided mock client and error
+// NewMockPingOneClientEnvironmentsWrapperFactory creates a factory that directly returns the provided mock client and error.
+// The mockClient parameter is the mock client instance to return from GetAuthenticatedClient.
+// The err parameter is the error to return from GetAuthenticatedClient, or nil for successful authentication.
 func NewMockPingOneClientEnvironmentsWrapperFactory(mockClient environments.EnvironmentsClient, err error) *mockPingOneClientEnvironmentsWrapperFactory {
 	return &mockPingOneClientEnvironmentsWrapperFactory{
 		mockClient: mockClient,
@@ -32,81 +27,9 @@ func NewMockPingOneClientEnvironmentsWrapperFactory(mockClient environments.Envi
 	}
 }
 
+// GetAuthenticatedClient returns the pre-configured mock client and error.
+// This method implements the EnvironmentsClientFactory interface for testing purposes.
+// The ctx parameter provides context for the authentication operation (not used in mock).
 func (f *mockPingOneClientEnvironmentsWrapperFactory) GetAuthenticatedClient(ctx context.Context) (environments.EnvironmentsClient, error) {
 	return f.mockClient, f.err
-}
-
-func (p *mockPingOneClientEnvironmentsWrapper) GetEnvironments(ctx context.Context, filter *string) (pingone.PagedIterator[pingone.EnvironmentsCollectionResponse], error) {
-	args := p.Called(ctx, filter)
-	var response pingone.PagedIterator[pingone.EnvironmentsCollectionResponse]
-	response, ok := args.Get(0).(pingone.PagedIterator[pingone.EnvironmentsCollectionResponse])
-	if !ok {
-		return nil, args.Error(1)
-	}
-	return response, args.Error(1)
-}
-
-func (p *mockPingOneClientEnvironmentsWrapper) CreateEnvironment(ctx context.Context, request *pingone.EnvironmentCreateRequest) (*pingone.EnvironmentResponse, *http.Response, error) {
-	args := p.Called(ctx, request)
-	var envResponse *pingone.EnvironmentResponse
-	if args.Get(0) != nil {
-		envResponse = args.Get(0).(*pingone.EnvironmentResponse)
-	}
-	var httpResponse *http.Response
-	if args.Get(1) != nil {
-		httpResponse = args.Get(1).(*http.Response)
-	}
-	return envResponse, httpResponse, args.Error(2)
-}
-
-func (p *mockPingOneClientEnvironmentsWrapper) GetEnvironmentById(ctx context.Context, environmentId uuid.UUID) (*pingone.EnvironmentResponse, *http.Response, error) {
-	args := p.Called(ctx, environmentId)
-	var response *pingone.EnvironmentResponse
-	if args.Get(0) != nil {
-		response = args.Get(0).(*pingone.EnvironmentResponse)
-	}
-	var httpResponse *http.Response
-	if args.Get(1) != nil {
-		httpResponse = args.Get(1).(*http.Response)
-	}
-	return response, httpResponse, args.Error(2)
-}
-
-func (p *mockPingOneClientEnvironmentsWrapper) UpdateEnvironmentById(ctx context.Context, environmentId uuid.UUID, request *pingone.EnvironmentReplaceRequest) (*pingone.EnvironmentResponse, *http.Response, error) {
-	args := p.Called(ctx, environmentId, request)
-	var response *pingone.EnvironmentResponse
-	if args.Get(0) != nil {
-		response = args.Get(0).(*pingone.EnvironmentResponse)
-	}
-	var httpResponse *http.Response
-	if args.Get(1) != nil {
-		httpResponse = args.Get(1).(*http.Response)
-	}
-	return response, httpResponse, args.Error(2)
-}
-
-func (p *mockPingOneClientEnvironmentsWrapper) GetEnvironmentServicesById(ctx context.Context, environmentId uuid.UUID) (*pingone.EnvironmentBillOfMaterialsResponse, *http.Response, error) {
-	args := p.Called(ctx, environmentId)
-	var response *pingone.EnvironmentBillOfMaterialsResponse
-	if args.Get(0) != nil {
-		response = args.Get(0).(*pingone.EnvironmentBillOfMaterialsResponse)
-	}
-	var httpResponse *http.Response
-	if args.Get(1) != nil {
-		httpResponse = args.Get(1).(*http.Response)
-	}
-	return response, httpResponse, args.Error(2)
-}
-
-func (p *mockPingOneClientEnvironmentsWrapper) UpdateEnvironmentServicesById(ctx context.Context, environmentId uuid.UUID, request *pingone.EnvironmentBillOfMaterialsReplaceRequest) (*pingone.EnvironmentBillOfMaterialsResponse, *http.Response, error) {
-	args := p.Called(ctx, environmentId, request)
-	var response *pingone.EnvironmentBillOfMaterialsResponse
-	if args.Get(0) != nil {
-		response = args.Get(0).(*pingone.EnvironmentBillOfMaterialsResponse)
-	}
-	var httpResponse *http.Response
-	if args.Get(1) != nil {
-		httpResponse = args.Get(1).(*http.Response)
-	}
-	return response, httpResponse, args.Error(2)
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pingidentity/pingone-go-client/pingone"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
+envtestutils "github.com/pingidentity/pingone-mcp-server/internal/tools/environments/testutils"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -119,10 +120,10 @@ func assertCreateEnvironmentOutput(t *testing.T, input environments.CreateEnviro
 // mockListEnvironmentsSetup creates a setup function for mocking GetEnvironments calls.
 // If err is not nil, it configures the mock to return that error.
 // Otherwise, it configures the mock to return a paginated response with the provided pageData.
-func mockListEnvironmentsSetup(t *testing.T, err error, pageData ...[]environmentTestData) func(*mockPingOneClientEnvironmentsWrapper, *string) {
+func mockListEnvironmentsSetup(t *testing.T, err error, pageData ...[]environmentTestData) func(*envtestutils.MockEnvironmentsClient, *string) {
 	t.Helper()
 
-	return func(m *mockPingOneClientEnvironmentsWrapper, filter *string) {
+	return func(m *envtestutils.MockEnvironmentsClient, filter *string) {
 		if err != nil {
 			m.On("GetEnvironments", mock.Anything, filter).Return(nil, err)
 			return
@@ -139,7 +140,7 @@ func mockListEnvironmentsSetup(t *testing.T, err error, pageData ...[]environmen
 }
 
 // mockGetEnvironmentByIdSetup configures a mock for GetEnvironmentById calls
-func mockGetEnvironmentByIdSetup(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID, response *pingone.EnvironmentResponse, statusCode int, err error) {
+func mockGetEnvironmentByIdSetup(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID, response *pingone.EnvironmentResponse, statusCode int, err error) {
 	httpResponse := &http.Response{StatusCode: statusCode}
 	m.On("GetEnvironmentById", mock.Anything, envID).Return(response, httpResponse, err)
 }
@@ -148,7 +149,7 @@ func mockGetEnvironmentByIdSetup(m *mockPingOneClientEnvironmentsWrapper, envID 
 // If matcher is provided and MatchedBy returns false, the mock will not match the call,
 // causing the test to fail with an "unexpected method call" error from testify/mock.
 // This is the intended behavior - it ensures tests validate the exact request parameters.
-func mockCreateEnvironmentSetup(m *mockPingOneClientEnvironmentsWrapper, matcher func(*pingone.EnvironmentCreateRequest) bool, response *pingone.EnvironmentResponse, statusCode int, err error) {
+func mockCreateEnvironmentSetup(m *envtestutils.MockEnvironmentsClient, matcher func(*pingone.EnvironmentCreateRequest) bool, response *pingone.EnvironmentResponse, statusCode int, err error) {
 	httpResponse := &http.Response{StatusCode: statusCode}
 	if matcher != nil {
 		m.On("CreateEnvironment", mock.Anything, mock.MatchedBy(matcher)).Return(response, httpResponse, err)
@@ -158,7 +159,7 @@ func mockCreateEnvironmentSetup(m *mockPingOneClientEnvironmentsWrapper, matcher
 }
 
 // mockUpdateEnvironmentByIdSetup configures a mock for UpdateEnvironmentById calls with a matcher function
-func mockUpdateEnvironmentByIdSetup(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID, matcher func(*pingone.EnvironmentReplaceRequest) bool, response *pingone.EnvironmentResponse, statusCode int, err error) {
+func mockUpdateEnvironmentByIdSetup(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID, matcher func(*pingone.EnvironmentReplaceRequest) bool, response *pingone.EnvironmentResponse, statusCode int, err error) {
 	httpResponse := &http.Response{StatusCode: statusCode}
 	if matcher != nil {
 		m.On("UpdateEnvironmentById", mock.Anything, envID, mock.MatchedBy(matcher)).Return(response, httpResponse, err)
@@ -184,13 +185,13 @@ func createEnvironmentServicesResponse(t testing.TB) pingone.EnvironmentBillOfMa
 }
 
 // mockGetEnvironmentServicesByIdSetup configures a mock for GetEnvironmentServicesById calls
-func mockGetEnvironmentServicesByIdSetup(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID, response *pingone.EnvironmentBillOfMaterialsResponse, statusCode int, err error) {
+func mockGetEnvironmentServicesByIdSetup(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID, response *pingone.EnvironmentBillOfMaterialsResponse, statusCode int, err error) {
 	httpResponse := &http.Response{StatusCode: statusCode}
 	m.On("GetEnvironmentServicesById", mock.Anything, envID).Return(response, httpResponse, err)
 }
 
 // mockUpdateEnvironmentServicesByIdSetup configures a mock for UpdateEnvironmentServicesById calls with a matcher function
-func mockUpdateEnvironmentServicesByIdSetup(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID, matcher func(*pingone.EnvironmentBillOfMaterialsReplaceRequest) bool, response *pingone.EnvironmentBillOfMaterialsResponse, statusCode int, err error) {
+func mockUpdateEnvironmentServicesByIdSetup(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID, matcher func(*pingone.EnvironmentBillOfMaterialsReplaceRequest) bool, response *pingone.EnvironmentBillOfMaterialsResponse, statusCode int, err error) {
 	httpResponse := &http.Response{StatusCode: statusCode}
 	if matcher != nil {
 		m.On("UpdateEnvironmentServicesById", mock.Anything, envID, mock.MatchedBy(matcher)).Return(response, httpResponse, err)
