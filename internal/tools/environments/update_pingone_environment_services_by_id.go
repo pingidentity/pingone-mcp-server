@@ -23,7 +23,7 @@ var UpdateEnvironmentServicesByIdDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
 		Name:         "update_environment_services_by_id",
 		Title:        "Update PingOne Environment Services by ID",
-		Description:  "Update the services assigned to a PingOne environment (update's the environment's Bill of Materials) by the environment's unique ID.",
+		Description:  "Update the services assigned to a PingOne environment (update's the environment's Bill of Materials) by the environment's unique ID. IMPORTANT: when changing the services for an environment, include any optional fields you wish to retain from the existing configuration, as omitting them remove those fields from the configuration.",
 		InputSchema:  mustGenerateUpdateEnvironmentServicesByIdInputSchema(),
 		OutputSchema: schema.MustGenerateSchema[UpdateEnvironmentServicesByIdOutput](),
 	},
@@ -31,9 +31,16 @@ var UpdateEnvironmentServicesByIdDef = types.ToolDefinition{
 
 const NeoServiceValue = "NEO"
 
+type EnvironmentServiceInput struct {
+	Type      string                                              `json:"type" jsonschema:"REQUIRED. The product type value. Note that 'NEO' represents both 'PING_ONE_VERIFY' and 'PING_ONE_CREDENTIALS' services."`
+	Bookmarks []pingone.EnvironmentBillOfMaterialsProductBookmark `json:"bookmarks,omitempty" jsonschema:"OPTIONAL. Custom bookmarks. Up to five can be specified per product."`
+	Console   *pingone.EnvironmentBillOfMaterialsProductConsole   `json:"console,omitempty" jsonschema:"OPTIONAL. Link to your administrative console for the product, whether the product is in the PingOne platform, PingCloud, a private cloud, or on-premises. If specified, must be an RFC 2396-compliant URI with a maximum length of 1024 characters."`
+	Tags      []string                                            `json:"tags,omitempty" jsonschema:"OPTIONAL. The set of tags for the PingOne products to be initially configured. The currently supported value is DAVINCI_MINIMAL (only valid when the product type is PING_ONE_DAVINCI). This indicates that DaVinci is to be configured with a minimal set of resources."`
+}
+
 type UpdateEnvironmentServicesByIdInput struct {
-	EnvironmentId uuid.UUID `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
-	Services      []string  `json:"services" jsonschema:"REQUIRED. The product type values enabled for the environment. Note that 'NEO' represents both 'PING_ONE_VERIFY' and 'PING_ONE_CREDENTIALS' services."`
+	EnvironmentId uuid.UUID                 `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
+	Services      []EnvironmentServiceInput `json:"services" jsonschema:"REQUIRED. The services enabled for the environment. Note that 'NEO' represents both 'PING_ONE_VERIFY' and 'PING_ONE_CREDENTIALS' services."`
 }
 
 type UpdateEnvironmentServicesByIdOutput struct {
@@ -52,15 +59,27 @@ func mustGenerateUpdateEnvironmentServicesByIdInputSchema() *jsonschema.Schema {
 	if !exists || servicesSchema == nil || servicesSchema.Items == nil {
 		panic("services property not found in UpdateEnvironmentServicesByIdInput schema")
 	}
+	if servicesSchema.Items.Properties == nil || servicesSchema.Items.Properties["type"] == nil {
+		panic("type property not found in services item schema for UpdateEnvironmentServicesByIdInput")
+	}
 	var itemsEnum []any
 	for _, val := range pingone.AllowedEnvironmentBillOfMaterialsProductTypeEnumValues {
 		itemsEnum = append(itemsEnum, string(val))
 	}
 	// Add Neo value, representing Verify and Credentials combined
 	itemsEnum = append(itemsEnum, NeoServiceValue)
-	servicesSchema.Items.Enum = itemsEnum
+	servicesSchema.Items.Properties["type"].Enum = itemsEnum
 
 	return baseSchema
+}
+
+func (i EnvironmentServiceInput) toBOMProductWithType(productType pingone.EnvironmentBillOfMaterialsProductType) pingone.EnvironmentBillOfMaterialsProduct {
+	return pingone.EnvironmentBillOfMaterialsProduct{
+		Type:      productType,
+		Bookmarks: i.Bookmarks,
+		Console:   i.Console,
+		Tags:      i.Tags,
+	}
 }
 
 // UpdateEnvironmentServicesByIdHandler updates PingOne environment services by ID using the provided client
@@ -111,37 +130,41 @@ func UpdateEnvironmentServicesByIdHandler(environmentsClientFactory Environments
 		}
 
 		// Build list of desired EnvironmentBillOfMaterialsProductType values
-		desiredProductTypes := make(map[pingone.EnvironmentBillOfMaterialsProductType]struct{})
+		inputProductsByType := make(map[pingone.EnvironmentBillOfMaterialsProductType]pingone.EnvironmentBillOfMaterialsProduct)
 		for _, service := range input.Services {
-			if service == NeoServiceValue {
+			if service.Type == NeoServiceValue {
 				// Expand Neo into its constituent services
-				desiredProductTypes[pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_CREDENTIALS] = struct{}{}
-				desiredProductTypes[pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_VERIFY] = struct{}{}
+				inputProductsByType[pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_CREDENTIALS] =
+					service.toBOMProductWithType(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_CREDENTIALS)
+				inputProductsByType[pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_VERIFY] =
+					service.toBOMProductWithType(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_VERIFY)
 			} else {
-				productType, err := pingone.NewEnvironmentBillOfMaterialsProductTypeFromValue(service)
+				productType, err := pingone.NewEnvironmentBillOfMaterialsProductTypeFromValue(service.Type)
 				if err != nil {
-					toolErr := errs.NewToolError(UpdateEnvironmentServicesByIdDef.McpTool.Name, fmt.Errorf("invalid service value: %s", service))
+					toolErr := errs.NewToolError(UpdateEnvironmentServicesByIdDef.McpTool.Name, fmt.Errorf("invalid service value: %s", service.Type))
 					errs.Log(ctx, toolErr)
 					return nil, nil, toolErr
 				}
-				desiredProductTypes[*productType] = struct{}{}
+				inputProductsByType[*productType] = service.toBOMProductWithType(*productType)
 			}
 		}
 
 		logger.FromContext(ctx).Debug("Updating environment services",
 			slog.String("environmentId", input.EnvironmentId.String()),
-			slog.Int("productCount", len(desiredProductTypes)))
+			slog.Int("productCount", len(input.Services)))
 
 		// Build request struct, preserving existing product configurations where they exist
 		var replaceRequest pingone.EnvironmentBillOfMaterialsReplaceRequest
-		for productType := range desiredProductTypes {
+		for productType := range inputProductsByType {
 			if existingProduct, exists := currentProductsByType[productType]; exists {
-				// Preserve the existing product configuration
+				// Update any optional fields from input, but otherwise preserve existing configuration
+				existingProduct.Bookmarks = inputProductsByType[productType].Bookmarks
+				existingProduct.Console = inputProductsByType[productType].Console
+				existingProduct.Tags = inputProductsByType[productType].Tags
 				replaceRequest.Products = append(replaceRequest.Products, existingProduct)
 			} else {
-				// Create a new product with default configuration
-				product := pingone.NewEnvironmentBillOfMaterialsProduct(productType)
-				replaceRequest.Products = append(replaceRequest.Products, *product)
+				// Create a new product entry
+				replaceRequest.Products = append(replaceRequest.Products, inputProductsByType[productType])
 			}
 		}
 
