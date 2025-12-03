@@ -29,11 +29,11 @@ var UpdateEnvironmentServicesByIdDef = types.ToolDefinition{
 	},
 }
 
-const NeoServiceValue = "PING_ONE_NEO"
+const NeoServiceValue = "NEO"
 
 type UpdateEnvironmentServicesByIdInput struct {
 	EnvironmentId uuid.UUID `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
-	Services      []string  `json:"services" jsonschema:"REQUIRED. The product type values enabled for the environment. Note that 'PING_ONE_NEO' represents both 'PING_ONE_VERIFY' and 'PING_ONE_CREDENTIALS' services."`
+	Services      []string  `json:"services" jsonschema:"REQUIRED. The product type values enabled for the environment. Note that 'NEO' represents both 'PING_ONE_VERIFY' and 'PING_ONE_CREDENTIALS' services."`
 }
 
 type UpdateEnvironmentServicesByIdOutput struct {
