@@ -73,6 +73,7 @@ func mustGenerateUpdateEnvironmentServicesByIdInputSchema() *jsonschema.Schema {
 	return baseSchema
 }
 
+// Converts input struct into client SDK's EnvironmentBillOfMaterialsProduct struct
 func (i EnvironmentServiceInput) toBOMProductWithType(productType pingone.EnvironmentBillOfMaterialsProductType) pingone.EnvironmentBillOfMaterialsProduct {
 	return pingone.EnvironmentBillOfMaterialsProduct{
 		Type:      productType,
