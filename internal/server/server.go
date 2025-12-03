@@ -16,6 +16,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/tools"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/filter"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/validation"
 )
 
@@ -41,7 +42,8 @@ func Start(ctx context.Context, transport mcp.Transport, clientFactory sdk.Clien
 	allTools := tools.ListTools()
 	toolRegistry := validation.NewToolRegistry(allTools)
 	environmentsFactory := environments.NewPingOneClientEnvironmentsWrapperFactory(clientFactory, tokenStore)
-	validator := validation.NewCachingEnvironmentValidator(environmentsFactory)
+	initializeAuthContext := initialize.AuthContextInitializer(authClientFactory, tokenStore, grantType)
+	validator := validation.NewCachingEnvironmentValidator(environmentsFactory, initializeAuthContext)
 	validationMiddleware := validation.NewEnvironmentValidationMiddleware(validator, toolRegistry)
 	server.AddReceivingMiddleware(validationMiddleware.Handler)
 	logger.FromContext(ctx).Info("Environment validation middleware enabled - production environments are protected from write operations")

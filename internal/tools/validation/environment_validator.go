@@ -12,6 +12,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 )
 
 // OperationType represents the type of operation being performed on an environment.
@@ -36,17 +37,21 @@ type EnvironmentValidator interface {
 // SANDBOX environments are not cached since they can be upgraded to PRODUCTION.
 // For write operations, it enforces that the environment type is not PRODUCTION.
 type CachingEnvironmentValidator struct {
-	clientFactory environments.EnvironmentsClientFactory
-	cache         sync.Map // uuid.UUID -> *pingone.EnvironmentResponse
+	clientFactory         environments.EnvironmentsClientFactory
+	initializeAuthContext initialize.ContextInitializer
+	cache                 sync.Map // uuid.UUID -> *pingone.EnvironmentResponse
 }
 
 // NewCachingEnvironmentValidator creates a new caching environment validator.
 // The validator uses the provided client factory to fetch environment information
 // and caches successful validations to improve performance.
-func NewCachingEnvironmentValidator(clientFactory environments.EnvironmentsClientFactory) *CachingEnvironmentValidator {
+// The initializeAuthContext function is called to establish authentication before
+// making API calls, ensuring the context has a valid auth session.
+func NewCachingEnvironmentValidator(clientFactory environments.EnvironmentsClientFactory, initializeAuthContext initialize.ContextInitializer) *CachingEnvironmentValidator {
 	return &CachingEnvironmentValidator{
-		clientFactory: clientFactory,
-		cache:         sync.Map{},
+		clientFactory:         clientFactory,
+		initializeAuthContext: initializeAuthContext,
+		cache:                 sync.Map{},
 	}
 }
 
@@ -65,6 +70,12 @@ func (v *CachingEnvironmentValidator) ValidateEnvironment(ctx context.Context, e
 	if cachedEnv, ok := v.cache.Load(environmentId); ok {
 		env := cachedEnv.(*pingone.EnvironmentResponse)
 		return v.validateEnvironmentType(env, operationType)
+	}
+
+	// Initialize authentication context before making API calls
+	ctx, err := v.initializeAuthContext(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to initialize authentication for environment validation: %w", err)
 	}
 
 	// Get authenticated client
