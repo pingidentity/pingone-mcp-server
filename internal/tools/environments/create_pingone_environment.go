@@ -18,8 +18,8 @@ import (
 
 var CreateEnvironmentDef = types.ToolDefinition{
 	IsReadOnly: false,
-	Validation: &types.ToolValidation{
-		SkipProductionEnvironmentWriteRestriction: true, // Tool does not act on an existing environment
+	ValidationPolicy: &types.ToolValidationPolicy{
+		ProductionEnvironmentNotApplicable: true, // Tool does not act on an existing environment
 	},
 	McpTool: &mcp.Tool{
 		Name:         "create_environment",

@@ -185,16 +185,18 @@ func TestCachingEnvironmentValidator_ClearCache(t *testing.T) {
 
 	validator := NewCachingEnvironmentValidator(mockFactory)
 
-	// Validate to populate cache
+	// Validate to populate cache (READ will be blocked on PRODUCTION)
 	err := validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "to safeguard against unintended access to sensitive data or configuration, this read operation is not allowed against PRODUCTION environments")
 
 	// Clear cache
 	validator.ClearCache()
 
-	// After clearing cache, should hit API again
+	// After clearing cache, should hit API again (and still be blocked)
 	err = validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "to safeguard against unintended access to sensitive data or configuration, this read operation is not allowed against PRODUCTION environments")
 	mockClient.AssertExpectations(t)
 }
 
@@ -218,20 +220,22 @@ func TestCachingEnvironmentValidator_RemoveFromCache(t *testing.T) {
 
 	validator := NewCachingEnvironmentValidator(mockFactory)
 
-	// Validate to populate cache
+	// Validate to populate cache (READ will be blocked on PRODUCTION)
 	err := validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "to safeguard against unintended access to sensitive data or configuration, this read operation is not allowed against PRODUCTION environments")
 
 	// Remove specific environment from cache
 	validator.RemoveFromCache(envId)
 
-	// After removing from cache, should hit API again
+	// After removing from cache, should hit API again (and still be blocked)
 	err = validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "to safeguard against unintended access to sensitive data or configuration, this read operation is not allowed against PRODUCTION environments")
 	mockClient.AssertExpectations(t)
 }
 
-func TestCachingEnvironmentValidator_ProductionEnvironment_ReadAllowed(t *testing.T) {
+func TestCachingEnvironmentValidator_ProductionEnvironment_ReadBlocked(t *testing.T) {
 	ctx := context.Background()
 	envId := uuid.New()
 
@@ -249,9 +253,11 @@ func TestCachingEnvironmentValidator_ProductionEnvironment_ReadAllowed(t *testin
 
 	validator := NewCachingEnvironmentValidator(mockFactory)
 
-	// Read operations should be allowed on PRODUCTION environments
+	// Read operations should NOT be allowed on PRODUCTION environments by default
 	err := validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "to safeguard against unintended access to sensitive data or configuration, this read operation is not allowed against PRODUCTION environments")
+	assert.Contains(t, err.Error(), envId.String())
 	mockClient.AssertExpectations(t)
 }
 
@@ -276,7 +282,7 @@ func TestCachingEnvironmentValidator_ProductionEnvironment_WriteBlocked(t *testi
 	// Write operations should NOT be allowed on PRODUCTION environments
 	err := validator.ValidateEnvironment(ctx, envId, OperationTypeWrite)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "to safeguard against unintended or breaking changes to PRODUCTION environments, write operations are not allowed")
+	assert.Contains(t, err.Error(), "to safeguard against unintended or breaking changes, this write operation is not allowed against PRODUCTION environments")
 	assert.Contains(t, err.Error(), envId.String())
 	mockClient.AssertExpectations(t)
 }
@@ -301,6 +307,30 @@ func TestCachingEnvironmentValidator_SandboxEnvironment_WriteAllowed(t *testing.
 
 	// Write operations should be allowed on SANDBOX environments
 	err := validator.ValidateEnvironment(ctx, envId, OperationTypeWrite)
+	assert.NoError(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+func TestCachingEnvironmentValidator_SandboxEnvironment_ReadAllowed(t *testing.T) {
+	ctx := context.Background()
+	envId := uuid.New()
+
+	mockClient := new(mockEnvironmentsClient)
+	mockFactory := &mockEnvironmentsClientFactory{client: mockClient}
+
+	env := &pingone.EnvironmentResponse{
+		Id:   envId,
+		Name: "Sandbox Environment",
+		Type: pingone.ENVIRONMENTTYPEVALUE_SANDBOX,
+	}
+	resp := &http.Response{StatusCode: 200}
+
+	mockClient.On("GetEnvironmentById", ctx, envId).Return(env, resp, nil).Once()
+
+	validator := NewCachingEnvironmentValidator(mockFactory)
+
+	// Read operations should be allowed on SANDBOX environments
+	err := validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
 	assert.NoError(t, err)
 	mockClient.AssertExpectations(t)
 }
@@ -355,22 +385,24 @@ func TestCachingEnvironmentValidator_ProductionEnvironment_IsCached(t *testing.T
 
 	validator := NewCachingEnvironmentValidator(mockFactory)
 
-	// First read operation - populates cache
+	// First read operation - populates cache (and gets blocked)
 	err := validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "to safeguard against unintended access to sensitive data or configuration, this read operation is not allowed against PRODUCTION environments")
 
-	// Second read operation should use cache (no additional API call)
+	// Second read operation should use cache (no additional API call, also blocked)
 	err = validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "to safeguard against unintended access to sensitive data or configuration, this read operation is not allowed against PRODUCTION environments")
 
 	// Third read operation should also use cache
 	err = validator.ValidateEnvironment(ctx, envId, OperationTypeRead)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	// Write operation should use cached data and block
 	err = validator.ValidateEnvironment(ctx, envId, OperationTypeWrite)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "to safeguard against unintended or breaking changes to PRODUCTION environments, write operations are not allowed")
+	assert.Contains(t, err.Error(), "to safeguard against unintended or breaking changes, this write operation is not allowed against PRODUCTION environments")
 
 	// Verify only one API call was made (all subsequent calls used cache)
 	mockClient.AssertExpectations(t)

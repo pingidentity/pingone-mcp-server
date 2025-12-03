@@ -88,12 +88,19 @@ func (m *EnvironmentValidationMiddleware) Handler(next mcp.MethodHandler) mcp.Me
 
 		toolName := callToolReq.Params.Name
 
-		// Lookup tool definition and determine whether there are validation modifiers
+		// Lookup tool definition
 		toolDef := m.toolRegistry.GetTool(toolName)
-		if shouldSkipEnvironmentValidation(toolDef) {
-			// Skip environment validation for this tool as per its definition
+
+		// Determine operation type from tool definition
+		operationType := determineOperationType(toolDef)
+
+		// Check if validation should be skipped based on tool policy and operation type
+		if shouldSkipEnvironmentValidation(toolDef, operationType) {
+			// Skip environment validation for this tool as per its validation policy
 			logger.FromContext(ctx).Debug("Skipping environment validation for tool",
-				slog.String("tool", toolName))
+				slog.String("tool", toolName),
+				slog.String("operationType", string(operationType)),
+				slog.String("reason", "validation policy allows operation"))
 			return next(ctx, method, req)
 		}
 
@@ -118,9 +125,6 @@ func (m *EnvironmentValidationMiddleware) Handler(next mcp.MethodHandler) mcp.Me
 				slog.String("tool", toolName))
 			return nil, fmt.Errorf("environment validation failed: %w", err)
 		}
-
-		// Determine operation type from tool definition
-		operationType := determineOperationType(toolDef)
 
 		logger.FromContext(ctx).Debug("Validating environment for tool",
 			slog.String("tool", toolName),
@@ -177,16 +181,6 @@ func extractEnvironmentId(argsJSON json.RawMessage) (*uuid.UUID, bool, error) {
 	return nil, false, nil
 }
 
-// shouldSkipEnvironmentValidation determines if environment validation should be skipped for a tool.
-// Returns true if the tool definition is nil or if the tool explicitly opts out of production environment validation.
-// This allows certain trusted tools or tools that don't operate on environments to bypass validation checks.
-func shouldSkipEnvironmentValidation(toolDef *types.ToolDefinition) bool {
-	if toolDef == nil || (toolDef.Validation != nil && toolDef.Validation.SkipProductionEnvironmentWriteRestriction) {
-		return true
-	}
-	return false
-}
-
 // determineOperationType determines if a tool performs read or write operations.
 // Read-only tools can operate on PRODUCTION environments.
 // Write tools are blocked from operating on PRODUCTION environments.
@@ -195,4 +189,37 @@ func determineOperationType(toolDef *types.ToolDefinition) OperationType {
 		return OperationTypeRead
 	}
 	return OperationTypeWrite
+}
+
+// shouldSkipEnvironmentValidation determines if environment validation should be skipped for a tool.
+// Returns true if the tool definition is nil or if the tool's validation policy allows the operation.
+// The logic follows this priority:
+// 1. If toolDef is nil, skip validation (unknown tool)
+// 2. If ProductionEnvironmentNotApplicable is true, skip validation (tool doesn't use environmentId)
+// 3. If operation is WRITE and AllowProductionEnvironmentWrite is true, skip validation
+// 4. If operation is READ and AllowProductionEnvironmentRead is true, skip validation
+// 5. Otherwise, perform validation (default restrictive behavior)
+func shouldSkipEnvironmentValidation(toolDef *types.ToolDefinition, operationType OperationType) bool {
+	if toolDef == nil {
+		return true
+	}
+
+	if toolDef.ValidationPolicy != nil {
+		// If tool doesn't operate on environments, skip validation entirely
+		if toolDef.ValidationPolicy.ProductionEnvironmentNotApplicable {
+			return true
+		}
+
+		// Check operation-specific permissions
+		if operationType == OperationTypeWrite && toolDef.ValidationPolicy.AllowProductionEnvironmentWrite {
+			return true
+		}
+
+		if operationType == OperationTypeRead && toolDef.ValidationPolicy.AllowProductionEnvironmentRead {
+			return true
+		}
+	}
+
+	// Default: require validation
+	return false
 }

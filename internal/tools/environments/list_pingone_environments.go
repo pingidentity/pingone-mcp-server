@@ -18,8 +18,8 @@ import (
 
 var ListEnvironmentsDef = types.ToolDefinition{
 	IsReadOnly: true,
-	Validation: &types.ToolValidation{
-		SkipProductionEnvironmentWriteRestriction: true, // Tool not applicable to a single environment
+	ValidationPolicy: &types.ToolValidationPolicy{
+		ProductionEnvironmentNotApplicable: true, // Tool not applicable to a single environment
 	},
 	McpTool: &mcp.Tool{
 		Name:  "list_environments",

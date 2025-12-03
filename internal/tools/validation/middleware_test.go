@@ -199,48 +199,180 @@ func TestExtractEnvironmentId_InvalidJSON(t *testing.T) {
 
 func TestShouldSkipEnvironmentValidation(t *testing.T) {
 	tests := []struct {
-		name     string
-		toolDef  *types.ToolDefinition
-		expected bool
+		name          string
+		toolDef       *types.ToolDefinition
+		operationType OperationType
+		expected      bool
 	}{
 		{
-			name:     "nil tool definition",
-			toolDef:  nil,
-			expected: true,
+			name:          "nil tool definition",
+			toolDef:       nil,
+			operationType: OperationTypeRead,
+			expected:      true,
 		},
 		{
-			name: "tool with skip flag set to true",
+			name: "ProductionEnvironmentNotApplicable true - READ operation",
 			toolDef: &types.ToolDefinition{
-				Validation: &types.ToolValidation{
-					SkipProductionEnvironmentWriteRestriction: true,
+				ValidationPolicy: &types.ToolValidationPolicy{
+					ProductionEnvironmentNotApplicable: true,
 				},
-				McpTool: &mcp.Tool{Name: "exempt_tool"},
+				McpTool: &mcp.Tool{Name: "no_env_tool"},
 			},
-			expected: true,
+			operationType: OperationTypeRead,
+			expected:      true,
 		},
 		{
-			name: "tool with skip flag set to false",
+			name: "ProductionEnvironmentNotApplicable true - WRITE operation",
 			toolDef: &types.ToolDefinition{
-				Validation: &types.ToolValidation{
-					SkipProductionEnvironmentWriteRestriction: false,
+				ValidationPolicy: &types.ToolValidationPolicy{
+					ProductionEnvironmentNotApplicable: true,
 				},
-				McpTool: &mcp.Tool{Name: "normal_tool"},
+				McpTool: &mcp.Tool{Name: "no_env_tool"},
 			},
-			expected: false,
+			operationType: OperationTypeWrite,
+			expected:      true,
 		},
 		{
-			name: "tool with nil validation",
+			name: "AllowProductionEnvironmentWrite true - WRITE operation",
 			toolDef: &types.ToolDefinition{
-				Validation: nil,
-				McpTool:    &mcp.Tool{Name: "no_validation_tool"},
+				ValidationPolicy: &types.ToolValidationPolicy{
+					AllowProductionEnvironmentWrite: true,
+				},
+				McpTool: &mcp.Tool{Name: "trusted_write_tool"},
 			},
-			expected: false,
+			operationType: OperationTypeWrite,
+			expected:      true,
+		},
+		{
+			name: "AllowProductionEnvironmentWrite true - READ operation",
+			toolDef: &types.ToolDefinition{
+				ValidationPolicy: &types.ToolValidationPolicy{
+					AllowProductionEnvironmentWrite: true,
+				},
+				McpTool: &mcp.Tool{Name: "trusted_write_tool"},
+			},
+			operationType: OperationTypeRead,
+			expected:      false, // Write permission doesn't grant read permission
+		},
+		{
+			name: "AllowProductionEnvironmentRead true - READ operation",
+			toolDef: &types.ToolDefinition{
+				ValidationPolicy: &types.ToolValidationPolicy{
+					AllowProductionEnvironmentRead: true,
+				},
+				McpTool: &mcp.Tool{Name: "trusted_read_tool"},
+			},
+			operationType: OperationTypeRead,
+			expected:      true,
+		},
+		{
+			name: "AllowProductionEnvironmentRead true - WRITE operation",
+			toolDef: &types.ToolDefinition{
+				ValidationPolicy: &types.ToolValidationPolicy{
+					AllowProductionEnvironmentRead: true,
+				},
+				McpTool: &mcp.Tool{Name: "trusted_read_tool"},
+			},
+			operationType: OperationTypeWrite,
+			expected:      false, // Read permission doesn't grant write permission
+		},
+		{
+			name: "Both read and write permissions - READ operation",
+			toolDef: &types.ToolDefinition{
+				ValidationPolicy: &types.ToolValidationPolicy{
+					AllowProductionEnvironmentRead:  true,
+					AllowProductionEnvironmentWrite: true,
+				},
+				McpTool: &mcp.Tool{Name: "full_access_tool"},
+			},
+			operationType: OperationTypeRead,
+			expected:      true,
+		},
+		{
+			name: "Both read and write permissions - WRITE operation",
+			toolDef: &types.ToolDefinition{
+				ValidationPolicy: &types.ToolValidationPolicy{
+					AllowProductionEnvironmentRead:  true,
+					AllowProductionEnvironmentWrite: true,
+				},
+				McpTool: &mcp.Tool{Name: "full_access_tool"},
+			},
+			operationType: OperationTypeWrite,
+			expected:      true,
+		},
+		{
+			name: "No permissions - READ operation",
+			toolDef: &types.ToolDefinition{
+				ValidationPolicy: &types.ToolValidationPolicy{
+					AllowProductionEnvironmentRead:  false,
+					AllowProductionEnvironmentWrite: false,
+				},
+				McpTool: &mcp.Tool{Name: "restricted_tool"},
+			},
+			operationType: OperationTypeRead,
+			expected:      false,
+		},
+		{
+			name: "No permissions - WRITE operation",
+			toolDef: &types.ToolDefinition{
+				ValidationPolicy: &types.ToolValidationPolicy{
+					AllowProductionEnvironmentRead:  false,
+					AllowProductionEnvironmentWrite: false,
+				},
+				McpTool: &mcp.Tool{Name: "restricted_tool"},
+			},
+			operationType: OperationTypeWrite,
+			expected:      false,
+		},
+		{
+			name: "Nil validation policy - READ operation",
+			toolDef: &types.ToolDefinition{
+				ValidationPolicy: nil,
+				McpTool:          &mcp.Tool{Name: "no_policy_tool"},
+			},
+			operationType: OperationTypeRead,
+			expected:      false,
+		},
+		{
+			name: "Nil validation policy - WRITE operation",
+			toolDef: &types.ToolDefinition{
+				ValidationPolicy: nil,
+				McpTool:          &mcp.Tool{Name: "no_policy_tool"},
+			},
+			operationType: OperationTypeWrite,
+			expected:      false,
+		},
+		{
+			name: "ProductionEnvironmentNotApplicable overrides other settings - READ",
+			toolDef: &types.ToolDefinition{
+				ValidationPolicy: &types.ToolValidationPolicy{
+					ProductionEnvironmentNotApplicable: true,
+					AllowProductionEnvironmentRead:     false,
+					AllowProductionEnvironmentWrite:    false,
+				},
+				McpTool: &mcp.Tool{Name: "not_applicable_tool"},
+			},
+			operationType: OperationTypeRead,
+			expected:      true, // ProductionEnvironmentNotApplicable takes precedence
+		},
+		{
+			name: "ProductionEnvironmentNotApplicable overrides other settings - WRITE",
+			toolDef: &types.ToolDefinition{
+				ValidationPolicy: &types.ToolValidationPolicy{
+					ProductionEnvironmentNotApplicable: true,
+					AllowProductionEnvironmentRead:     false,
+					AllowProductionEnvironmentWrite:    false,
+				},
+				McpTool: &mcp.Tool{Name: "not_applicable_tool"},
+			},
+			operationType: OperationTypeWrite,
+			expected:      true, // ProductionEnvironmentNotApplicable takes precedence
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := shouldSkipEnvironmentValidation(tt.toolDef)
+			result := shouldSkipEnvironmentValidation(tt.toolDef, tt.operationType)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

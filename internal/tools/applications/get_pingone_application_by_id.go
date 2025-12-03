@@ -19,6 +19,9 @@ import (
 
 var GetApplicationByIdDef = types.ToolDefinition{
 	IsReadOnly: true,
+	ValidationPolicy: &types.ToolValidationPolicy{
+		AllowProductionEnvironmentRead: true,
+	},
 	McpTool: &mcp.Tool{
 		Name:         "get_application_by_id",
 		Title:        "Get PingOne Application by ID",

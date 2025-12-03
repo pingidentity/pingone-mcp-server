@@ -11,14 +11,22 @@ type ToolDefinition struct {
 	IsReadOnly bool
 	// McpTool is the MCP tool definition (including name and description)
 	McpTool *mcp.Tool
-	// Validation allows modification of in-built validation rules and constraints for the tool's execution
-	Validation *ToolValidation
+	// ValidationPolicy allows modification of in-built validation rules and constraints for the tool's execution
+	ValidationPolicy *ToolValidationPolicy
 }
 
-type ToolValidation struct {
-	// SkipProductionEnvironmentWriteRestriction when set to true, allows the tool to make write operations on production-type environments.
-	// Typically used where the tool itself performs validation, is trusted or is not acting on environments.
-	// Defaults to false, meaning production environments are protected by default.
-	SkipProductionEnvironmentWriteRestriction   bool
-	EnforceProductionEnvironmentReadRestriction bool
+type ToolValidationPolicy struct {
+	// AllowProductionEnvironmentWrite when set to true, allows the tool to make write operations on production-type environments.
+	// When false (default), write operations on PRODUCTION environments are blocked to prevent unintended changes.
+	// This modifier only applies to WRITE operations; READ operations are governed by AllowProductionEnvironmentRead.
+	AllowProductionEnvironmentWrite bool
+	// AllowProductionEnvironmentRead when set to true, allows the tool to make read operations on production-type environments.
+	// When false (default), read operations on PRODUCTION environments are blocked.
+	// This modifier only applies to READ operations; WRITE operations are governed by AllowProductionEnvironmentWrite.
+	AllowProductionEnvironmentRead bool
+	// ProductionEnvironmentNotApplicable when set to true, indicates that the tool does not operate on environments
+	// and therefore production environment validation should be skipped entirely.
+	// This is typically used for tools that don't have an environmentId parameter (e.g., list_environments) or operate at the organization level.
+	// When true, both AllowProductionEnvironmentWrite and AllowProductionEnvironmentRead are ignored.
+	ProductionEnvironmentNotApplicable bool
 }

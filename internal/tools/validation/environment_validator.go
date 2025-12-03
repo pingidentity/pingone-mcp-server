@@ -52,10 +52,12 @@ func NewCachingEnvironmentValidator(clientFactory environments.EnvironmentsClien
 // It first checks the cache, and if not found, makes an API call to verify the environment.
 // Only PRODUCTION environments are cached after successful validation, as they cannot be
 // downgraded to SANDBOX (ensuring cache consistency).
-// For write operations, it enforces that the environment type is not PRODUCTION.
+// By default, both READ and WRITE operations on PRODUCTION environments are restricted
+// to prevent unintended access or changes. Tools can opt-in to PRODUCTION access via
+// their validation policy (AllowProductionEnvironmentRead or AllowProductionEnvironmentWrite).
 // Returns an error if:
 //   - The environment does not exist or is not accessible
-//   - The operation is a write operation and the environment type is PRODUCTION
+//   - The operation type is not allowed on the PRODUCTION environment
 func (v *CachingEnvironmentValidator) ValidateEnvironment(ctx context.Context, environmentId uuid.UUID, operationType OperationType) error {
 	// Check cache first
 	if cachedEnv, ok := v.cache.Load(environmentId); ok {
@@ -87,15 +89,22 @@ func (v *CachingEnvironmentValidator) ValidateEnvironment(ctx context.Context, e
 }
 
 // validateEnvironmentType checks if the operation type is allowed for the given environment.
-// to safeguard against unintended or breaking changes to PRODUCTION environments, write operations are not allowed.
+// By default, both READ and WRITE operations on PRODUCTION environments are restricted to prevent
+// unintended access or breaking changes. This safeguard ensures PRODUCTION environments are protected
+// unless tools explicitly opt-in via their validation policy.
 func (v *CachingEnvironmentValidator) validateEnvironmentType(env *pingone.EnvironmentResponse, operationType OperationType) error {
 	if env == nil {
 		return fmt.Errorf("environment response is nil")
 	}
 
-	// to safeguard against unintended or breaking changes to PRODUCTION environments, write operations are not allowed
-	if operationType == OperationTypeWrite && env.Type == pingone.ENVIRONMENTTYPEVALUE_PRODUCTION {
-		return fmt.Errorf("to safeguard against unintended or breaking changes to PRODUCTION environments, write operations are not allowed (environment ID: %s, name: %s)", env.Id, env.Name)
+	// Restrict both READ and WRITE operations on PRODUCTION environments by default
+	if env.Type == pingone.ENVIRONMENTTYPEVALUE_PRODUCTION {
+		if operationType == OperationTypeWrite {
+			return fmt.Errorf("to safeguard against unintended or breaking changes, this write operation is not allowed against PRODUCTION environments (environment ID: %s, name: %s)", env.Id, env.Name)
+		}
+		if operationType == OperationTypeRead {
+			return fmt.Errorf("to safeguard against unintended access to sensitive data or configuration, this read operation is not allowed against PRODUCTION environments (environment ID: %s, name: %s)", env.Id, env.Name)
+		}
 	}
 
 	return nil

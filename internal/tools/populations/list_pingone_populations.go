@@ -19,6 +19,9 @@ import (
 
 var ListPopulationsDef = types.ToolDefinition{
 	IsReadOnly: true,
+	ValidationPolicy: &types.ToolValidationPolicy{
+		AllowProductionEnvironmentRead: true,
+	},
 	McpTool: &mcp.Tool{
 		Name:         "list_populations",
 		Title:        "List PingOne Populations",
