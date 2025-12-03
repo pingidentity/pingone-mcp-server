@@ -165,6 +165,9 @@ func UpdateEnvironmentServicesByIdHandler(environmentsClientFactory Environments
 			slog.String("environmentId", input.EnvironmentId.String()),
 			slog.Int("productCount", len(services.Products)))
 
+		// Filter out _links field from response
+		services.Links = nil
+
 		result := &UpdateEnvironmentServicesByIdOutput{
 			Services: *services,
 		}

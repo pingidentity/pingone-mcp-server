@@ -19,7 +19,7 @@ func InitializeAuthenticatedClient(clientFactory sdk.ClientFactory, tokenStore t
 		return nil, fmt.Errorf("failed to check for auth session: %w", err)
 	}
 	if !hasSession {
-		return nil, fmt.Errorf("no active auth session found. Use the login command to authenticate")
+		return nil, fmt.Errorf("no active auth session found, unable to create authenticated client")
 	}
 	authSession, err := tokenStore.GetSession()
 	if err != nil {
@@ -38,7 +38,7 @@ func InitializeAuthenticatedLegacyClient(ctx context.Context, clientFactory lega
 		return nil, fmt.Errorf("failed to check for auth session: %w", err)
 	}
 	if !hasSession {
-		return nil, fmt.Errorf("no active auth session found. Use the login command to authenticate")
+		return nil, fmt.Errorf("no active auth session found, unable to create authenticated client")
 	}
 	authSession, err := tokenStore.GetSession()
 	if err != nil {
