@@ -144,7 +144,7 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 			},
 		},
 		{
-			name: "Success - Update environment services with PING_ONE_NEO expands to Verify and Credentials",
+			name: "Success - Update environment services with NEO expands to Verify and Credentials",
 			input: environments.UpdateEnvironmentServicesByIdInput{
 				EnvironmentId: testEnv1.id,
 				Services: []environments.EnvironmentServiceInput{
@@ -304,6 +304,104 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 						assert.NotNil(t, product.Description, "BASE product should have preserved Description")
 					}
 				}
+			},
+		},
+		{
+			name: "Success - Update with all optional fields (Bookmarks, Console, Tags)",
+			input: environments.UpdateEnvironmentServicesByIdInput{
+				EnvironmentId: testEnv1.id,
+				Services: []environments.EnvironmentServiceInput{
+					{
+						Type: string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_DAVINCI),
+						Bookmarks: []pingone.EnvironmentBillOfMaterialsProductBookmark{
+							{
+								Name: "Custom Dashboard",
+								Href: "https://example.com/dashboard",
+							},
+							{
+								Name: "Documentation",
+								Href: "https://example.com/docs",
+							},
+						},
+						Console: &pingone.EnvironmentBillOfMaterialsProductConsole{
+							Href: "https://console.example.com/davinci",
+						},
+						Tags: []string{"DAVINCI_MINIMAL"},
+					},
+					{
+						Type: string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE),
+						Bookmarks: []pingone.EnvironmentBillOfMaterialsProductBookmark{
+							{
+								Name: "Admin Portal",
+								Href: "https://example.com/admin",
+							},
+						},
+						Console: &pingone.EnvironmentBillOfMaterialsProductConsole{
+							Href: "https://console.example.com/base",
+						},
+					},
+				},
+			},
+			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
+				// Mock GET call to retrieve current services (empty initially)
+				currentServices := &pingone.EnvironmentBillOfMaterialsResponse{
+					Products: []pingone.EnvironmentBillOfMaterialsProduct{},
+				}
+				mockGetEnvironmentServicesByIdSetup(m, envID, currentServices, 200, nil)
+
+				matcher := func(req *pingone.EnvironmentBillOfMaterialsReplaceRequest) bool {
+					if len(req.Products) != 2 {
+						return false
+					}
+
+					// Verify all optional fields are passed to the client
+					hasDaVinciWithOptionalFields := false
+					hasBaseWithOptionalFields := false
+
+					for _, product := range req.Products {
+						if product.Type == pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_DAVINCI {
+							hasDaVinciWithOptionalFields =
+								len(product.Bookmarks) == 2 &&
+									product.Bookmarks[0].Name == "Custom Dashboard" &&
+									product.Bookmarks[0].Href == "https://example.com/dashboard" &&
+									product.Bookmarks[1].Name == "Documentation" &&
+									product.Bookmarks[1].Href == "https://example.com/docs" &&
+									product.Console != nil &&
+									product.Console.Href == "https://console.example.com/davinci" &&
+									len(product.Tags) == 1 &&
+									product.Tags[0] == "DAVINCI_MINIMAL"
+						}
+						if product.Type == pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE {
+							hasBaseWithOptionalFields =
+								len(product.Bookmarks) == 1 &&
+									product.Bookmarks[0].Name == "Admin Portal" &&
+									product.Bookmarks[0].Href == "https://example.com/admin" &&
+									product.Console != nil &&
+									product.Console.Href == "https://console.example.com/base" &&
+									len(product.Tags) == 0
+						}
+					}
+
+					return hasDaVinciWithOptionalFields && hasBaseWithOptionalFields
+				}
+
+				// What the mock returns doesn't matter for this test, just verifying the input to the client
+				expectedServices := pingone.EnvironmentBillOfMaterialsResponse{
+					Products: []pingone.EnvironmentBillOfMaterialsProduct{
+						{
+							Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_DAVINCI,
+						},
+						{
+							Type: pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE,
+						},
+					},
+				}
+				mockUpdateEnvironmentServicesByIdSetup(m, envID, matcher, &expectedServices, 200, nil)
+			},
+			validateOutput: func(t *testing.T, output *environments.UpdateEnvironmentServicesByIdOutput) {
+				assert.NotNil(t, output.Services)
+				require.Equal(t, 2, len(output.Services.Products))
+				// Mainly validating that the client is called, rather than what we set the mock to return
 			},
 		},
 	}
