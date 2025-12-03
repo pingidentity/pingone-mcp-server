@@ -195,11 +195,11 @@ func assertReadApplicationMatches(t *testing.T, expected management.ReadOneAppli
 	}
 }
 
-func assertCreateApplicationMatches(t *testing.T, expected applications.CreateApplicationModel, actual applications.CreateApplicationModel) {
+func assertOIDCApplicationMatches(t *testing.T, expected *management.ApplicationOIDC, actual *management.ApplicationOIDC) {
 	t.Helper()
 
 	if diff := cmp.Diff(expected, actual); diff != "" {
-		t.Errorf("Create application mismatch (-expected +actual):\n%s", diff)
+		t.Errorf("OIDC application mismatch (-expected +actual):\n%s", diff)
 	}
 }
 

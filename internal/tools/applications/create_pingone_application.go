@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/patrickcping/pingone-go-sdk-v2/management"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
@@ -21,31 +21,20 @@ var CreateApplicationDef = types.ToolDefinition{
 	IsReadOnly: false,
 	McpTool: &mcp.Tool{
 		Name:         "create_application",
-		Title:        "Create PingOne Application",
-		Description:  "Create a new OAuth 2.0, SAML, or external link application within a specified PingOne environment.",
-		InputSchema:  mustGenerateCreateApplicationSchema[CreateApplicationInput](),
-		OutputSchema: mustGenerateCreateApplicationSchema[CreateApplicationOutput](),
+		Title:        "Create PingOne OIDC Application",
+		Description:  "Create a new OIDC application within a specified PingOne environment.",
+		InputSchema:  schema.MustGenerateSchema[CreateApplicationInput](),
+		OutputSchema: schema.MustGenerateSchema[CreateApplicationOutput](),
 	},
 }
 
 type CreateApplicationInput struct {
-	EnvironmentId uuid.UUID              `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
-	Application   CreateApplicationModel `json:"application" jsonschema:"REQUIRED. The application configuration details"`
+	EnvironmentId uuid.UUID                  `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
+	Application   management.ApplicationOIDC `json:"application" jsonschema:"REQUIRED. The OIDC application configuration details"`
 }
 
 type CreateApplicationOutput struct {
-	Application CreateApplicationModel `json:"application" jsonschema:"The created application details"`
-}
-
-func mustGenerateCreateApplicationSchema[T any]() *jsonschema.Schema {
-	baseSchema := schema.MustGenerateSchema[T]()
-	// Modify the Application property to use the CreateApplicationModel schema with oneOf constraint
-	applicationModelSchema := MustGenerateCreateApplicationModelSchema()
-	if baseSchema.Properties == nil {
-		panic("baseSchema.Properties is nil when generating CreateApplicationInput schema")
-	}
-	baseSchema.Properties["application"] = applicationModelSchema
-	return baseSchema
+	Application management.ApplicationOIDC `json:"application" jsonschema:"The created application details"`
 }
 
 // CreateApplicationHandler creates a new PingOne application using the provided client
@@ -78,7 +67,9 @@ func CreateApplicationHandler(applicationsClientFactory ApplicationsClientFactor
 			slog.String("environmentId", input.EnvironmentId.String()),
 		)
 
-		createRequest := CreateApplicationModelToSDKCreateRequest(input.Application)
+		createRequest := management.CreateApplicationRequest{
+			ApplicationOIDC: &input.Application,
+		}
 
 		// Call the API to create the application
 		applicationResponse, httpResponse, err := client.CreateApplication(ctx, input.EnvironmentId, createRequest)
@@ -90,7 +81,7 @@ func CreateApplicationHandler(applicationsClientFactory ApplicationsClientFactor
 			return nil, nil, apiErr
 		}
 
-		if applicationResponse == nil {
+		if applicationResponse == nil || applicationResponse.ApplicationOIDC == nil {
 			apiErr := errs.NewApiError(httpResponse, fmt.Errorf("no application data in response"))
 			errs.Log(ctx, apiErr)
 			return nil, nil, apiErr
@@ -101,7 +92,7 @@ func CreateApplicationHandler(applicationsClientFactory ApplicationsClientFactor
 		)
 
 		result := &CreateApplicationOutput{
-			Application: CreateApplicationModelFromSDKCreateResponse(*applicationResponse),
+			Application: *applicationResponse.ApplicationOIDC,
 		}
 
 		return nil, result, nil

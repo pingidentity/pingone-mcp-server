@@ -18,13 +18,6 @@ type ReadApplicationModel struct {
 	ApplicationWSFED               *management.ApplicationWSFED               `json:"applicationWSFED,omitempty"`
 }
 
-type CreateApplicationModel struct {
-	ApplicationExternalLink *management.ApplicationExternalLink `json:"applicationExternalLink,omitempty"`
-	ApplicationOIDC         *management.ApplicationOIDC         `json:"applicationOIDC,omitempty"`
-	ApplicationSAML         *management.ApplicationSAML         `json:"applicationSAML,omitempty"`
-	ApplicationWSFED        *management.ApplicationWSFED        `json:"applicationWSFED,omitempty"`
-}
-
 type UpdateApplicationModel struct {
 	ApplicationExternalLink       *management.ApplicationExternalLink       `json:"applicationExternalLink,omitempty"`
 	ApplicationOIDC               *management.ApplicationOIDC               `json:"applicationOIDC,omitempty"`
@@ -69,38 +62,6 @@ func ReadApplicationModelFromSDKReadResponse(sdkApp management.ReadOneApplicatio
 		ApplicationWSFED:               sdkApp.ApplicationWSFED,
 	}
 	return filterApplicationLinks(model)
-}
-
-func CreateApplicationModelFromSDKCreateResponse(sdkApp management.CreateApplication201Response) CreateApplicationModel {
-	model := CreateApplicationModel{
-		ApplicationExternalLink: sdkApp.ApplicationExternalLink,
-		ApplicationOIDC:         sdkApp.ApplicationOIDC,
-		ApplicationSAML:         sdkApp.ApplicationSAML,
-		ApplicationWSFED:        sdkApp.ApplicationWSFED,
-	}
-	// Filter out _links field from all application types
-	if model.ApplicationExternalLink != nil {
-		model.ApplicationExternalLink.Links = nil
-	}
-	if model.ApplicationOIDC != nil {
-		model.ApplicationOIDC.Links = nil
-	}
-	if model.ApplicationSAML != nil {
-		model.ApplicationSAML.Links = nil
-	}
-	if model.ApplicationWSFED != nil {
-		model.ApplicationWSFED.Links = nil
-	}
-	return model
-}
-
-func CreateApplicationModelToSDKCreateRequest(model CreateApplicationModel) management.CreateApplicationRequest {
-	return management.CreateApplicationRequest{
-		ApplicationExternalLink: model.ApplicationExternalLink,
-		ApplicationOIDC:         model.ApplicationOIDC,
-		ApplicationSAML:         model.ApplicationSAML,
-		ApplicationWSFED:        model.ApplicationWSFED,
-	}
 }
 
 func UpdateApplicationModelFromSDKReadResponse(sdkApp management.ReadOneApplication200Response) UpdateApplicationModel {
