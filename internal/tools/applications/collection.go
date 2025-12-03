@@ -43,22 +43,22 @@ func (c *ApplicationsCollection) RegisterTools(ctx context.Context, server *mcp.
 	applicationsClientFactory := NewPingOneClientApplicationsWrapperFactory(clientFactory, tokenStore)
 	initializeAuthContext := initialize.AuthContextInitializer(authClientFactory, tokenStore, grantType)
 
-	if toolFilter.ShouldIncludeTool(ListApplicationsDef.McpTool.Name, ListApplicationsDef.IsReadOnly) {
+	if toolFilter.ShouldIncludeTool(&ListApplicationsDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", ListApplicationsDef.McpTool.Name))
 		mcp.AddTool(server, ListApplicationsDef.McpTool, ListApplicationsHandler(applicationsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(GetApplicationByIdDef.McpTool.Name, GetApplicationByIdDef.IsReadOnly) {
+	if toolFilter.ShouldIncludeTool(&GetApplicationByIdDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetApplicationByIdDef.McpTool.Name))
 		mcp.AddTool(server, GetApplicationByIdDef.McpTool, GetApplicationByIdHandler(applicationsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(CreateApplicationDef.McpTool.Name, CreateApplicationDef.IsReadOnly) {
+	if toolFilter.ShouldIncludeTool(&CreateApplicationDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", CreateApplicationDef.McpTool.Name))
 		mcp.AddTool(server, CreateApplicationDef.McpTool, CreateApplicationHandler(applicationsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(UpdateApplicationByIdDef.McpTool.Name, UpdateApplicationByIdDef.IsReadOnly) {
+	if toolFilter.ShouldIncludeTool(&UpdateApplicationByIdDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", UpdateApplicationByIdDef.McpTool.Name))
 		mcp.AddTool(server, UpdateApplicationByIdDef.McpTool, UpdateApplicationByIdHandler(applicationsClientFactory, initializeAuthContext))
 	}

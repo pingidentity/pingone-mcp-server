@@ -55,14 +55,15 @@ func createCallToolRequest(toolName string, args map[string]any) *mcp.CallToolRe
 func TestNewToolRegistry(t *testing.T) {
 	tools := []types.ToolDefinition{
 		{
-			IsReadOnly: true,
 			McpTool: &mcp.Tool{
 				Name:        "list_populations",
 				Description: "List populations",
+				Annotations: &mcp.ToolAnnotations{
+					ReadOnlyHint: true,
+				},
 			},
 		},
 		{
-			IsReadOnly: false,
 			McpTool: &mcp.Tool{
 				Name:        "create_population",
 				Description: "Create population",
@@ -394,15 +395,18 @@ func TestDetermineOperationType(t *testing.T) {
 		{
 			name: "read-only tool",
 			toolDef: &types.ToolDefinition{
-				IsReadOnly: true,
-				McpTool:    &mcp.Tool{Name: "list_tool"},
+				McpTool: &mcp.Tool{
+					Name: "list_tool",
+					Annotations: &mcp.ToolAnnotations{
+						ReadOnlyHint: true,
+					},
+				},
 			},
 			expected: OperationTypeRead,
 		},
 		{
 			name: "write tool",
 			toolDef: &types.ToolDefinition{
-				IsReadOnly: false,
 				McpTool: &mcp.Tool{
 					Name:        "create_tool",
 					Annotations: &mcp.ToolAnnotations{},
@@ -413,7 +417,6 @@ func TestDetermineOperationType(t *testing.T) {
 		{
 			name: "read-only hint annotation",
 			toolDef: &types.ToolDefinition{
-				IsReadOnly: false,
 				McpTool: &mcp.Tool{
 					Name: "annotated_read_tool",
 					Annotations: &mcp.ToolAnnotations{
@@ -492,9 +495,11 @@ func TestEnvironmentValidationMiddleware_ToolWithoutEnvironmentId(t *testing.T) 
 
 	// Mock tool definition that doesn't skip validation
 	toolDef := &types.ToolDefinition{
-		IsReadOnly: true,
 		McpTool: &mcp.Tool{
 			Name: "list_environments",
+			Annotations: &mcp.ToolAnnotations{
+				ReadOnlyHint: true,
+			},
 		},
 	}
 	mockReg.On("GetTool", "list_environments").Return(toolDef)
@@ -530,10 +535,11 @@ func TestEnvironmentValidationMiddleware_ReadOperation_Success(t *testing.T) {
 	mockReg := new(mockToolRegistry)
 
 	toolDef := &types.ToolDefinition{
-		IsReadOnly: true,
 		McpTool: &mcp.Tool{
-			Name:        "list_populations",
-			Annotations: &mcp.ToolAnnotations{},
+			Name: "list_populations",
+			Annotations: &mcp.ToolAnnotations{
+				ReadOnlyHint: true,
+			},
 		},
 	}
 
@@ -568,7 +574,6 @@ func TestEnvironmentValidationMiddleware_WriteOperation_Success(t *testing.T) {
 	mockReg := new(mockToolRegistry)
 
 	toolDef := &types.ToolDefinition{
-		IsReadOnly: false,
 		McpTool: &mcp.Tool{
 			Name:        "create_population",
 			Annotations: &mcp.ToolAnnotations{},
@@ -607,7 +612,6 @@ func TestEnvironmentValidationMiddleware_ValidationError(t *testing.T) {
 	mockReg := new(mockToolRegistry)
 
 	toolDef := &types.ToolDefinition{
-		IsReadOnly: false,
 		McpTool: &mcp.Tool{
 			Name:        "create_population",
 			Annotations: &mcp.ToolAnnotations{},
@@ -650,7 +654,6 @@ func TestEnvironmentValidationMiddleware_ProductionProtection(t *testing.T) {
 	mockReg := new(mockToolRegistry)
 
 	toolDef := &types.ToolDefinition{
-		IsReadOnly: false,
 		McpTool: &mcp.Tool{
 			Name: "delete_population",
 			// No tool annotations so we can test nil pointer behaviour
@@ -725,9 +728,11 @@ func TestEnvironmentValidationMiddleware_InvalidJSON(t *testing.T) {
 
 	// Mock tool definition
 	toolDef := &types.ToolDefinition{
-		IsReadOnly: true,
 		McpTool: &mcp.Tool{
 			Name: "test_tool",
+			Annotations: &mcp.ToolAnnotations{
+				ReadOnlyHint: true,
+			},
 		},
 	}
 	mockReg.On("GetTool", "test_tool").Return(toolDef)

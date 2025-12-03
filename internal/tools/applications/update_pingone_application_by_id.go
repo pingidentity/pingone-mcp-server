@@ -18,7 +18,6 @@ import (
 )
 
 var UpdateApplicationByIdDef = types.ToolDefinition{
-	IsReadOnly: false,
 	McpTool: &mcp.Tool{
 		Name:         "update_application_by_id",
 		Title:        "Update PingOne Application by ID",

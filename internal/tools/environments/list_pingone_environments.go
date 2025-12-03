@@ -17,7 +17,6 @@ import (
 )
 
 var ListEnvironmentsDef = types.ToolDefinition{
-	IsReadOnly: true,
 	ValidationPolicy: &types.ToolValidationPolicy{
 		ProductionEnvironmentNotApplicable: true, // Tool not applicable to a single environment
 	},
@@ -31,6 +30,9 @@ Supports optional SCIM filtering to narrow results based on environment attribut
 Returns all matching environments with their full details including ID, name, type, region, and metadata.`,
 		InputSchema:  schema.MustGenerateSchema[ListEnvironmentsInput](),
 		OutputSchema: schema.MustGenerateSchema[ListEnvironmentsOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
 	},
 }
 

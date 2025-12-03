@@ -18,7 +18,6 @@ import (
 )
 
 var UpdateEnvironmentServicesByIdDef = types.ToolDefinition{
-	IsReadOnly: false,
 	McpTool: &mcp.Tool{
 		Name:         "update_environment_services_by_id",
 		Title:        "Update PingOne Environment Services by ID",

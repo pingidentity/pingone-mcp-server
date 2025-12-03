@@ -18,7 +18,6 @@ import (
 )
 
 var CreateApplicationDef = types.ToolDefinition{
-	IsReadOnly: false,
 	McpTool: &mcp.Tool{
 		Name:         "create_application",
 		Title:        "Create PingOne Application",

@@ -5,7 +5,9 @@ package filter_test
 import (
 	"testing"
 
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/filter"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 )
 
 func TestFilter(t *testing.T) {
@@ -167,7 +169,16 @@ func TestFilterStruct(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			f := filter.NewFilter(test.readOnly, test.includedTools, test.excludedTools, test.includedToolCollections, test.excludedToolCollections)
 
-			actualTool := f.ShouldIncludeTool(test.testToolName, test.testToolIsReadOnly)
+			testToolDef := &types.ToolDefinition{
+				McpTool: &mcp.Tool{
+					Name: test.testToolName,
+					Annotations: &mcp.ToolAnnotations{
+						ReadOnlyHint: test.testToolIsReadOnly,
+					},
+				},
+			}
+
+			actualTool := f.ShouldIncludeTool(testToolDef)
 			if actualTool != test.expectedTool {
 				t.Errorf("ShouldIncludeTool: Expected %t, got %t", test.expectedTool, actualTool)
 			}

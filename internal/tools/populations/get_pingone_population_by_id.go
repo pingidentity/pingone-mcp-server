@@ -18,7 +18,6 @@ import (
 )
 
 var GetPopulationByIdDef = types.ToolDefinition{
-	IsReadOnly: true,
 	ValidationPolicy: &types.ToolValidationPolicy{
 		AllowProductionEnvironmentRead: true, // this is true while the tool does not return any actual user data
 	},
@@ -28,6 +27,9 @@ var GetPopulationByIdDef = types.ToolDefinition{
 		Description:  "Retrieve a population's configuration by its unique ID within a specified PingOne environment.",
 		InputSchema:  schema.MustGenerateSchema[GetPopulationByIdInput](),
 		OutputSchema: schema.MustGenerateSchema[GetPopulationByIdOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
 	},
 }
 
