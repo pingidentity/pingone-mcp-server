@@ -118,9 +118,6 @@ func TestEnvironmentValidationMiddleware_WriteOperation_OverMcp(t *testing.T) {
 			Description:  "Create a test resource in an environment",
 			InputSchema:  schema.MustGenerateSchema[testToolInput](),
 			OutputSchema: schema.MustGenerateSchema[testToolOutput](),
-			Annotations: &mcp.ToolAnnotations{
-				ReadOnlyHint: false,
-			},
 		},
 	}
 
@@ -172,9 +169,6 @@ func TestEnvironmentValidationMiddleware_ValidationFailure_OverMcp(t *testing.T)
 			Description:  "Create a test resource in an environment",
 			InputSchema:  schema.MustGenerateSchema[testToolInput](),
 			OutputSchema: schema.MustGenerateSchema[testToolOutput](),
-			Annotations: &mcp.ToolAnnotations{
-				ReadOnlyHint: false,
-			},
 		},
 	}
 
