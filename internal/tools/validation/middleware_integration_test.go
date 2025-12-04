@@ -61,12 +61,14 @@ func TestEnvironmentValidationMiddleware_ReadOperation_OverMcp(t *testing.T) {
 	mockReg := new(mockToolRegistry)
 
 	toolDef := &types.ToolDefinition{
-		IsReadOnly: true,
 		McpTool: &mcp.Tool{
 			Name:         "list_test_resources",
 			Description:  "List test resources in an environment",
 			InputSchema:  schema.MustGenerateSchema[testToolInput](),
 			OutputSchema: schema.MustGenerateSchema[testToolOutput](),
+			Annotations: &mcp.ToolAnnotations{
+				ReadOnlyHint: true,
+			},
 		},
 	}
 
@@ -111,7 +113,6 @@ func TestEnvironmentValidationMiddleware_WriteOperation_OverMcp(t *testing.T) {
 	mockReg := new(mockToolRegistry)
 
 	toolDef := &types.ToolDefinition{
-		IsReadOnly: false,
 		McpTool: &mcp.Tool{
 			Name:         "create_test_resource",
 			Description:  "Create a test resource in an environment",
@@ -163,7 +164,6 @@ func TestEnvironmentValidationMiddleware_ValidationFailure_OverMcp(t *testing.T)
 	mockReg := new(mockToolRegistry)
 
 	toolDef := &types.ToolDefinition{
-		IsReadOnly: false,
 		McpTool: &mcp.Tool{
 			Name:         "create_test_resource",
 			Description:  "Create a test resource in an environment",
@@ -224,7 +224,6 @@ func TestEnvironmentValidationMiddleware_SkipValidation_ProductionNotApplicable_
 	}
 
 	toolDef := &types.ToolDefinition{
-		IsReadOnly: true,
 		ValidationPolicy: &types.ToolValidationPolicy{
 			ProductionEnvironmentNotApplicable: true,
 		},
@@ -233,6 +232,9 @@ func TestEnvironmentValidationMiddleware_SkipValidation_ProductionNotApplicable_
 			Description:  "List all resources across all environments",
 			InputSchema:  schema.MustGenerateSchema[listInput](),
 			OutputSchema: schema.MustGenerateSchema[listOutput](),
+			Annotations: &mcp.ToolAnnotations{
+				ReadOnlyHint: true,
+			},
 		},
 	}
 
@@ -276,12 +278,14 @@ func TestEnvironmentValidationMiddleware_InvalidEnvironmentId_OverMcp(t *testing
 	mockReg := new(mockToolRegistry)
 
 	toolDef := &types.ToolDefinition{
-		IsReadOnly: true,
 		McpTool: &mcp.Tool{
 			Name:         "list_test_resources",
 			Description:  "List test resources",
 			InputSchema:  schema.MustGenerateSchema[testToolInput](),
 			OutputSchema: schema.MustGenerateSchema[testToolOutput](),
+			Annotations: &mcp.ToolAnnotations{
+				ReadOnlyHint: true,
+			},
 		},
 	}
 
@@ -333,12 +337,14 @@ func TestEnvironmentValidationMiddleware_WithStructuredContent_OverMcp(t *testin
 	}
 
 	toolDef := &types.ToolDefinition{
-		IsReadOnly: true,
 		McpTool: &mcp.Tool{
 			Name:         "list_test_resources",
 			Description:  "List test resources in an environment",
 			InputSchema:  schema.MustGenerateSchema[testToolInput](),
 			OutputSchema: schema.MustGenerateSchema[resourceListOutput](),
+			Annotations: &mcp.ToolAnnotations{
+				ReadOnlyHint: true,
+			},
 		},
 	}
 
