@@ -73,12 +73,12 @@ The server will communicate over stdin/stdout.`,
 					return errs.NewCommandError(commandName, errors.New("active session is nil"))
 				}
 				if session.Expiry.Before(time.Now()) {
-					logger.FromContext(cmd.Context()).Warn("Active session is expired, please run the login command", slog.String("sessionId", session.SessionId))
+					logger.FromContext(cmd.Context()).Debug("Active session is expired, authentication will be refreshed when a tool is invoked", slog.String("sessionId", session.SessionId))
 				} else {
 					logger.FromContext(cmd.Context()).Debug("Active session found", slog.String("sessionId", session.SessionId))
 				}
 			} else {
-				logger.FromContext(cmd.Context()).Warn("No active session found, please run the login command")
+				logger.FromContext(cmd.Context()).Debug("No active session found, authentication will be refreshed when a tool is invoked")
 			}
 
 			toolFilter := filter.NewFilter(!disableReadOnly, includedTools, excludedTools, includedToolCollections, excludedToolCollections)

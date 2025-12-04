@@ -1,6 +1,6 @@
 // Copyright © 2025 Ping Identity Corporation
 
-package testutils
+package mcp
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestMcpClient creates a test MCP client for testing purposes.
 func TestMcpClient(t *testing.T) *mcp.Client {
 	t.Helper()
 	return mcp.NewClient(&mcp.Implementation{
@@ -19,6 +20,7 @@ func TestMcpClient(t *testing.T) *mcp.Client {
 	}, nil)
 }
 
+// TestMcpServer creates a test MCP server for testing purposes.
 func TestMcpServer(t *testing.T) *mcp.Server {
 	t.Helper()
 	return mcp.NewServer(&mcp.Implementation{
@@ -27,7 +29,10 @@ func TestMcpServer(t *testing.T) *mcp.Server {
 	}, nil)
 }
 
+// CallToolOverMcp invokes a tool through a full MCP client-server connection.
 func CallToolOverMcp(t *testing.T, server *mcp.Server, toolName string, toolInput any) (*mcp.CallToolResult, error) {
+	t.Helper()
+
 	serverTransport, clientTransport := mcp.NewInMemoryTransports()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -46,7 +51,11 @@ func CallToolOverMcp(t *testing.T, server *mcp.Server, toolName string, toolInpu
 	session, err := client.Connect(t.Context(), clientTransport, nil)
 	require.NoError(t, err, "MCP client should connect to server successfully")
 	require.NotNil(t, session, "Session should not be nil")
-	defer session.Close()
+	defer func() {
+		if closeErr := session.Close(); closeErr != nil {
+			t.Logf("Warning: Failed to close session: %v", closeErr)
+		}
+	}()
 
 	// Call the tool via MCP
 	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{

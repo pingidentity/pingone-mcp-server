@@ -18,19 +18,24 @@ import (
 )
 
 var GetEnvironmentByIdDef = types.ToolDefinition{
-	IsReadOnly: true,
+	ValidationPolicy: &types.ToolValidationPolicy{
+		AllowProductionEnvironmentRead: true,
+	},
 	McpTool: &mcp.Tool{
 		Name:         "get_environment_by_id",
 		Title:        "Get PingOne Environment by ID",
-		Description:  "Retrieve an environment's configuration by it's unique ID.",
+		Description:  "Retrieve an environment's full configuration by ID. Use 'list_environments' first if you need to find the environment ID. Call this before 'update_environment_by_id' to get current configuration.",
 		InputSchema:  schema.MustGenerateSchema[GetEnvironmentByIdInput](),
 		OutputSchema: schema.MustGenerateSchema[GetEnvironmentByIdOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
 	},
 }
 
 // GetEnvironmentByIdInput defines the input parameters for retrieving an environment by ID
 type GetEnvironmentByIdInput struct {
-	EnvironmentId uuid.UUID `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
+	EnvironmentId uuid.UUID `json:"environmentId" jsonschema:"REQUIRED. UUID format (e.g., '123e4567-e89b-12d3-a456-426614174000')."`
 }
 
 // GetEnvironmentByIdOutput represents the result of retrieving an environment
@@ -86,6 +91,9 @@ func GetEnvironmentByIdHandler(environmentsClientFactory EnvironmentsClientFacto
 			slog.String("environmentId", input.EnvironmentId.String()),
 			slog.String("environmentName", environment.Name),
 		)
+
+		// Filter out _links field from response
+		environment.Links = nil
 
 		result := &GetEnvironmentByIdOutput{
 			Environment: *environment,

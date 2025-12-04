@@ -18,25 +18,31 @@ import (
 )
 
 var UpdatePopulationByIdDef = types.ToolDefinition{
-	IsReadOnly: false,
 	McpTool: &mcp.Tool{
-		Name:         "update_population_by_id",
-		Title:        "Update PingOne Population by ID",
-		Description:  "Update a population's configuration by its unique ID within a specified PingOne environment.",
+		Name:  "update_population_by_id",
+		Title: "Update PingOne Population by ID",
+		Description: `Update population configuration using full replacement (HTTP PUT).
+
+WORKFLOW - Required to avoid data loss:
+1. Call 'get_population_by_id' to fetch current configuration
+2. Modify only the fields you want to change
+3. Pass the complete merged object to this tool
+
+Omitted optional fields will be cleared.`,
 		InputSchema:  schema.MustGenerateSchema[UpdatePopulationByIdInput](),
 		OutputSchema: schema.MustGenerateSchema[UpdatePopulationByIdOutput](),
 	},
 }
 
 type UpdatePopulationByIdInput struct {
-	EnvironmentId          uuid.UUID                            `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
-	PopulationId           uuid.UUID                            `json:"populationId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne population to update"`
-	Name                   string                               `json:"name" jsonschema:"REQUIRED. The population name, which must be unique within the environment."`
-	AlternativeIdentifiers []string                             `json:"alternativeIdentifiers,omitempty" jsonschema:"OPTIONAL. Alternative identifiers that can be used to search for populations besides name."`
-	Description            *string                              `json:"description,omitempty" jsonschema:"OPTIONAL. A description of the population."`
-	PreferredLanguage      *string                              `json:"preferredLanguage,omitempty" jsonschema:"OPTIONAL. The language locale for the population. If absent, the environment default is used."`
-	PasswordPolicy         *management.PopulationPasswordPolicy `json:"passwordPolicy,omitempty" jsonschema:"OPTIONAL. The object reference to the password policy resource for the population."`
-	Theme                  *management.PopulationTheme          `json:"theme,omitempty" jsonschema:"OPTIONAL. The object reference to the theme resource for the population."`
+	EnvironmentId          uuid.UUID                            `json:"environmentId" jsonschema:"REQUIRED. Environment UUID."`
+	PopulationId           uuid.UUID                            `json:"populationId" jsonschema:"REQUIRED. Population UUID."`
+	Name                   string                               `json:"name" jsonschema:"REQUIRED. Population name, must be unique within environment."`
+	AlternativeIdentifiers []string                             `json:"alternativeIdentifiers,omitempty" jsonschema:"OPTIONAL. Alternative search identifiers."`
+	Description            *string                              `json:"description,omitempty" jsonschema:"OPTIONAL. Description."`
+	PreferredLanguage      *string                              `json:"preferredLanguage,omitempty" jsonschema:"OPTIONAL. Locale code. Defaults to environment setting if omitted."`
+	PasswordPolicy         *management.PopulationPasswordPolicy `json:"passwordPolicy,omitempty" jsonschema:"OPTIONAL. Reference to password policy."`
+	Theme                  *management.PopulationTheme          `json:"theme,omitempty" jsonschema:"OPTIONAL. Reference to theme."`
 }
 
 type UpdatePopulationByIdOutput struct {
@@ -103,6 +109,9 @@ func UpdatePopulationByIdHandler(populationsClientFactory PopulationsClientFacto
 			slog.String("environmentId", input.EnvironmentId.String()),
 			slog.String("populationId", input.PopulationId.String()),
 		)
+
+		// Filter out _links field from response
+		populationResponse.Links = nil
 
 		result := &UpdatePopulationByIdOutput{
 			Population: *populationResponse,

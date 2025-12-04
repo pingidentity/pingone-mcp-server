@@ -18,13 +18,18 @@ import (
 )
 
 var GetEnvironmentServicesByIdDef = types.ToolDefinition{
-	IsReadOnly: true,
+	ValidationPolicy: &types.ToolValidationPolicy{
+		AllowProductionEnvironmentRead: true,
+	},
 	McpTool: &mcp.Tool{
 		Name:         "get_environment_services_by_id",
 		Title:        "Get PingOne Environment Services by ID",
 		Description:  "Retrieve all the services assigned to a specified PingOne environment, by the environment's unique ID.",
 		InputSchema:  schema.MustGenerateSchema[GetEnvironmentServicesByIdInput](),
 		OutputSchema: schema.MustGenerateSchema[GetEnvironmentServicesByIdOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
 	},
 }
 
@@ -86,6 +91,9 @@ func GetEnvironmentServicesByIdHandler(environmentsClientFactory EnvironmentsCli
 		logger.FromContext(ctx).Debug("Environment services retrieved successfully",
 			slog.String("environmentId", input.EnvironmentId.String()),
 			slog.Int("productCount", len(services.Products)))
+
+		// Filter out _links field from response
+		services.Links = nil
 
 		result := &GetEnvironmentServicesByIdOutput{
 			Services: *services,

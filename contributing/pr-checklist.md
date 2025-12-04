@@ -226,9 +226,6 @@ make test
 # Run linter
 make lint
 
-# Test login flow
-./bin/pingone-mcp-server login
-
 # Test server run
 ./bin/pingone-mcp-server run
 

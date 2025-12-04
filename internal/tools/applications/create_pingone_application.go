@@ -18,19 +18,21 @@ import (
 )
 
 var CreateApplicationDef = types.ToolDefinition{
-	IsReadOnly: false,
 	McpTool: &mcp.Tool{
 		Name:         "create_application",
 		Title:        "Create PingOne Application",
-		Description:  "Create a new OAuth 2.0, SAML, or external link application within a specified PingOne environment.",
+		Description:  "Create an application (choose one type: OIDC/OAuth2 for modern apps, SAML typically for enterprise SSO, or External Link to show on the PingOne application portal). The 'application' field must contain exactly one application type object (applicationOIDC, applicationSAML, applicationExternalLink, or applicationWSFED).",
 		InputSchema:  mustGenerateCreateApplicationSchema[CreateApplicationInput](),
 		OutputSchema: mustGenerateCreateApplicationSchema[CreateApplicationOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			DestructiveHint: func() *bool { b := false; return &b }(),
+		},
 	},
 }
 
 type CreateApplicationInput struct {
-	EnvironmentId uuid.UUID              `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
-	Application   CreateApplicationModel `json:"application" jsonschema:"REQUIRED. The application configuration details"`
+	EnvironmentId uuid.UUID              `json:"environmentId" jsonschema:"REQUIRED. Environment UUID."`
+	Application   CreateApplicationModel `json:"application" jsonschema:"REQUIRED. Application config. Must contain exactly one type: applicationOIDC, applicationSAML, applicationExternalLink, or applicationWSFED."`
 }
 
 type CreateApplicationOutput struct {
