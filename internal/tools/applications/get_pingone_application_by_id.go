@@ -89,7 +89,7 @@ func GetApplicationByIdHandler(applicationsClientFactory ApplicationsClientFacto
 			slog.String("applicationId", input.ApplicationId.String()))
 
 		// Serialize the application based on its type, filtering out the _links field
-		formattedApplication, err := GetOutputFormattedApplication(application)
+		formattedApplication, err := getOutputFormattedApplication(application)
 		if err != nil {
 			toolErr := errs.NewToolError(GetApplicationByIdDef.McpTool.Name, err)
 			errs.Log(ctx, toolErr)
@@ -112,7 +112,7 @@ func GetApplicationByIdHandler(applicationsClientFactory ApplicationsClientFacto
 	}
 }
 
-func GetOutputFormattedApplication(application *management.ReadOneApplication200Response) (any, error) {
+func getOutputFormattedApplication(application *management.ReadOneApplication200Response) (any, error) {
 	// Return the configured application type, and filter out the _links field
 	switch {
 	case application.ApplicationExternalLink != nil:

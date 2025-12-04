@@ -95,7 +95,7 @@ func ListApplicationsHandler(clientFactory ApplicationsClientFactory, initialize
 			}
 			logger.FromContext(ctx).Debug("Retrieved applications page", slog.Int("count", len(next.EntityArray.Embedded.Applications)))
 			for _, sdkApp := range next.EntityArray.Embedded.Applications {
-				formattedApplication, err := GetOutputFormattedApplication(&sdkApp)
+				formattedApplication, err := getOutputFormattedApplication(&sdkApp)
 				if err != nil {
 					toolErr := errs.NewToolError(GetApplicationByIdDef.McpTool.Name, err)
 					errs.Log(ctx, toolErr)
