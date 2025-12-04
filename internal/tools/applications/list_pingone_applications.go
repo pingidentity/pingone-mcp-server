@@ -4,10 +4,11 @@ package applications
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 
-	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
@@ -20,11 +21,10 @@ import (
 var ListApplicationsDef = types.ToolDefinition{
 	IsReadOnly: true,
 	McpTool: &mcp.Tool{
-		Name:         "list_applications",
-		Title:        "List PingOne Applications",
-		Description:  "Lists PingOne applications in a specified PingOne environment.",
-		InputSchema:  schema.MustGenerateSchema[ListApplicationsInput](),
-		OutputSchema: MustGenerateListApplicationsOutputSchema(),
+		Name:        "list_applications",
+		Title:       "List PingOne Applications",
+		Description: "Lists PingOne applications in a specified PingOne environment.",
+		InputSchema: schema.MustGenerateSchema[ListApplicationsInput](),
 	},
 }
 
@@ -33,22 +33,7 @@ type ListApplicationsInput struct {
 }
 
 type ListApplicationsOutput struct {
-	Applications []ReadApplicationModel `json:"applications" jsonschema:"List of applications with their configuration details"`
-}
-
-func MustGenerateListApplicationsOutputSchema() *jsonschema.Schema {
-	baseSchema := schema.MustGenerateSchema[ListApplicationsOutput]()
-	// Modify the Applications property to use the ApplicationModel schema with oneOf constraint
-	applicationModelSchema := MustGenerateReadApplicationModelSchema()
-	if baseSchema.Properties == nil {
-		panic("baseSchema.Properties is nil when generating ListApplicationsOutput schema")
-	}
-	appsProp, ok := baseSchema.Properties["applications"]
-	if !ok {
-		panic("applications property not found in ListApplicationsOutput schema")
-	}
-	appsProp.Items = applicationModelSchema
-	return baseSchema
+	Applications []any `json:"applications" jsonschema:"List of applications with their configuration details"`
 }
 
 // ListApplicationsHandler lists all PingOne applications using the provided client
@@ -58,10 +43,10 @@ func ListApplicationsHandler(clientFactory ApplicationsClientFactory, initialize
 	input ListApplicationsInput,
 ) (
 	*mcp.CallToolResult,
-	*ListApplicationsOutput,
+	any,
 	error,
 ) {
-	return func(ctx context.Context, req *mcp.CallToolRequest, input ListApplicationsInput) (*mcp.CallToolResult, *ListApplicationsOutput, error) {
+	return func(ctx context.Context, req *mcp.CallToolRequest, input ListApplicationsInput) (*mcp.CallToolResult, any, error) {
 		ctx = initialize.InitializeToolInvocation(ctx, ListApplicationsDef.McpTool.Name, req)
 		ctx, err := initializeAuthContext(ctx)
 		if err != nil {
@@ -88,7 +73,7 @@ func ListApplicationsHandler(clientFactory ApplicationsClientFactory, initialize
 		}
 		// Aggregate all pages into one response
 		result := ListApplicationsOutput{
-			Applications: []ReadApplicationModel{},
+			Applications: []any{},
 		}
 		for next, err := range pagedIterator {
 			logger.LogHttpResponse(ctx, next.HTTPResponse)
@@ -105,10 +90,29 @@ func ListApplicationsHandler(clientFactory ApplicationsClientFactory, initialize
 			}
 			logger.FromContext(ctx).Debug("Retrieved applications page", slog.Int("count", len(next.EntityArray.Embedded.Applications)))
 			for _, sdkApp := range next.EntityArray.Embedded.Applications {
-				result.Applications = append(result.Applications, ReadApplicationModelFromSDKReadResponse(sdkApp))
+				formattedApplication, err := GetOutputFormattedApplication(&sdkApp)
+				if err != nil {
+					toolErr := errs.NewToolError(GetApplicationByIdDef.McpTool.Name, err)
+					errs.Log(ctx, toolErr)
+					return nil, nil, toolErr
+				}
+				result.Applications = append(result.Applications, formattedApplication)
 			}
 		}
 
-		return nil, &result, nil
+		applicationJsonBytes, err := json.Marshal(result)
+		if err != nil {
+			toolErr := errs.NewToolError(GetApplicationByIdDef.McpTool.Name, fmt.Errorf("failed to marshal formatted application response: %w", err))
+			errs.Log(ctx, toolErr)
+			return nil, nil, toolErr
+		}
+
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{
+					Text: string(applicationJsonBytes),
+				},
+			},
+		}, nil, nil
 	}
 }
