@@ -26,17 +26,27 @@ var ListEnvironmentsDef = types.ToolDefinition{
 		Title: "List PingOne Environments",
 		Description: `Lists all PingOne environments accessible to the authenticated user.
 
-Supports optional SCIM filtering to narrow results based on environment attributes.
+Use to discover environment IDs needed for other operations or to find environments by name/status.
 
-Returns all matching environments with their full details including ID, name, type, region, and metadata.`,
+Only filters that 'name' with 'sw' (starts with); 'id', 'organization.id', 'license.id', 'status' with 'eq' (equals); 'and' to combine are valid.
+
+Filter examples:
+- name sw "Prod"
+- status eq "ACTIVE"
+- name sw "Dev" and status eq "ACTIVE"
+
+Returns: Array of environments with ID, name, type, region, license, and metadata.`,
 		InputSchema:  schema.MustGenerateSchema[ListEnvironmentsInput](),
 		OutputSchema: schema.MustGenerateSchema[ListEnvironmentsOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
 	},
 }
 
 // ListEnvironmentsInput defines the input parameters for listing environments
 type ListEnvironmentsInput struct {
-	Filter *string `json:"filter,omitempty" jsonschema:"OPTIONAL. A SCIM filter string to filter environments based on attributes. Supported operators: 'sw' (starts with) for 'name' attribute; 'eq' (equals) for 'id', 'organization.id', 'license.id', and 'status' attributes; 'and' (logical AND) to combine multiple conditions. Other SCIM operators are not supported. Example: 'name sw \"Prod\" and status eq \"ACTIVE\"'. If omitted, all environments are returned."`
+	Filter *string `json:"filter,omitempty" jsonschema:"OPTIONAL. SCIM filter. Only filters that 'name' with 'sw' (starts with); 'id', 'organization.id', 'license.id', 'status' with 'eq' (equals); 'and' to combine are valid."`
 }
 
 // ListEnvironmentsOutput represents the result of listing environments

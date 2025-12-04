@@ -20,18 +20,25 @@ import (
 var UpdateApplicationByIdDef = types.ToolDefinition{
 	IsReadOnly: false,
 	McpTool: &mcp.Tool{
-		Name:         "update_application_by_id",
-		Title:        "Update PingOne Application by ID",
-		Description:  "Update an existing application within a specified PingOne environment.",
+		Name:  "update_application_by_id",
+		Title: "Update PingOne Application by ID",
+		Description: `Update application configuration using full replacement (HTTP PUT).
+
+WORKFLOW - Required to avoid data loss:
+1. Call 'get_application_by_id' to fetch current configuration
+2. Modify only the fields you want to change
+3. Pass the complete merged object to this tool
+
+Omitted optional fields will be cleared.`,
 		InputSchema:  mustGenerateUpdateApplicationByIdSchema[UpdateApplicationByIdInput](),
 		OutputSchema: mustGenerateUpdateApplicationByIdSchema[UpdateApplicationByIdOutput](),
 	},
 }
 
 type UpdateApplicationByIdInput struct {
-	EnvironmentId uuid.UUID              `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
-	ApplicationId uuid.UUID              `json:"applicationId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne application"`
-	Application   UpdateApplicationModel `json:"application" jsonschema:"REQUIRED. The updated application configuration details"`
+	EnvironmentId uuid.UUID              `json:"environmentId" jsonschema:"REQUIRED. Environment UUID."`
+	ApplicationId uuid.UUID              `json:"applicationId" jsonschema:"REQUIRED. Application UUID."`
+	Application   UpdateApplicationModel `json:"application" jsonschema:"REQUIRED. Complete application config with modifications."`
 }
 
 type UpdateApplicationByIdOutput struct {
