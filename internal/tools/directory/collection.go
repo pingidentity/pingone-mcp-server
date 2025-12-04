@@ -43,7 +43,7 @@ func (c *DirectoryCollection) RegisterTools(ctx context.Context, server *mcp.Ser
 	directoryClientFactory := NewPingOneClientDirectoryWrapperFactory(clientFactory, tokenStore)
 	initializeAuthContext := initialize.AuthContextInitializer(authClientFactory, tokenStore, grantType)
 
-	if toolFilter.ShouldIncludeTool(GetTotalIdentitiesByEnvironmentIdDef.McpTool.Name, GetTotalIdentitiesByEnvironmentIdDef.IsReadOnly) {
+	if toolFilter.ShouldIncludeTool(&GetTotalIdentitiesByEnvironmentIdDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetTotalIdentitiesByEnvironmentIdDef.McpTool.Name))
 		mcp.AddTool(server, GetTotalIdentitiesByEnvironmentIdDef.McpTool, GetTotalIdentitiesByEnvironmentIdHandler(directoryClientFactory, initializeAuthContext))
 	}

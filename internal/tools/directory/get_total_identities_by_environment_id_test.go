@@ -14,6 +14,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
+	mcptestutils "github.com/pingidentity/pingone-mcp-server/internal/testutils/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/directory"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 	"github.com/stretchr/testify/assert"
@@ -123,11 +124,11 @@ func TestGetTotalIdentitiesByEnvironmentIdHandler_MockClient(t *testing.T) {
 			tt.setupMock(mockClient, tt.input.EnvironmentId, filter)
 			handler := directory.GetTotalIdentitiesByEnvironmentIdHandler(NewMockPingOneClientDirectoryWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 
-			server := testutils.TestMcpServer(t)
+			server := mcptestutils.TestMcpServer(t)
 			mcp.AddTool(server, directory.GetTotalIdentitiesByEnvironmentIdDef.McpTool, handler)
 
 			// Execute over MCP
-			output, err := testutils.CallToolOverMcp(t, server, directory.GetTotalIdentitiesByEnvironmentIdDef.McpTool.Name, tt.input)
+			output, err := mcptestutils.CallToolOverMcp(t, server, directory.GetTotalIdentitiesByEnvironmentIdDef.McpTool.Name, tt.input)
 
 			require.NoError(t, err, "Expect no error calling tool")
 			require.NotNil(t, output, "Expect non-nil output")

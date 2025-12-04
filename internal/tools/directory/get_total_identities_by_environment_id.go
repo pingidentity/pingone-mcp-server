@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/pingidentity/pingone-go-client/pingone"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
@@ -20,13 +19,18 @@ import (
 )
 
 var GetTotalIdentitiesByEnvironmentIdDef = types.ToolDefinition{
-	IsReadOnly: true,
+	ValidationPolicy: &types.ToolValidationPolicy{
+		AllowProductionEnvironmentRead: true,
+	},
 	McpTool: &mcp.Tool{
 		Name:         "get_total_identities_by_environment_id",
 		Title:        "Get Total Identities Count for PingOne Environment",
 		Description:  "Retrieve the total count of user identities in a PingOne environment within a specified date range. Returns aggregated identity count data for reporting and analytics purposes. If no dates are provided, defaults to today at midnight UTC (showing a single day result). If specifying dates, at least one date must be provided.",
 		InputSchema:  schema.MustGenerateSchema[GetTotalIdentitiesByEnvironmentIdInput](),
 		OutputSchema: schema.MustGenerateSchema[GetTotalIdentitiesByEnvironmentIdOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
 	},
 }
 
@@ -39,7 +43,13 @@ type GetTotalIdentitiesByEnvironmentIdInput struct {
 
 // GetTotalIdentitiesByEnvironmentIdOutput represents the result of retrieving total identities count for an environment
 type GetTotalIdentitiesByEnvironmentIdOutput struct {
-	TotalIdentitiesReport []pingone.DirectoryTotalIdentitiesCountResponse `json:"totalIdentitiesReport" jsonschema:"A list of total identities reports, by day, containing the aggregated number of user identities in the environment for the specified date range."`
+	TotalIdentitiesReport []GetTotalIdentitiesByEnvironmentIdOutputReport `json:"totalIdentitiesReport" jsonschema:"A list of total identities reports, by day, containing the aggregated number of user identities in the environment for the specified date range."`
+}
+
+type GetTotalIdentitiesByEnvironmentIdOutputReport struct {
+	Date                 *string `json:"date,omitempty" jsonschema:"The date and time the total identities count starts for the sampling period (ISO 8601 format)."`
+	TotalIdentities      *int32  `json:"totalIdentities,omitempty" jsonschema:"The total unique identities count for the sampling period."`
+	AdditionalProperties map[string]interface{}
 }
 
 // GetTotalIdentitiesByEnvironmentIdHandler retrieves the total identities count for a PingOne environment within a specified date range using the provided client
@@ -124,8 +134,18 @@ func GetTotalIdentitiesByEnvironmentIdHandler(directoryClientFactory DirectoryCl
 			slog.String("environmentId", input.EnvironmentId.String()),
 		)
 
+		totalIdentitiesReportOut := make([]GetTotalIdentitiesByEnvironmentIdOutputReport, 0, len(totalIdentitiesReport.Embedded.TotalIdentities))
+		for _, report := range totalIdentitiesReport.Embedded.TotalIdentities {
+			dateStr := report.Date.String()
+			totalIdentitiesReportOut = append(totalIdentitiesReportOut, GetTotalIdentitiesByEnvironmentIdOutputReport{
+				Date:                 &dateStr,
+				TotalIdentities:      report.TotalIdentities,
+				AdditionalProperties: report.AdditionalProperties,
+			})
+		}
+
 		result := &GetTotalIdentitiesByEnvironmentIdOutput{
-			TotalIdentitiesReport: totalIdentitiesReport.Embedded.TotalIdentities,
+			TotalIdentitiesReport: totalIdentitiesReportOut,
 		}
 
 		return nil, result, nil
