@@ -112,7 +112,13 @@ func ListEnvironmentsHandler(environmentsClientFactory EnvironmentsClientFactory
 
 			logger.FromContext(ctx).Debug("Retrieved environments page",
 				slog.Int("count", len(next.Data.Embedded.Environments)))
+
 			result.Environments = append(result.Environments, next.Data.Embedded.Environments...)
+		}
+
+		// Filter out _links field from all environment responses
+		for i := range result.Environments {
+			result.Environments[i].Links = nil
 		}
 
 		return nil, &result, nil

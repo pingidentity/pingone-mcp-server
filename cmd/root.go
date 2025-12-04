@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/pingidentity/pingone-mcp-server/cmd/login"
 	"github.com/pingidentity/pingone-mcp-server/cmd/logout"
 	"github.com/pingidentity/pingone-mcp-server/cmd/run"
 	"github.com/pingidentity/pingone-mcp-server/cmd/session"
@@ -43,8 +42,6 @@ func NewRootCommand(serverVersion string) *cobra.Command {
 	authClientFactory := client.NewPingOneClientAuthWrapperFactory(serverVersion, mcpEnvironmentId)
 	// Always run on stdio transport
 	result.AddCommand(run.NewCommand(tokenStoreFactory, clientFactory, legacyClientFactory, authClientFactory, &mcp.StdioTransport{}))
-
-	result.AddCommand(login.NewCommand(authClientFactory, tokenStoreFactory))
 
 	result.AddCommand(logout.NewCommand(tokenStoreFactory))
 

@@ -112,6 +112,9 @@ func CreatePopulationHandler(populationsClientFactory PopulationsClientFactory, 
 			slog.String("populationId", *populationResponse.Id),
 			slog.String("name", populationResponse.Name))
 
+		// Filter out _links field from response
+		populationResponse.Links = nil
+
 		result := &CreatePopulationOutput{
 			Population: *populationResponse,
 		}

@@ -132,6 +132,9 @@ func UpdateEnvironmentByIdHandler(environmentsClientFactory EnvironmentsClientFa
 			slog.String("type", string(input.Type)),
 		)
 
+		// Filter out _links field from response
+		environment.Links = nil
+
 		result := &UpdateEnvironmentByIdOutput{
 			Environment: *environment,
 		}

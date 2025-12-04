@@ -44,7 +44,6 @@ This PR has been tested with:
 <!-- Use the following shell block to paste the command used when testing. Examples:
 make test
 make lint
-./bin/pingone-mcp-server login
 ./bin/pingone-mcp-server run
 -->
 ```shell

@@ -92,6 +92,9 @@ func GetPopulationByIdHandler(populationsClientFactory PopulationsClientFactory,
 			slog.String("populationName", population.Name),
 		)
 
+		// Filter out _links field from response
+		population.Links = nil
+
 		result := &GetPopulationByIdOutput{
 			Population: *population,
 		}
