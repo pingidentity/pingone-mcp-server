@@ -13,6 +13,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
 	"github.com/pingidentity/pingone-mcp-server/internal/server"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
+	mcptestutils "github.com/pingidentity/pingone-mcp-server/internal/testutils/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/filter"
 	"github.com/stretchr/testify/assert"
@@ -34,7 +35,7 @@ func TestServer_MCPClient(t *testing.T) {
 	// Give server a moment to start
 	time.Sleep(100 * time.Millisecond)
 
-	client := testutils.TestMcpClient(t)
+	client := mcptestutils.TestMcpClient(t)
 
 	session, err := client.Connect(t.Context(), clientTransport, nil)
 	require.NoError(t, err, "MCP client should connect to server successfully")
@@ -126,7 +127,7 @@ func TestServer_ToolFiltering(t *testing.T) {
 
 			time.Sleep(100 * time.Millisecond)
 
-			client := testutils.TestMcpClient(t)
+			client := mcptestutils.TestMcpClient(t)
 
 			session, err := client.Connect(t.Context(), clientTransport, nil)
 			require.NoError(t, err)
