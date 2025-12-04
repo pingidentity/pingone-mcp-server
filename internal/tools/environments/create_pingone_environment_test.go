@@ -179,7 +179,7 @@ func TestCreateEnvironmentHandler_MockClient(t *testing.T) {
 			}
 
 			// Assert success expectations
-			testutils.AssertHandlerSuccess(t, err, mcpResult, output)
+			testutils.AssertStructuredHandlerSuccess(t, err, mcpResult, output)
 			assert.NotEqual(t, uuid.Nil, output.Environment.Id)
 			assert.Equal(t, pingone.ENVIRONMENTTYPEVALUE_SANDBOX, output.Environment.Type, "Environment type should always be SANDBOX")
 
@@ -375,7 +375,7 @@ func TestCreateEnvironmentHandler_EdgeCaseInputs(t *testing.T) {
 			if tt.wantErr {
 				testutils.AssertHandlerError(t, err, mcpResult, output, tt.wantErrContains)
 			} else {
-				testutils.AssertHandlerSuccess(t, err, mcpResult, output)
+				testutils.AssertStructuredHandlerSuccess(t, err, mcpResult, output)
 			}
 
 			mockClient.AssertExpectations(t)

@@ -4,7 +4,6 @@ package applications_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"testing"
@@ -36,7 +35,7 @@ func TestGetApplicationByIdHandler_MockClient(t *testing.T) {
 		setupMock        func(*mockPingOneClientApplicationsWrapper, uuid.UUID, uuid.UUID)
 		wantErr          bool
 		wantErrContains  string
-		expectedResponse *management.ReadOneApplication200Response
+		expectedResponse any
 	}{
 		{
 			name: "Success - Get OIDC application by ID",
@@ -150,10 +149,10 @@ func TestGetApplicationByIdHandler_MockClient(t *testing.T) {
 			}
 
 			// Assert success expectations
-			testutils.AssertHandlerSuccess(t, err, mcpResult, output)
+			testutils.AssertUnstructuredHandlerSuccess(t, err, mcpResult, output)
 
 			if tt.expectedResponse != nil {
-				assertReadApplicationMatches(t, *tt.expectedResponse, output.Application)
+				testutils.AssertUnstructuredOutputMatches(t, mcpResult, tt.expectedResponse)
 			}
 
 			mockClient.AssertExpectations(t)
@@ -185,15 +184,8 @@ func TestGetApplicationByIdHandler_MockClient(t *testing.T) {
 			// Assert success expectations
 			testutils.AssertMcpCallSuccess(t, err, output)
 
-			// marshal the structured content into the expected output type
-			outputApplication := &applications.GetApplicationByIdOutput{}
-			jsonBytes, err := json.Marshal(output.StructuredContent)
-			require.NoError(t, err, "Failed to marshal structured content")
-			err = json.Unmarshal(jsonBytes, outputApplication)
-			require.NoError(t, err, "Failed to unmarshal structured content")
-
 			if tt.expectedResponse != nil {
-				assertReadApplicationMatches(t, *tt.expectedResponse, outputApplication.Application)
+				testutils.AssertUnstructuredOutputMatches(t, output, tt.expectedResponse)
 			}
 
 			mockClient.AssertExpectations(t)
@@ -253,55 +245,6 @@ func TestGetApplicationByIdHandler_APIErrors(t *testing.T) {
 
 			// Assert
 			testutils.AssertHandlerError(t, err, mcpResult, output, tt.WantErrContains)
-			mockClient.AssertExpectations(t)
-		})
-	}
-}
-
-func TestGetApplicationByIdHandler_JSONSchemaOneOfValidation(t *testing.T) {
-	testCases := []struct {
-		name             string
-		malformedApp     management.ReadOneApplication200Response
-		expectedErrorMsg string
-		description      string
-	}{
-		{
-			name:             "Multiple application types set",
-			malformedApp:     testMalformedMultiTypeApp, // This app has both OIDC and SAML set
-			expectedErrorMsg: "oneOf: validated against both",
-			description:      "violates oneOf constraint by having multiple application types set simultaneously",
-		},
-		{
-			name:             "No application type set",
-			malformedApp:     testMalformedEmptyApp, // This app has no application types set
-			expectedErrorMsg: "oneOf: did not validate against any of",
-			description:      "violates oneOf constraint by having no application type set",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// This test verifies that the MCP JSON schema validation properly fails
-			// when a ReadApplicationModel violates the oneOf constraint
-			mockClient := &mockPingOneClientApplicationsWrapper{}
-			envID := testEnvironmentId
-			appID := testAppId
-
-			mockGetApplicationByIdSetup(mockClient, envID, appID, &tc.malformedApp, 200, nil)
-
-			server := testutils.TestMcpServer(t)
-			handler := applications.GetApplicationByIdHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
-			mcp.AddTool(server, applications.GetApplicationByIdDef.McpTool, handler)
-
-			input := applications.GetApplicationByIdInput{
-				EnvironmentId: envID,
-				ApplicationId: appID,
-			}
-			_, err := testutils.CallToolOverMcp(t, server, applications.GetApplicationByIdDef.McpTool.Name, input)
-
-			require.Error(t, err, "Expected MCP to reject response due to JSON schema validation failure that %s", tc.description)
-			assert.Contains(t, err.Error(), tc.expectedErrorMsg, "Error should mention the specific oneOf validation issue")
-
 			mockClient.AssertExpectations(t)
 		})
 	}

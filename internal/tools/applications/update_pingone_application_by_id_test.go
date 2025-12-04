@@ -110,7 +110,7 @@ func TestUpdateApplicationByIdHandler_MockClient(t *testing.T) {
 			}
 
 			// Assert success expectations
-			testutils.AssertHandlerSuccess(t, err, mcpResult, output)
+			testutils.AssertStructuredHandlerSuccess(t, err, mcpResult, output)
 
 			if tt.expectedResponse != nil {
 				assertOIDCApplicationMatches(t, tt.expectedResponse, &output.Application)

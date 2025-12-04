@@ -121,7 +121,7 @@ func TestGetEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 			}
 
 			// Assert success expectations
-			testutils.AssertHandlerSuccess(t, err, mcpResult, output)
+			testutils.AssertStructuredHandlerSuccess(t, err, mcpResult, output)
 
 			if tt.validateOutput != nil {
 				tt.validateOutput(t, output)

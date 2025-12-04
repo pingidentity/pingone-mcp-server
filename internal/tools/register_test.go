@@ -57,7 +57,6 @@ func TestAllToolsHaveSchemas(t *testing.T) {
 		t.Run(toolDef.McpTool.Name, func(t *testing.T) {
 			require.NotNil(t, toolDef.McpTool, "McpTool should not be nil for tool %s", toolDef.McpTool.Name)
 			assert.NotNil(t, toolDef.McpTool.InputSchema, "tool InputSchema should not be nil for tool %s", toolDef.McpTool.Name)
-			assert.NotNil(t, toolDef.McpTool.OutputSchema, "tool OutputSchema should not be nil for tool %s", toolDef.McpTool.Name)
 		})
 	}
 }

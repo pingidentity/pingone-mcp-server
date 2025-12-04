@@ -94,7 +94,7 @@ func TestListEnvironmentsHandler_MockClient(t *testing.T) {
 			}
 
 			// Assert success expectations
-			testutils.AssertHandlerSuccess(t, err, mcpResult, response)
+			testutils.AssertStructuredHandlerSuccess(t, err, mcpResult, response)
 			assert.Len(t, response.Environments, tt.wantEnvCount)
 
 			// Verify environment details if specified

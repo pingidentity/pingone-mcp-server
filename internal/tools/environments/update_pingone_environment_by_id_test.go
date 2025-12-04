@@ -177,7 +177,7 @@ func TestUpdateEnvironmentByIdHandler_MockClient(t *testing.T) {
 			}
 
 			// Assert success expectations
-			testutils.AssertHandlerSuccess(t, err, mcpResult, output)
+			testutils.AssertStructuredHandlerSuccess(t, err, mcpResult, output)
 
 			if tt.validateOutput != nil {
 				tt.validateOutput(t, output)
@@ -386,7 +386,7 @@ func TestUpdateEnvironmentByIdHandler_EdgeCaseInputs(t *testing.T) {
 			if tt.wantErr {
 				testutils.AssertHandlerError(t, err, mcpResult, output, tt.wantErrContains)
 			} else {
-				testutils.AssertHandlerSuccess(t, err, mcpResult, output)
+				testutils.AssertStructuredHandlerSuccess(t, err, mcpResult, output)
 			}
 
 			mockClient.AssertExpectations(t)
