@@ -26,14 +26,14 @@ type MockEnvironmentsClient struct {
 // MockEnvironmentsClientFactory is a mock implementation of the EnvironmentsClientFactory interface.
 // It returns a pre-configured mock client and optional error for testing authentication flows.
 type MockEnvironmentsClientFactory struct {
-	Client *MockEnvironmentsClient
+	Client environments.EnvironmentsClient
 	Err    error
 }
 
 // NewMockEnvironmentsClientFactory creates a new MockEnvironmentsClientFactory with the provided client and error.
 // The client parameter is the mock client instance to return from GetAuthenticatedClient.
 // The err parameter is the error to return from GetAuthenticatedClient, or nil for successful authentication.
-func NewMockEnvironmentsClientFactory(client *MockEnvironmentsClient, err error) *MockEnvironmentsClientFactory {
+func NewMockEnvironmentsClientFactory(client environments.EnvironmentsClient, err error) *MockEnvironmentsClientFactory {
 	return &MockEnvironmentsClientFactory{
 		Client: client,
 		Err:    err,

@@ -109,7 +109,7 @@ func TestGetEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 			// Setup
 			mockClient := &envtestutils.MockEnvironmentsClient{}
 			tt.setupMock(mockClient, tt.input.EnvironmentId)
-			handler := environments.GetEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 			req := &mcp.CallToolRequest{}
 
 			// Execute
@@ -136,7 +136,7 @@ func TestGetEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 			// Setup
 			mockClient := &envtestutils.MockEnvironmentsClient{}
 			tt.setupMock(mockClient, tt.input.EnvironmentId)
-			handler := environments.GetEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 
 			server := mcptestutils.TestMcpServer(t)
 			mcp.AddTool(server, environments.GetEnvironmentServicesByIdDef.McpTool, handler)
@@ -183,7 +183,7 @@ func TestGetEnvironmentServicesByIdHandler_ContextCancellation(t *testing.T) {
 	// Mock should return context.Canceled error when context is already cancelled
 	mockClient.On("GetEnvironmentServicesById", testutils.CancelledContextMatcher, envID).Return(nil, nil, context.Canceled)
 
-	handler := environments.GetEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+	handler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 	req := &mcp.CallToolRequest{}
 	input := environments.GetEnvironmentServicesByIdInput{
 		EnvironmentId: testEnv1.id,
@@ -214,7 +214,7 @@ func TestGetEnvironmentServicesByIdHandler_APIErrors(t *testing.T) {
 			// Setup
 			mockClient := &envtestutils.MockEnvironmentsClient{}
 			mockGetEnvironmentServicesByIdSetup(mockClient, envID, nil, tt.StatusCode, tt.ApiError)
-			handler := environments.GetEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 
 			// Execute
 			mcpResult, output, err := handler(context.Background(), &mcp.CallToolRequest{}, input)
@@ -229,7 +229,7 @@ func TestGetEnvironmentServicesByIdHandler_APIErrors(t *testing.T) {
 func TestGetEnvironmentServicesByIdHandler_GetAuthenticatedClientError(t *testing.T) {
 	mockClient := &envtestutils.MockEnvironmentsClient{}
 	clientFactoryErr := errors.New("failed to get authenticated client")
-	handler := environments.GetEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
+	handler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
 	req := &mcp.CallToolRequest{}
 	input := environments.GetEnvironmentServicesByIdInput{
 		EnvironmentId: testEnv1.id,
@@ -246,7 +246,7 @@ func TestGetEnvironmentServicesByIdHandler_GetAuthenticatedClientError(t *testin
 func TestGetEnvironmentServicesByIdHandler_InitializeAuthContextError(t *testing.T) {
 	mockClient := &envtestutils.MockEnvironmentsClient{}
 	initContextErr := errors.New("failed to initialize auth context")
-	handler := environments.GetEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
+	handler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
 	req := &mcp.CallToolRequest{}
 	input := environments.GetEnvironmentServicesByIdInput{
 		EnvironmentId: testEnv1.id,
@@ -273,7 +273,7 @@ func TestGetEnvironmentServicesByIdHandler_RealClient(t *testing.T) {
 	// Note: Replace with a valid environment and application ID from your PingOne organization
 	testEnvID := uuid.MustParse("00000000-0000-0000-0000-000000000000")
 
-	handler := environments.GetEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(clientWrapper, nil), testutils.MockContextInitializer())
+	handler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(clientWrapper, nil), testutils.MockContextInitializer())
 	input := environments.GetEnvironmentServicesByIdInput{
 		EnvironmentId: testEnvID,
 	}
