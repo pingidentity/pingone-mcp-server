@@ -25,9 +25,12 @@ var GetPopulationByIdDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
 		Name:         "get_population_by_id",
 		Title:        "Get PingOne Population by ID",
-		Description:  "Retrieve a population's configuration by its unique ID within a specified PingOne environment.",
+		Description:  "Retrieve population configuration by ID. Use 'list_populations' first if you need to find the population ID. Call before 'update_population_by_id' to get current settings.",
 		InputSchema:  schema.MustGenerateSchema[GetPopulationByIdInput](),
 		OutputSchema: schema.MustGenerateSchema[GetPopulationByIdOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
 	},
 }
 

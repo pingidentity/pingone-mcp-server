@@ -25,14 +25,17 @@ var ListApplicationsDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
 		Name:         "list_applications",
 		Title:        "List PingOne Applications",
-		Description:  "Lists PingOne applications in a specified PingOne environment.",
+		Description:  "Lists all applications in an environment. Use to discover application IDs or review configurations before updates. Returns OIDC, SAML, External Link, and PingOne system applications.",
 		InputSchema:  schema.MustGenerateSchema[ListApplicationsInput](),
 		OutputSchema: MustGenerateListApplicationsOutputSchema(),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
 	},
 }
 
 type ListApplicationsInput struct {
-	EnvironmentId uuid.UUID `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
+	EnvironmentId uuid.UUID `json:"environmentId" jsonschema:"REQUIRED. Environment UUID."`
 }
 
 type ListApplicationsOutput struct {

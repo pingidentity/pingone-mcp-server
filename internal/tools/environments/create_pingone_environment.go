@@ -24,9 +24,12 @@ var CreateEnvironmentDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
 		Name:         "create_environment",
 		Title:        "Create PingOne Environment",
-		Description:  "Create a new sandbox PingOne environment. Only sandbox types can be created, production type environments are not supported.",
+		Description:  "Create a new sandbox PingOne environment. Only SANDBOX type supported via API (PRODUCTION must be created via admin console). Requires license quota. Environment becomes available immediately but services may take 10-30 seconds to initialize.",
 		InputSchema:  schema.MustGenerateSchema[CreateEnvironmentInput](),
 		OutputSchema: schema.MustGenerateSchema[CreateEnvironmentOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			DestructiveHint: func() *bool { b := false; return &b }(),
+		},
 	},
 }
 
@@ -36,8 +39,8 @@ type CreateEnvironmentInput struct {
 	Description     *string                             `json:"description,omitempty" jsonschema:"OPTIONAL. The description of the environment."`
 	Icon            *string                             `json:"icon,omitempty" jsonschema:"OPTIONAL. The URL referencing the image to use for the environment icon. The supported image types are JPEG/JPG, PNG, and GIF."`
 	License         pingone.EnvironmentLicense          `json:"license" jsonschema:"REQUIRED. The active license associated with this environment. Required only if your organization has more than one active license."`
-	Name            string                              `json:"name" jsonschema:"REQUIRED. The environment name, which must be unique within an organization."`
-	Region          pingone.EnvironmentRegionCode       `json:"region" jsonschema:"REQUIRED. The region in which this environment will be used. The value is set when the environment is created and cannot be updated. Options are 'NA', 'CA', 'EU', 'AU', 'SG', or 'AP'."`
+	Name            string                              `json:"name" jsonschema:"REQUIRED. Environment name, must be unique within organization."`
+	Region          pingone.EnvironmentRegionCode       `json:"region" jsonschema:"REQUIRED. Region code: NA, CA, EU, AU, SG, or AP. Cannot be changed after creation."`
 }
 
 // CreateEnvironmentOutput represents the result of creating an environment
