@@ -17,7 +17,6 @@ import (
 )
 
 var CreateEnvironmentDef = types.ToolDefinition{
-	IsReadOnly: false,
 	ValidationPolicy: &types.ToolValidationPolicy{
 		ProductionEnvironmentNotApplicable: true, // Tool does not act on an existing environment
 	},

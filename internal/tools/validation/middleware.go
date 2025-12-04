@@ -185,7 +185,7 @@ func extractEnvironmentId(argsJSON json.RawMessage) (*uuid.UUID, bool, error) {
 // Read-only tools can operate on PRODUCTION environments.
 // Write tools are blocked from operating on PRODUCTION environments.
 func determineOperationType(toolDef *types.ToolDefinition) OperationType {
-	if toolDef == nil || toolDef.IsReadOnly || (toolDef.McpTool.Annotations != nil && toolDef.McpTool.Annotations.ReadOnlyHint) {
+	if toolDef == nil || toolDef.IsReadOnly() {
 		return OperationTypeRead
 	}
 	return OperationTypeWrite

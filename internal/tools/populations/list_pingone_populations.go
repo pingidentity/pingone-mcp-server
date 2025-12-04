@@ -18,7 +18,6 @@ import (
 )
 
 var ListPopulationsDef = types.ToolDefinition{
-	IsReadOnly: true,
 	ValidationPolicy: &types.ToolValidationPolicy{
 		AllowProductionEnvironmentRead: true,
 	},

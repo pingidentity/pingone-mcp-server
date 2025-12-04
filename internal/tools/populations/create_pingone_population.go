@@ -18,7 +18,6 @@ import (
 )
 
 var CreatePopulationDef = types.ToolDefinition{
-	IsReadOnly: false,
 	McpTool: &mcp.Tool{
 		Name:         "create_population",
 		Title:        "Create PingOne Population",

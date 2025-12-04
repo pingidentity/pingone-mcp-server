@@ -18,7 +18,6 @@ import (
 )
 
 var ListApplicationsDef = types.ToolDefinition{
-	IsReadOnly: true,
 	ValidationPolicy: &types.ToolValidationPolicy{
 		AllowProductionEnvironmentRead: true,
 	},

@@ -18,7 +18,6 @@ import (
 )
 
 var GetEnvironmentServicesByIdDef = types.ToolDefinition{
-	IsReadOnly: true,
 	ValidationPolicy: &types.ToolValidationPolicy{
 		AllowProductionEnvironmentRead: true,
 	},

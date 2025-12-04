@@ -43,22 +43,22 @@ func (c *PopulationsCollection) RegisterTools(ctx context.Context, server *mcp.S
 	populationsClientFactory := NewPingOneClientPopulationsWrapperFactory(clientFactory, tokenStore)
 	initializeAuthContext := initialize.AuthContextInitializer(authClientFactory, tokenStore, grantType)
 
-	if toolFilter.ShouldIncludeTool(ListPopulationsDef.McpTool.Name, ListPopulationsDef.IsReadOnly) {
+	if toolFilter.ShouldIncludeTool(&ListPopulationsDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", ListPopulationsDef.McpTool.Name))
 		mcp.AddTool(server, ListPopulationsDef.McpTool, ListPopulationsHandler(populationsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(CreatePopulationDef.McpTool.Name, CreatePopulationDef.IsReadOnly) {
+	if toolFilter.ShouldIncludeTool(&CreatePopulationDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", CreatePopulationDef.McpTool.Name))
 		mcp.AddTool(server, CreatePopulationDef.McpTool, CreatePopulationHandler(populationsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(GetPopulationByIdDef.McpTool.Name, GetPopulationByIdDef.IsReadOnly) {
+	if toolFilter.ShouldIncludeTool(&GetPopulationByIdDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetPopulationByIdDef.McpTool.Name))
 		mcp.AddTool(server, GetPopulationByIdDef.McpTool, GetPopulationByIdHandler(populationsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(UpdatePopulationByIdDef.McpTool.Name, UpdatePopulationByIdDef.IsReadOnly) {
+	if toolFilter.ShouldIncludeTool(&UpdatePopulationByIdDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", UpdatePopulationByIdDef.McpTool.Name))
 		mcp.AddTool(server, UpdatePopulationByIdDef.McpTool, UpdatePopulationByIdHandler(populationsClientFactory, initializeAuthContext))
 	}

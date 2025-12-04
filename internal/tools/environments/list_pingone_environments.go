@@ -17,7 +17,6 @@ import (
 )
 
 var ListEnvironmentsDef = types.ToolDefinition{
-	IsReadOnly: true,
 	ValidationPolicy: &types.ToolValidationPolicy{
 		ProductionEnvironmentNotApplicable: true, // Tool not applicable to a single environment
 	},

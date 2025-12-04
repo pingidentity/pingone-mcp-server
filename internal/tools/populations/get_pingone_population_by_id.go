@@ -18,7 +18,6 @@ import (
 )
 
 var GetPopulationByIdDef = types.ToolDefinition{
-	IsReadOnly: true,
 	ValidationPolicy: &types.ToolValidationPolicy{
 		AllowProductionEnvironmentRead: true, // this is true while the tool does not return any actual user data
 	},
