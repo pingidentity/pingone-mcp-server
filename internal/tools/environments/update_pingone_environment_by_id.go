@@ -18,11 +18,17 @@ import (
 )
 
 var UpdateEnvironmentByIdDef = types.ToolDefinition{
-	IsReadOnly: false,
 	McpTool: &mcp.Tool{
-		Name:         "update_environment_by_id",
-		Title:        "Update PingOne Environment by ID",
-		Description:  "Update an environment's configuration by its unique ID.",
+		Name:  "update_environment_by_id",
+		Title: "Update PingOne Environment by ID",
+		Description: `Update environment configuration using full replacement (HTTP PUT).
+
+WORKFLOW - Required to avoid data loss:
+1. Call 'get_environment_by_id' to fetch current configuration
+2. Modify only the fields you want to change
+3. Pass the complete merged object to this tool
+
+Omitted optional fields will be cleared. Common updates: name, description, type (SANDBOX→PRODUCTION is permanent). Cannot change: region, ID.`,
 		InputSchema:  schema.MustGenerateSchema[UpdateEnvironmentByIdInput](),
 		OutputSchema: schema.MustGenerateSchema[UpdateEnvironmentByIdOutput](),
 	},
@@ -35,10 +41,10 @@ type UpdateEnvironmentByIdInput struct {
 	EnvironmentId   uuid.UUID                                         `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment to update."`
 	Icon            *string                                           `json:"icon,omitempty" jsonschema:"OPTIONAL. The URL referencing the image to use for the environment icon. The supported image types are JPEG/JPG, PNG, and GIF."`
 	License         *pingone.EnvironmentLicense                       `json:"license,omitempty" jsonschema:"OPTIONAL. The active license associated with this environment. Required only if your organization has more than one active license."`
-	Name            string                                            `json:"name" jsonschema:"REQUIRED. The environment name, which must be unique within an organization."`
-	Region          pingone.EnvironmentRegionCode                     `json:"region" jsonschema:"REQUIRED. The region in which this environment is located. This value is set when the environment is created and cannot be updated. Options are 'NA', 'CA', 'EU', 'AU', 'SG', or 'AP'."`
-	Status          *pingone.EnvironmentStatusValue                   `json:"status,omitempty" jsonschema:"OPTIONAL. The status of the environment. Can be null (operational, not soft-deleted), 'ACTIVE' (operational), or 'DELETE_PENDING' (soft-deleted, non-operational). For PRODUCTION environments, use the Update Environment Status endpoint instead."`
-	Type            pingone.EnvironmentTypeValue                      `json:"type" jsonschema:"REQUIRED. The type of environment. Options are 'PRODUCTION' or 'SANDBOX'. Note: Once a SANDBOX environment is promoted to PRODUCTION, it cannot be demoted back to SANDBOX."`
+	Name            string                                            `json:"name" jsonschema:"REQUIRED. Environment name, must be unique within organization."`
+	Region          pingone.EnvironmentRegionCode                     `json:"region" jsonschema:"REQUIRED. Region code (NA/CA/EU/AU/SG/AP). Set at creation, immutable."`
+	Status          *pingone.EnvironmentStatusValue                   `json:"status,omitempty" jsonschema:"OPTIONAL. ACTIVE or DELETE_PENDING. For PRODUCTION environments, use Update Environment Status endpoint instead."`
+	Type            pingone.EnvironmentTypeValue                      `json:"type" jsonschema:"REQUIRED. PRODUCTION or SANDBOX. SANDBOX can be promoted to PRODUCTION (permanent, cannot revert)."`
 }
 
 // UpdateEnvironmentByIdOutput represents the result of updating an environment

@@ -19,12 +19,17 @@ import (
 )
 
 var GetApplicationByIdDef = types.ToolDefinition{
-	IsReadOnly: true,
+	ValidationPolicy: &types.ToolValidationPolicy{
+		AllowProductionEnvironmentRead: true,
+	},
 	McpTool: &mcp.Tool{
 		Name:        "get_application_by_id",
 		Title:       "Get PingOne Application by ID",
-		Description: "Retrieve an application's configuration by its unique ID within a specified PingOne environment.",
+		Description: "Retrieve application configuration by ID. Use 'list_applications' first if you need to find the application ID. Call before 'update_application_by_id' to get current settings.",
 		InputSchema: schema.MustGenerateSchema[GetApplicationByIdInput](),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
 	},
 }
 

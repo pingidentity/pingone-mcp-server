@@ -18,18 +18,20 @@ import (
 )
 
 var CreateApplicationDef = types.ToolDefinition{
-	IsReadOnly: false,
 	McpTool: &mcp.Tool{
 		Name:         "create_application",
 		Title:        "Create PingOne OIDC Application",
 		Description:  "Create a new OIDC application within a specified PingOne environment.",
 		InputSchema:  schema.MustGenerateSchema[CreateApplicationInput](),
 		OutputSchema: schema.MustGenerateSchema[CreateApplicationOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			DestructiveHint: func() *bool { b := false; return &b }(),
+		},
 	},
 }
 
 type CreateApplicationInput struct {
-	EnvironmentId uuid.UUID                  `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
+	EnvironmentId uuid.UUID                  `json:"environmentId" jsonschema:"REQUIRED. Environment UUID."`
 	Application   management.ApplicationOIDC `json:"application" jsonschema:"REQUIRED. The OIDC application configuration details"`
 }
 
