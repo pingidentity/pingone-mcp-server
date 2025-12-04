@@ -90,6 +90,9 @@ func GetEnvironmentServicesByIdHandler(environmentsClientFactory EnvironmentsCli
 			slog.String("environmentId", input.EnvironmentId.String()),
 			slog.Int("productCount", len(services.Products)))
 
+		// Filter out _links field from response
+		services.Links = nil
+
 		result := &GetEnvironmentServicesByIdOutput{
 			Services: *services,
 		}

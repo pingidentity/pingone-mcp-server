@@ -90,6 +90,9 @@ func GetEnvironmentByIdHandler(environmentsClientFactory EnvironmentsClientFacto
 			slog.String("environmentName", environment.Name),
 		)
 
+		// Filter out _links field from response
+		environment.Links = nil
+
 		result := &GetEnvironmentByIdOutput{
 			Environment: *environment,
 		}

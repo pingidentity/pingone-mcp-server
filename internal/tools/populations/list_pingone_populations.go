@@ -101,6 +101,11 @@ func ListPopulationsHandler(populationsClientFactory PopulationsClientFactory, i
 			result.Populations = append(result.Populations, next.EntityArray.Embedded.Populations...)
 		}
 
+		// Filter out _links field from all population responses
+		for i := range result.Populations {
+			result.Populations[i].Links = nil
+		}
+
 		return nil, &result, nil
 	}
 }

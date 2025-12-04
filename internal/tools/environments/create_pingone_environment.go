@@ -116,6 +116,9 @@ func CreateEnvironmentHandler(environmentsClientFactory EnvironmentsClientFactor
 			slog.String("environmentId", envResponse.Id.String()),
 			slog.String("name", envResponse.Name))
 
+		// Filter out _links field from response
+		envResponse.Links = nil
+
 		result := &CreateEnvironmentOutput{
 			Environment: *envResponse,
 		}

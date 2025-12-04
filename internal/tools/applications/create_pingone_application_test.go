@@ -15,6 +15,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
+	mcptestutils "github.com/pingidentity/pingone-mcp-server/internal/testutils/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/applications"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 	"github.com/stretchr/testify/assert"
@@ -180,7 +181,7 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 
 			handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 
-			server := testutils.TestMcpServer(t)
+			server := mcptestutils.TestMcpServer(t)
 			mcp.AddTool(server, applications.CreateApplicationDef.McpTool, handler)
 
 			// Execute over MCP
@@ -188,7 +189,7 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 				EnvironmentId: testEnvironmentId,
 				Application:   tc.inputApplication,
 			}
-			output, err := testutils.CallToolOverMcp(t, server, applications.CreateApplicationDef.McpTool.Name, input)
+			output, err := mcptestutils.CallToolOverMcp(t, server, applications.CreateApplicationDef.McpTool.Name, input)
 
 			require.NoError(t, err, "Expect no error calling tool")
 			require.NotNil(t, output, "Expect non-nil output")
@@ -318,7 +319,7 @@ func TestCreateApplicationHandler_JSONSchemaValidationFailure(t *testing.T) {
 			// The mock won't be called because MCP should reject the input before reaching the handler
 			mockClient := &mockPingOneClientApplicationsWrapper{}
 
-			server := testutils.TestMcpServer(t)
+			server := mcptestutils.TestMcpServer(t)
 			handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 			mcp.AddTool(server, applications.CreateApplicationDef.McpTool, handler)
 
@@ -326,7 +327,7 @@ func TestCreateApplicationHandler_JSONSchemaValidationFailure(t *testing.T) {
 				EnvironmentId: testEnvironmentId,
 				Application:   tc.malformedApp,
 			}
-			_, err := testutils.CallToolOverMcp(t, server, applications.CreateApplicationDef.McpTool.Name, input)
+			_, err := mcptestutils.CallToolOverMcp(t, server, applications.CreateApplicationDef.McpTool.Name, input)
 
 			require.Error(t, err, "Expected MCP to reject request due to JSON schema validation failure that %s", tc.description)
 			assert.Contains(t, err.Error(), tc.expectedErrorMsg, "Error should mention the specific oneOf validation issue")
