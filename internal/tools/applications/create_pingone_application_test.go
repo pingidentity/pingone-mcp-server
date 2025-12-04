@@ -99,9 +99,7 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 			handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 			input := applications.CreateApplicationInput{
 				EnvironmentId: testEnvironmentId,
-				ApplicationParent: applications.OIDCApplicationModel{
-					ApplicationOIDC: tc.inputApplication,
-				},
+				Application:   *tc.inputApplication,
 			}
 
 			// Execute
@@ -130,10 +128,10 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 			err = json.Unmarshal(jsonBytes, outputApplication)
 			require.NoError(t, err)
 
-			assert.NotNil(t, outputApplication.ApplicationParent.ApplicationOIDC)
+			assert.NotNil(t, outputApplication.Application)
 
 			// Assert the returned application matches expected configuration
-			assertOIDCApplicationMatches(t, tc.expectedApplication, outputApplication.ApplicationParent.ApplicationOIDC)
+			assertOIDCApplicationMatches(t, tc.expectedApplication, &outputApplication.Application)
 
 			mockClient.AssertExpectations(t)
 		})
@@ -151,9 +149,7 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 			// Execute over MCP
 			input := applications.CreateApplicationInput{
 				EnvironmentId: testEnvironmentId,
-				ApplicationParent: applications.OIDCApplicationModel{
-					ApplicationOIDC: tc.inputApplication,
-				},
+				Application:   *tc.inputApplication,
 			}
 			output, err := testutils.CallToolOverMcp(t, server, applications.CreateApplicationDef.McpTool.Name, input)
 
@@ -179,10 +175,10 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 			err = json.Unmarshal(jsonBytes, outputApplication)
 			require.NoError(t, err)
 
-			assert.NotNil(t, outputApplication.ApplicationParent.ApplicationOIDC)
+			assert.NotNil(t, outputApplication.Application)
 
 			// Assert the returned application matches expected configuration
-			assertOIDCApplicationMatches(t, tc.expectedApplication, outputApplication.ApplicationParent.ApplicationOIDC)
+			assertOIDCApplicationMatches(t, tc.expectedApplication, &outputApplication.Application)
 
 			mockClient.AssertExpectations(t)
 		})
@@ -206,9 +202,7 @@ func TestCreateApplicationHandler_ContextCancellation(t *testing.T) {
 	req := &mcp.CallToolRequest{}
 	input := applications.CreateApplicationInput{
 		EnvironmentId: testEnvironmentId,
-		ApplicationParent: applications.OIDCApplicationModel{
-			ApplicationOIDC: testApp.ApplicationOIDC,
-		},
+		Application:   *testApp.ApplicationOIDC,
 	}
 
 	// Execute
@@ -241,9 +235,7 @@ func TestCreateApplicationHandler_APIErrors(t *testing.T) {
 			// Execute
 			mcpResult, response, err := handler(context.Background(), &mcp.CallToolRequest{}, applications.CreateApplicationInput{
 				EnvironmentId: testEnvironmentId,
-				ApplicationParent: applications.OIDCApplicationModel{
-					ApplicationOIDC: testApp.ApplicationOIDC,
-				},
+				Application:   *testApp.ApplicationOIDC,
 			})
 
 			// Assert
@@ -260,15 +252,13 @@ func TestCreateApplicationHandler_GetAuthenticatedClientError(t *testing.T) {
 	req := &mcp.CallToolRequest{}
 	input := applications.CreateApplicationInput{
 		EnvironmentId: testEnvironmentId,
-		ApplicationParent: applications.OIDCApplicationModel{
-			ApplicationOIDC: &management.ApplicationOIDC{
-				Name:                    "Test App",
-				Enabled:                 true,
-				Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
-				Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
-				GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
-				TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
-			},
+		Application: management.ApplicationOIDC{
+			Name:                    "Test App",
+			Enabled:                 true,
+			Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
+			Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
+			GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
+			TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
 		},
 	}
 
@@ -287,15 +277,13 @@ func TestCreateApplicationHandler_InitializeAuthContextError(t *testing.T) {
 	req := &mcp.CallToolRequest{}
 	input := applications.CreateApplicationInput{
 		EnvironmentId: testEnvironmentId,
-		ApplicationParent: applications.OIDCApplicationModel{
-			ApplicationOIDC: &management.ApplicationOIDC{
-				Name:                    "Test App",
-				Enabled:                 true,
-				Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
-				Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
-				GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
-				TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
-			},
+		Application: management.ApplicationOIDC{
+			Name:                    "Test App",
+			Enabled:                 true,
+			Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
+			Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
+			GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
+			TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
 		},
 	}
 
@@ -370,9 +358,7 @@ func TestCreateApplicationHandler_InitializeAuthContext(t *testing.T) {
 			req := &mcp.CallToolRequest{}
 			input := applications.CreateApplicationInput{
 				EnvironmentId: testEnvironmentId,
-				ApplicationParent: applications.OIDCApplicationModel{
-					ApplicationOIDC: testOIDCApp.ApplicationOIDC,
-				},
+				Application:   *testOIDCApp.ApplicationOIDC,
 			}
 
 			_, _, err := handler(context.Background(), req, input)
@@ -413,9 +399,7 @@ func TestCreateApplicationHandler_RealClient(t *testing.T) {
 	handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(clientWrapper, nil), testutils.MockContextInitializer())
 	input := applications.CreateApplicationInput{
 		EnvironmentId: testEnvironmentId,
-		ApplicationParent: applications.OIDCApplicationModel{
-			ApplicationOIDC: &testApp,
-		},
+		Application:   testApp,
 	}
 
 	mcpResult, structuredResponse, err := handler(context.Background(), req, input)
@@ -432,6 +416,6 @@ func TestCreateApplicationHandler_RealClient(t *testing.T) {
 	require.NoError(t, err, "Failed to unmarshal structured response")
 
 	// Verify the created application matches the input
-	assert.NotNil(t, outputApplication.ApplicationParent.ApplicationOIDC, "Application should not be nil")
-	assertOIDCApplicationMatches(t, &testApp, outputApplication.ApplicationParent.ApplicationOIDC)
+	assert.NotNil(t, outputApplication.Application, "Application should not be nil")
+	assertOIDCApplicationMatches(t, &testApp, &outputApplication.Application)
 }

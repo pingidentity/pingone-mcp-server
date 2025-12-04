@@ -29,13 +29,13 @@ var UpdateApplicationByIdDef = types.ToolDefinition{
 }
 
 type UpdateApplicationByIdInput struct {
-	EnvironmentId     uuid.UUID            `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
-	ApplicationId     uuid.UUID            `json:"applicationId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne application"`
-	ApplicationParent OIDCApplicationModel `json:"applicationOIDC" jsonschema:"REQUIRED. The OIDC application configuration details"`
+	EnvironmentId uuid.UUID                  `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
+	ApplicationId uuid.UUID                  `json:"applicationId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne application"`
+	Application   management.ApplicationOIDC `json:"application" jsonschema:"REQUIRED. The OIDC application configuration details"`
 }
 
 type UpdateApplicationByIdOutput struct {
-	ApplicationParent OIDCApplicationModel `json:"applicationOIDC" jsonschema:"The updated application configuration details"`
+	Application management.ApplicationOIDC `json:"application" jsonschema:"The updated application configuration details"`
 }
 
 func UpdateApplicationByIdHandler(applicationsClientFactory ApplicationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
@@ -69,7 +69,7 @@ func UpdateApplicationByIdHandler(applicationsClientFactory ApplicationsClientFa
 		)
 
 		updateRequest := management.UpdateApplicationRequest{
-			ApplicationOIDC: input.ApplicationParent.ApplicationOIDC,
+			ApplicationOIDC: &input.Application,
 		}
 
 		// Call the API to update the application
@@ -94,9 +94,7 @@ func UpdateApplicationByIdHandler(applicationsClientFactory ApplicationsClientFa
 		)
 
 		result := &UpdateApplicationByIdOutput{
-			ApplicationParent: OIDCApplicationModel{
-				ApplicationOIDC: applicationResponse.ApplicationOIDC,
-			},
+			Application: *applicationResponse.ApplicationOIDC,
 		}
 
 		return nil, result, nil
