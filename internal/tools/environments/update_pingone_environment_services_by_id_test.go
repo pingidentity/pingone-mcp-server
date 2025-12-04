@@ -15,6 +15,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
 	mcptestutils "github.com/pingidentity/pingone-mcp-server/internal/testutils/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
+	envtestutils "github.com/pingidentity/pingone-mcp-server/internal/tools/environments/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +24,7 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 	tests := []struct {
 		name            string
 		input           environments.UpdateEnvironmentServicesByIdInput
-		setupMock       func(*mockPingOneClientEnvironmentsWrapper, uuid.UUID)
+		setupMock       func(*envtestutils.MockEnvironmentsClient, uuid.UUID)
 		wantErr         bool
 		wantErrContains string
 		validateOutput  func(*testing.T, *environments.UpdateEnvironmentServicesByIdOutput)
@@ -37,7 +38,7 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 					{Type: string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_MFA)},
 				},
 			},
-			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
+			setupMock: func(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID) {
 				// Mock GET call to retrieve current services (empty initially)
 				currentServices := &pingone.EnvironmentBillOfMaterialsResponse{
 					Products: []pingone.EnvironmentBillOfMaterialsProduct{},
@@ -76,7 +77,7 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 					{Type: string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE)},
 				},
 			},
-			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
+			setupMock: func(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID) {
 				// Mock GET call to retrieve current services (empty initially)
 				currentServices := &pingone.EnvironmentBillOfMaterialsResponse{
 					Products: []pingone.EnvironmentBillOfMaterialsProduct{},
@@ -111,7 +112,7 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 					{Type: string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_RISK)},
 				},
 			},
-			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
+			setupMock: func(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID) {
 				// Mock GET call to retrieve current services (empty initially)
 				currentServices := &pingone.EnvironmentBillOfMaterialsResponse{
 					Products: []pingone.EnvironmentBillOfMaterialsProduct{},
@@ -153,7 +154,7 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 					{Type: environments.NeoServiceValue},
 				},
 			},
-			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
+			setupMock: func(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID) {
 				// Mock GET call to retrieve current services (empty initially)
 				currentServices := &pingone.EnvironmentBillOfMaterialsResponse{
 					Products: []pingone.EnvironmentBillOfMaterialsProduct{},
@@ -217,7 +218,7 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 					{Type: string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE)},
 				},
 			},
-			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
+			setupMock: func(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID) {
 				// Mock GET call fails with 404
 				mockGetEnvironmentServicesByIdSetup(m, envID, nil, 404, errors.New("environment not found"))
 			},
@@ -232,7 +233,7 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 					{Type: string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE)},
 				},
 			},
-			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
+			setupMock: func(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID) {
 				// Mock GET call returns nil response
 				mockGetEnvironmentServicesByIdSetup(m, envID, nil, 200, nil)
 			},
@@ -248,7 +249,7 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 					{Type: string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_MFA)},
 				},
 			},
-			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
+			setupMock: func(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID) {
 				// Mock GET call returns existing services with BASE already configured
 				baseId := uuid.New()
 				desc := "Existing BASE product description"
@@ -343,7 +344,7 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 					},
 				},
 			},
-			setupMock: func(m *mockPingOneClientEnvironmentsWrapper, envID uuid.UUID) {
+			setupMock: func(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID) {
 				// Mock GET call to retrieve current services (empty initially)
 				currentServices := &pingone.EnvironmentBillOfMaterialsResponse{
 					Products: []pingone.EnvironmentBillOfMaterialsProduct{},
@@ -411,9 +412,9 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 		// Test calling the handler directly
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
-			mockClient := &mockPingOneClientEnvironmentsWrapper{}
+			mockClient := &envtestutils.MockEnvironmentsClient{}
 			tt.setupMock(mockClient, tt.input.EnvironmentId)
-			handler := environments.UpdateEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 			req := &mcp.CallToolRequest{}
 
 			// Execute
@@ -438,9 +439,9 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 		// Test via call over MCP
 		t.Run(tt.name+" via MCP", func(t *testing.T) {
 			// Setup
-			mockClient := &mockPingOneClientEnvironmentsWrapper{}
+			mockClient := &envtestutils.MockEnvironmentsClient{}
 			tt.setupMock(mockClient, tt.input.EnvironmentId)
-			handler := environments.UpdateEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 
 			server := mcptestutils.TestMcpServer(t)
 			mcp.AddTool(server, environments.UpdateEnvironmentServicesByIdDef.McpTool, handler)
@@ -482,12 +483,12 @@ func TestUpdateEnvironmentServicesByIdHandler_ContextCancellation(t *testing.T) 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
-	mockClient := &mockPingOneClientEnvironmentsWrapper{}
+	mockClient := &envtestutils.MockEnvironmentsClient{}
 	envID := testEnv1.id
 	// Mock should return context.Canceled error when context is already cancelled
 	mockClient.On("GetEnvironmentServicesById", testutils.CancelledContextMatcher, envID).Return(nil, nil, context.Canceled)
 
-	handler := environments.UpdateEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+	handler := environments.UpdateEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 	req := &mcp.CallToolRequest{}
 	input := environments.UpdateEnvironmentServicesByIdInput{
 		EnvironmentId: testEnv1.id,
@@ -522,7 +523,7 @@ func TestUpdateEnvironmentServicesByIdHandler_APIErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			// Setup
-			mockClient := &mockPingOneClientEnvironmentsWrapper{}
+			mockClient := &envtestutils.MockEnvironmentsClient{}
 			// Mock GET call returns empty services successfully
 			currentServices := &pingone.EnvironmentBillOfMaterialsResponse{
 				Products: []pingone.EnvironmentBillOfMaterialsProduct{},
@@ -530,7 +531,7 @@ func TestUpdateEnvironmentServicesByIdHandler_APIErrors(t *testing.T) {
 			mockGetEnvironmentServicesByIdSetup(mockClient, envID, currentServices, 200, nil)
 			// Mock UPDATE call returns the API error
 			mockUpdateEnvironmentServicesByIdSetup(mockClient, envID, nil, nil, tt.StatusCode, tt.ApiError)
-			handler := environments.UpdateEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 
 			// Execute
 			mcpResult, output, err := handler(context.Background(), &mcp.CallToolRequest{}, input)
@@ -543,9 +544,9 @@ func TestUpdateEnvironmentServicesByIdHandler_APIErrors(t *testing.T) {
 }
 
 func TestUpdateEnvironmentServicesByIdHandler_GetAuthenticatedClientError(t *testing.T) {
-	mockClient := &mockPingOneClientEnvironmentsWrapper{}
+	mockClient := &envtestutils.MockEnvironmentsClient{}
 	clientFactoryErr := errors.New("failed to get authenticated client")
-	handler := environments.UpdateEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
+	handler := environments.UpdateEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
 	req := &mcp.CallToolRequest{}
 	input := environments.UpdateEnvironmentServicesByIdInput{
 		EnvironmentId: testEnv1.id,
@@ -563,9 +564,9 @@ func TestUpdateEnvironmentServicesByIdHandler_GetAuthenticatedClientError(t *tes
 }
 
 func TestUpdateEnvironmentServicesByIdHandler_InitializeAuthContextError(t *testing.T) {
-	mockClient := &mockPingOneClientEnvironmentsWrapper{}
+	mockClient := &envtestutils.MockEnvironmentsClient{}
 	initContextErr := errors.New("failed to initialize auth context")
-	handler := environments.UpdateEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
+	handler := environments.UpdateEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
 	req := &mcp.CallToolRequest{}
 	input := environments.UpdateEnvironmentServicesByIdInput{
 		EnvironmentId: testEnv1.id,
@@ -596,7 +597,7 @@ func TestUpdateEnvironmentServicesByIdHandler_RealClient(t *testing.T) {
 	testEnvID := uuid.MustParse("00000000-0000-0000-0000-000000000000")
 
 	// Get current services first
-	getHandler := environments.GetEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(clientWrapper, nil), testutils.MockContextInitializer())
+	getHandler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(clientWrapper, nil), testutils.MockContextInitializer())
 	_, getOutput, err := getHandler(t.Context(), &mcp.CallToolRequest{}, environments.GetEnvironmentServicesByIdInput{
 		EnvironmentId: testEnvID,
 	})
@@ -604,7 +605,7 @@ func TestUpdateEnvironmentServicesByIdHandler_RealClient(t *testing.T) {
 	require.NotNil(t, getOutput)
 
 	// Update with the same services (no-op update)
-	handler := environments.UpdateEnvironmentServicesByIdHandler(NewMockPingOneClientEnvironmentsWrapperFactory(clientWrapper, nil), testutils.MockContextInitializer())
+	handler := environments.UpdateEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(clientWrapper, nil), testutils.MockContextInitializer())
 
 	// Convert products to EnvironmentServiceInput slice
 	var services []environments.EnvironmentServiceInput
