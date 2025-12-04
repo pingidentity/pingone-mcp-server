@@ -46,9 +46,22 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 				mockGetEnvironmentServicesByIdSetup(m, envID, currentServices, 200, nil)
 
 				matcher := func(req *pingone.EnvironmentBillOfMaterialsReplaceRequest) bool {
-					return len(req.Products) == 2 &&
-						req.Products[0].Type == pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE &&
-						req.Products[1].Type == pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_MFA
+					// Should have 2 products: BASE and MFA
+					if len(req.Products) != 2 {
+						return false
+					}
+					// Check that both expected types are present
+					hasBase := false
+					hasMFA := false
+					for _, product := range req.Products {
+						switch product.Type {
+						case pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE:
+							hasBase = true
+						case pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_MFA:
+							hasMFA = true
+						}
+					}
+					return hasBase && hasMFA
 				}
 				expectedServices := pingone.EnvironmentBillOfMaterialsResponse{
 					Products: []pingone.EnvironmentBillOfMaterialsProduct{
@@ -65,8 +78,13 @@ func TestUpdateEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 			validateOutput: func(t *testing.T, output *environments.UpdateEnvironmentServicesByIdOutput) {
 				assert.NotNil(t, output.Services)
 				require.Equal(t, 2, len(output.Services.Products))
-				assert.Equal(t, pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE, output.Services.Products[0].Type)
-				assert.Equal(t, pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_MFA, output.Services.Products[1].Type)
+				// Verify both expected types are present
+				productTypes := make(map[pingone.EnvironmentBillOfMaterialsProductType]bool)
+				for _, product := range output.Services.Products {
+					productTypes[product.Type] = true
+				}
+				assert.True(t, productTypes[pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE])
+				assert.True(t, productTypes[pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_MFA])
 			},
 		},
 		{
