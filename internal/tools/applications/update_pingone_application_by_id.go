@@ -93,6 +93,8 @@ func UpdateApplicationByIdHandler(applicationsClientFactory ApplicationsClientFa
 			slog.String("applicationId", input.ApplicationId.String()),
 		)
 
+		// Filter out the _links field
+		applicationResponse.ApplicationOIDC.Links = nil
 		result := &UpdateApplicationByIdOutput{
 			Application: *applicationResponse.ApplicationOIDC,
 		}

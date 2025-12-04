@@ -91,6 +91,8 @@ func CreateApplicationHandler(applicationsClientFactory ApplicationsClientFactor
 			slog.String("environmentId", input.EnvironmentId.String()),
 		)
 
+		// Filter out the _links field
+		applicationResponse.ApplicationOIDC.Links = nil
 		result := &CreateApplicationOutput{
 			Application: *applicationResponse.ApplicationOIDC,
 		}
