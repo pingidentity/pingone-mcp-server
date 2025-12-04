@@ -19,6 +19,9 @@ import (
 
 var GetEnvironmentServicesByIdDef = types.ToolDefinition{
 	IsReadOnly: true,
+	ValidationPolicy: &types.ToolValidationPolicy{
+		AllowProductionEnvironmentRead: true,
+	},
 	McpTool: &mcp.Tool{
 		Name:         "get_environment_services_by_id",
 		Title:        "Get PingOne Environment Services by ID",

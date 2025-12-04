@@ -19,6 +19,9 @@ import (
 
 var ListApplicationsDef = types.ToolDefinition{
 	IsReadOnly: true,
+	ValidationPolicy: &types.ToolValidationPolicy{
+		AllowProductionEnvironmentRead: true,
+	},
 	McpTool: &mcp.Tool{
 		Name:         "list_applications",
 		Title:        "List PingOne Applications",
