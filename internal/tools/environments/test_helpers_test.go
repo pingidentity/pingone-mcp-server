@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pingidentity/pingone-go-client/pingone"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
-envtestutils "github.com/pingidentity/pingone-mcp-server/internal/tools/environments/testutils"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
+	envtestutils "github.com/pingidentity/pingone-mcp-server/internal/tools/environments/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -94,6 +94,15 @@ func assertEnvironmentMatches(t *testing.T, expected environmentTestData, actual
 	assert.Equal(t, expected.name, actual.Name, "Environment name should match")
 	assert.Equal(t, expected.id, actual.Id, "Environment ID should match")
 	assert.Equal(t, expected.region, actual.Region, "Environment region should match")
+	assert.Equal(t, expected.envType, actual.Type, "Environment type should match")
+}
+
+// assertEnvironmentSummaryMatches verifies that an actual environment matches the expected test data
+func assertEnvironmentSummaryMatches(t *testing.T, expected environmentTestData, actual environments.EnvironmentSummary) {
+	t.Helper()
+
+	assert.Equal(t, expected.name, actual.Name, "Environment name should match")
+	assert.Equal(t, expected.id, actual.Id, "Environment ID should match")
 	assert.Equal(t, expected.envType, actual.Type, "Environment type should match")
 }
 

@@ -6,7 +6,9 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-go-client/pingone"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
@@ -50,9 +52,9 @@ type ListEnvironmentsInput struct {
 
 // EnvironmentSummary contains the essential fields of an environment
 type EnvironmentSummary struct {
-	Id        string                          `json:"id" jsonschema:"The unique identifier of the environment"`
+	Id        uuid.UUID                       `json:"id" jsonschema:"The unique identifier of the environment"`
 	Name      string                          `json:"name" jsonschema:"The name of the environment"`
-	CreatedAt string                          `json:"createdAt" jsonschema:"The timestamp when the environment was created"`
+	CreatedAt time.Time                       `json:"createdAt" jsonschema:"The timestamp when the environment was created"`
 	Type      pingone.EnvironmentTypeValue    `json:"type" jsonschema:"The type of the environment (e.g., PRODUCTION, SANDBOX)"`
 	Status    *pingone.EnvironmentStatusValue `json:"status,omitempty" jsonschema:"OPTIONAL. The status of the environment (e.g., ACTIVE, DELETE_PENDING)"`
 }
@@ -126,9 +128,9 @@ func ListEnvironmentsHandler(environmentsClientFactory EnvironmentsClientFactory
 
 			for _, env := range next.Data.Embedded.Environments {
 				result.Environments = append(result.Environments, EnvironmentSummary{
-					Id:        env.Id.String(),
+					Id:        env.Id,
 					Name:      env.Name,
-					CreatedAt: env.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+					CreatedAt: env.CreatedAt,
 					Type:      env.Type,
 					Status:    env.Status,
 				})
