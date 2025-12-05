@@ -48,9 +48,18 @@ type ListEnvironmentsInput struct {
 	Filter *string `json:"filter,omitempty" jsonschema:"OPTIONAL. SCIM filter. Only filters that 'name' with 'sw' (starts with); 'id', 'organization.id', 'license.id', 'status' with 'eq' (equals); 'and' to combine are valid."`
 }
 
+// EnvironmentSummary contains the essential fields of an environment
+type EnvironmentSummary struct {
+	Id        string                          `json:"id" jsonschema:"The unique identifier of the environment"`
+	Name      string                          `json:"name" jsonschema:"The name of the environment"`
+	CreatedAt string                          `json:"createdAt" jsonschema:"The timestamp when the environment was created"`
+	Type      pingone.EnvironmentTypeValue    `json:"type" jsonschema:"The type of the environment (e.g., PRODUCTION, SANDBOX)"`
+	Status    *pingone.EnvironmentStatusValue `json:"status,omitempty" jsonschema:"OPTIONAL. The status of the environment (e.g., ACTIVE, DELETE_PENDING)"`
+}
+
 // ListEnvironmentsOutput represents the result of listing environments
 type ListEnvironmentsOutput struct {
-	Environments []pingone.EnvironmentResponse `json:"environments" jsonschema:"List of environments with their details including ID, name, type, region, and metadata"`
+	Environments []EnvironmentSummary `json:"environments" jsonschema:"List of environments with their basic details"`
 }
 
 // ListEnvironmentsHandler lists all PingOne environments using the provided client
@@ -94,7 +103,7 @@ func ListEnvironmentsHandler(environmentsClientFactory EnvironmentsClientFactory
 
 		// Aggregate all pages into one response
 		result := ListEnvironmentsOutput{
-			Environments: []pingone.EnvironmentResponse{},
+			Environments: []EnvironmentSummary{},
 		}
 		for next, err := range pagedIterator {
 			logger.LogHttpResponse(ctx, next.HTTPResponse)
@@ -115,12 +124,15 @@ func ListEnvironmentsHandler(environmentsClientFactory EnvironmentsClientFactory
 			logger.FromContext(ctx).Debug("Retrieved environments page",
 				slog.Int("count", len(next.Data.Embedded.Environments)))
 
-			result.Environments = append(result.Environments, next.Data.Embedded.Environments...)
-		}
-
-		// Filter out _links field from all environment responses
-		for i := range result.Environments {
-			result.Environments[i].Links = nil
+			for _, env := range next.Data.Embedded.Environments {
+				result.Environments = append(result.Environments, EnvironmentSummary{
+					Id:        env.Id.String(),
+					Name:      env.Name,
+					CreatedAt: env.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+					Type:      env.Type,
+					Status:    env.Status,
+				})
+			}
 		}
 
 		return nil, &result, nil
