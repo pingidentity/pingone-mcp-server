@@ -119,51 +119,50 @@ func ListApplicationsHandler(clientFactory ApplicationsClientFactory, initialize
 
 const adminConsoleAppName = "PingOne Admin Console"
 
+// appFields is an interface satisfied by all application types for extracting common fields
+type appFields interface {
+	GetId() string
+	GetName() string
+	GetProtocol() management.EnumApplicationProtocol
+	GetType() management.EnumApplicationType
+	GetCreatedAt() time.Time
+}
+
 func getApplicationSummary(application *management.ReadOneApplication200Response) (*ApplicationSummary, error) {
-	result := ApplicationSummary{}
+	var app appFields
 	switch {
 	case application.ApplicationExternalLink != nil:
-		result.Id = application.ApplicationExternalLink.Id
-		result.Name = application.ApplicationExternalLink.Name
-		result.Protocol = &application.ApplicationExternalLink.Protocol
-		result.Type = &application.ApplicationExternalLink.Type
-		result.CreatedAt = application.ApplicationExternalLink.CreatedAt
+		app = application.ApplicationExternalLink
 	case application.ApplicationOIDC != nil:
-		result.Id = application.ApplicationOIDC.Id
-		result.Name = application.ApplicationOIDC.Name
-		result.Protocol = &application.ApplicationOIDC.Protocol
-		result.Type = &application.ApplicationOIDC.Type
-		result.CreatedAt = application.ApplicationOIDC.CreatedAt
+		app = application.ApplicationOIDC
 	case application.ApplicationPingOneAdminConsole != nil:
-		result.Name = adminConsoleAppName
+		// Admin Console is a special case without Id, Protocol, or CreatedAt
 		adminConsoleType := management.ENUMAPPLICATIONTYPE_PING_ONE_ADMIN_CONSOLE
-		result.Type = &adminConsoleType
+		return &ApplicationSummary{
+			Name: adminConsoleAppName,
+			Type: &adminConsoleType,
+		}, nil
 	case application.ApplicationPingOnePortal != nil:
-		result.Id = application.ApplicationPingOnePortal.Id
-		result.Name = application.ApplicationPingOnePortal.Name
-		result.Protocol = &application.ApplicationPingOnePortal.Protocol
-		result.Type = &application.ApplicationPingOnePortal.Type
-		result.CreatedAt = application.ApplicationPingOnePortal.CreatedAt
+		app = application.ApplicationPingOnePortal
 	case application.ApplicationPingOneSelfService != nil:
-		result.Id = application.ApplicationPingOneSelfService.Id
-		result.Name = application.ApplicationPingOneSelfService.Name
-		result.Protocol = &application.ApplicationPingOneSelfService.Protocol
-		result.Type = &application.ApplicationPingOneSelfService.Type
-		result.CreatedAt = application.ApplicationPingOneSelfService.CreatedAt
+		app = application.ApplicationPingOneSelfService
 	case application.ApplicationSAML != nil:
-		result.Id = application.ApplicationSAML.Id
-		result.Name = application.ApplicationSAML.Name
-		result.Protocol = &application.ApplicationSAML.Protocol
-		result.Type = &application.ApplicationSAML.Type
-		result.CreatedAt = application.ApplicationSAML.CreatedAt
+		app = application.ApplicationSAML
 	case application.ApplicationWSFED != nil:
-		result.Id = application.ApplicationWSFED.Id
-		result.Name = application.ApplicationWSFED.Name
-		result.Protocol = &application.ApplicationWSFED.Protocol
-		result.Type = &application.ApplicationWSFED.Type
-		result.CreatedAt = application.ApplicationWSFED.CreatedAt
+		app = application.ApplicationWSFED
 	default:
 		return nil, fmt.Errorf("unknown application type in response")
 	}
-	return &result, nil
+
+	protocol := app.GetProtocol()
+	appType := app.GetType()
+	id := app.GetId()
+	createdAt := app.GetCreatedAt()
+	return &ApplicationSummary{
+		Id:        &id,
+		Name:      app.GetName(),
+		Protocol:  &protocol,
+		Type:      &appType,
+		CreatedAt: &createdAt,
+	}, nil
 }
