@@ -87,7 +87,9 @@ func ListApplicationsHandler(clientFactory ApplicationsClientFactory, initialize
 			return nil, nil, toolErr
 		}
 		// Aggregate all pages into one response
-		result := ListApplicationsOutput{}
+		result := ListApplicationsOutput{
+			Applications: []ApplicationSummary{},
+		}
 		for next, err := range pagedIterator {
 			logger.LogHttpResponse(ctx, next.HTTPResponse)
 			if err != nil {
