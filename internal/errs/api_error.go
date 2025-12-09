@@ -46,17 +46,12 @@ func (e *ApiError) Error() string {
 
 		if originalErrorMsg != "" {
 			msg = originalErrorMsg
+		} else if e.ResponseBody != "" {
+			// Append response body if available and not already parsed as a pingone error
+			msg = fmt.Sprintf("Response body: %s", e.ResponseBody)
 		} else {
 			// Fallback to the original error message
 			msg = e.OriginalError.Error()
-			// Append response body if available and not already parsed as a pingone error
-			if e.ResponseBody != "" {
-				if msg != "" {
-					msg = fmt.Sprintf("%s. Response body: %s", msg, e.ResponseBody)
-				} else {
-					msg = fmt.Sprintf("Response body: %s", e.ResponseBody)
-				}
-			}
 		}
 	}
 
