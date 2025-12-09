@@ -153,7 +153,7 @@ func TestListPopulationsHandler_MockClient(t *testing.T) {
 			for i, expectedPopData := range tc.expectedPopResults {
 				if i < len(structuredResponse.Populations) {
 					actualPop := structuredResponse.Populations[i]
-					assertPopulationMatches(t, expectedPopData, actualPop)
+					assertPopulationSummaryMatches(t, expectedPopData, actualPop)
 				}
 			}
 
@@ -200,7 +200,7 @@ func TestListPopulationsHandler_MockClient(t *testing.T) {
 			for i, expectedPopData := range tc.expectedPopResults {
 				if i < len(outputPopulations.Populations) {
 					actualPop := outputPopulations.Populations[i]
-					assertPopulationMatches(t, expectedPopData, actualPop)
+					assertPopulationSummaryMatches(t, expectedPopData, actualPop)
 				}
 			}
 

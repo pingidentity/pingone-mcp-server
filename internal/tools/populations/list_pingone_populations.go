@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/patrickcping/pingone-go-sdk-v2/management"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
@@ -38,8 +37,15 @@ type ListPopulationsInput struct {
 	Filter        *string   `json:"filter,omitempty" jsonschema:"OPTIONAL. SCIM filter. Supported: 'id' with 'eq', 'name' with 'sw'."`
 }
 
+type PopulationSummary struct {
+	Id        *string `json:"id" jsonschema:"The unique identifier of the population"`
+	Name      string  `json:"name" jsonschema:"The name of the population"`
+	Default   *bool   `json:"default,omitempty" jsonschema:"Indicates if this is the default population"`
+	CreatedAt *string `json:"createdAt,omitempty" jsonschema:"The creation timestamp of the population"`
+}
+
 type ListPopulationsOutput struct {
-	Populations []management.Population `json:"populations" jsonschema:"List of populations with their configuration details"`
+	Populations []PopulationSummary `json:"populations" jsonschema:"List of populations with their id and name"`
 }
 
 // ListPopulationsHandler lists all PingOne populations using the provided client
@@ -84,7 +90,7 @@ func ListPopulationsHandler(populationsClientFactory PopulationsClientFactory, i
 		}
 		// Aggregate all pages into one response
 		result := ListPopulationsOutput{
-			Populations: []management.Population{},
+			Populations: []PopulationSummary{},
 		}
 		for next, err := range pagedIterator {
 			logger.LogHttpResponse(ctx, next.HTTPResponse)
@@ -100,12 +106,16 @@ func ListPopulationsHandler(populationsClientFactory PopulationsClientFactory, i
 				return nil, nil, apiErr
 			}
 			logger.FromContext(ctx).Debug("Retrieved populations page", slog.Int("count", len(next.EntityArray.Embedded.Populations)))
-			result.Populations = append(result.Populations, next.EntityArray.Embedded.Populations...)
-		}
 
-		// Filter out _links field from all population responses
-		for i := range result.Populations {
-			result.Populations[i].Links = nil
+			// Convert each population to PopulationSummary
+			for _, pop := range next.EntityArray.Embedded.Populations {
+				result.Populations = append(result.Populations, PopulationSummary{
+					Id:        pop.Id,
+					Name:      pop.Name,
+					Default:   pop.Default,
+					CreatedAt: pop.CreatedAt,
+				})
+			}
 		}
 
 		return nil, &result, nil
