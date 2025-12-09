@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/patrickcping/pingone-go-sdk-v2/management"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
@@ -19,11 +19,11 @@ import (
 
 var CreateApplicationDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
-		Name:         "create_application",
-		Title:        "Create PingOne Application",
-		Description:  "Create an application (choose one type: OIDC/OAuth2 for modern apps, SAML typically for enterprise SSO, or External Link to show on the PingOne application portal). The 'application' field must contain exactly one application type object (applicationOIDC, applicationSAML, applicationExternalLink, or applicationWSFED).",
-		InputSchema:  mustGenerateCreateApplicationSchema[CreateApplicationInput](),
-		OutputSchema: mustGenerateCreateApplicationSchema[CreateApplicationOutput](),
+		Name:         "create_oidc_application",
+		Title:        "Create PingOne OIDC Application",
+		Description:  "Create a new OIDC application within a specified PingOne environment.",
+		InputSchema:  schema.MustGenerateSchema[CreateApplicationInput](),
+		OutputSchema: schema.MustGenerateSchema[CreateApplicationOutput](),
 		Annotations: &mcp.ToolAnnotations{
 			DestructiveHint: func() *bool { b := false; return &b }(),
 		},
@@ -31,23 +31,12 @@ var CreateApplicationDef = types.ToolDefinition{
 }
 
 type CreateApplicationInput struct {
-	EnvironmentId uuid.UUID              `json:"environmentId" jsonschema:"REQUIRED. Environment UUID."`
-	Application   CreateApplicationModel `json:"application" jsonschema:"REQUIRED. Application config. Must contain exactly one type: applicationOIDC, applicationSAML, applicationExternalLink, or applicationWSFED."`
+	EnvironmentId uuid.UUID                  `json:"environmentId" jsonschema:"REQUIRED. Environment UUID."`
+	Application   management.ApplicationOIDC `json:"application" jsonschema:"REQUIRED. The OIDC application configuration details"`
 }
 
 type CreateApplicationOutput struct {
-	Application CreateApplicationModel `json:"application" jsonschema:"The created application details"`
-}
-
-func mustGenerateCreateApplicationSchema[T any]() *jsonschema.Schema {
-	baseSchema := schema.MustGenerateSchema[T]()
-	// Modify the Application property to use the CreateApplicationModel schema with oneOf constraint
-	applicationModelSchema := MustGenerateCreateApplicationModelSchema()
-	if baseSchema.Properties == nil {
-		panic("baseSchema.Properties is nil when generating CreateApplicationInput schema")
-	}
-	baseSchema.Properties["application"] = applicationModelSchema
-	return baseSchema
+	Application management.ApplicationOIDC `json:"application" jsonschema:"The created application details"`
 }
 
 // CreateApplicationHandler creates a new PingOne application using the provided client
@@ -80,7 +69,9 @@ func CreateApplicationHandler(applicationsClientFactory ApplicationsClientFactor
 			slog.String("environmentId", input.EnvironmentId.String()),
 		)
 
-		createRequest := CreateApplicationModelToSDKCreateRequest(input.Application)
+		createRequest := management.CreateApplicationRequest{
+			ApplicationOIDC: &input.Application,
+		}
 
 		// Call the API to create the application
 		applicationResponse, httpResponse, err := client.CreateApplication(ctx, input.EnvironmentId, createRequest)
@@ -92,7 +83,7 @@ func CreateApplicationHandler(applicationsClientFactory ApplicationsClientFactor
 			return nil, nil, apiErr
 		}
 
-		if applicationResponse == nil {
+		if applicationResponse == nil || applicationResponse.ApplicationOIDC == nil {
 			apiErr := errs.NewApiError(httpResponse, fmt.Errorf("no application data in response"))
 			errs.Log(ctx, apiErr)
 			return nil, nil, apiErr
@@ -102,8 +93,10 @@ func CreateApplicationHandler(applicationsClientFactory ApplicationsClientFactor
 			slog.String("environmentId", input.EnvironmentId.String()),
 		)
 
+		// Filter out the _links field
+		applicationResponse.ApplicationOIDC.Links = nil
 		result := &CreateApplicationOutput{
-			Application: CreateApplicationModelFromSDKCreateResponse(*applicationResponse),
+			Application: *applicationResponse.ApplicationOIDC,
 		}
 
 		return nil, result, nil

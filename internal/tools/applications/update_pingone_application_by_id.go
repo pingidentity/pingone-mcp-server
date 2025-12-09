@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/patrickcping/pingone-go-sdk-v2/management"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
@@ -19,9 +19,9 @@ import (
 
 var UpdateApplicationByIdDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
-		Name:  "update_application_by_id",
-		Title: "Update PingOne Application by ID",
-		Description: `Update application configuration using full replacement (HTTP PUT).
+		Name:  "update_oidc_application_by_id",
+		Title: "Update PingOne OIDC Application by ID",
+		Description: `Update OIDC application configuration using full replacement (HTTP PUT).
 
 WORKFLOW - Required to avoid data loss:
 1. Call 'get_application_by_id' to fetch current configuration
@@ -29,30 +29,19 @@ WORKFLOW - Required to avoid data loss:
 3. Pass the complete merged object to this tool
 
 Omitted optional fields will be cleared.`,
-		InputSchema:  mustGenerateUpdateApplicationByIdSchema[UpdateApplicationByIdInput](),
-		OutputSchema: mustGenerateUpdateApplicationByIdSchema[UpdateApplicationByIdOutput](),
+		InputSchema:  schema.MustGenerateSchema[UpdateApplicationByIdInput](),
+		OutputSchema: schema.MustGenerateSchema[UpdateApplicationByIdOutput](),
 	},
 }
 
 type UpdateApplicationByIdInput struct {
-	EnvironmentId uuid.UUID              `json:"environmentId" jsonschema:"REQUIRED. Environment UUID."`
-	ApplicationId uuid.UUID              `json:"applicationId" jsonschema:"REQUIRED. Application UUID."`
-	Application   UpdateApplicationModel `json:"application" jsonschema:"REQUIRED. Complete application config with modifications."`
+	EnvironmentId uuid.UUID                  `json:"environmentId" jsonschema:"REQUIRED. Environment UUID."`
+	ApplicationId uuid.UUID                  `json:"applicationId" jsonschema:"REQUIRED. Application UUID."`
+	Application   management.ApplicationOIDC `json:"application" jsonschema:"REQUIRED. The complete OIDC application config with modifications."`
 }
 
 type UpdateApplicationByIdOutput struct {
-	Application UpdateApplicationModel `json:"application" jsonschema:"The updated application configuration details"`
-}
-
-func mustGenerateUpdateApplicationByIdSchema[T any]() *jsonschema.Schema {
-	baseSchema := schema.MustGenerateSchema[T]()
-	// Modify the Application property to use the UpdateApplicationModel schema with oneOf constraint
-	applicationModelSchema := MustGenerateUpdateApplicationModelSchema()
-	if baseSchema.Properties == nil {
-		panic("baseSchema.Properties is nil when generating UpdateApplicationByIdInput schema")
-	}
-	baseSchema.Properties["application"] = applicationModelSchema
-	return baseSchema
+	Application management.ApplicationOIDC `json:"application" jsonschema:"The updated application configuration details"`
 }
 
 func UpdateApplicationByIdHandler(applicationsClientFactory ApplicationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
@@ -85,7 +74,9 @@ func UpdateApplicationByIdHandler(applicationsClientFactory ApplicationsClientFa
 			slog.String("applicationId", input.ApplicationId.String()),
 		)
 
-		updateRequest := UpdateApplicationModelToSDKUpdateRequest(input.Application)
+		updateRequest := management.UpdateApplicationRequest{
+			ApplicationOIDC: &input.Application,
+		}
 
 		// Call the API to update the application
 		applicationResponse, httpResponse, err := client.UpdateApplicationById(ctx, input.EnvironmentId, input.ApplicationId, updateRequest)
@@ -97,7 +88,7 @@ func UpdateApplicationByIdHandler(applicationsClientFactory ApplicationsClientFa
 			return nil, nil, apiErr
 		}
 
-		if applicationResponse == nil {
+		if applicationResponse == nil || applicationResponse.ApplicationOIDC == nil {
 			apiErr := errs.NewApiError(httpResponse, fmt.Errorf("no application data in response"))
 			errs.Log(ctx, apiErr)
 			return nil, nil, apiErr
@@ -108,8 +99,10 @@ func UpdateApplicationByIdHandler(applicationsClientFactory ApplicationsClientFa
 			slog.String("applicationId", input.ApplicationId.String()),
 		)
 
+		// Filter out the _links field
+		applicationResponse.ApplicationOIDC.Links = nil
 		result := &UpdateApplicationByIdOutput{
-			Application: UpdateApplicationModelFromSDKReadResponse(*applicationResponse),
+			Application: *applicationResponse.ApplicationOIDC,
 		}
 
 		return nil, result, nil

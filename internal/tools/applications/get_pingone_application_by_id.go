@@ -4,12 +4,13 @@ package applications
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 
-	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/patrickcping/pingone-go-sdk-v2/management"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
@@ -22,11 +23,10 @@ var GetApplicationByIdDef = types.ToolDefinition{
 		AllowProductionEnvironmentRead: true,
 	},
 	McpTool: &mcp.Tool{
-		Name:         "get_application_by_id",
-		Title:        "Get PingOne Application by ID",
-		Description:  "Retrieve application configuration by ID. Use 'list_applications' first if you need to find the application ID. Call before 'update_application_by_id' to get current settings.",
-		InputSchema:  schema.MustGenerateSchema[GetApplicationByIdInput](),
-		OutputSchema: MustGenerateGetApplicationByIdOutputSchema(),
+		Name:        "get_application_by_id",
+		Title:       "Get PingOne Application by ID",
+		Description: "Retrieve application configuration by ID. Use 'list_applications' first if you need to find the application ID. Call before 'update_oidc_application_by_id' to get current settings.",
+		InputSchema: schema.MustGenerateSchema[GetApplicationByIdInput](),
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint: true,
 		},
@@ -38,20 +38,6 @@ type GetApplicationByIdInput struct {
 	ApplicationId uuid.UUID `json:"applicationId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne application"`
 }
 
-type GetApplicationByIdOutput struct {
-	Application ReadApplicationModel `json:"application" jsonschema:"The configuration details of the retrieved PingOne application"`
-}
-
-func MustGenerateGetApplicationByIdOutputSchema() *jsonschema.Schema {
-	baseSchema := schema.MustGenerateSchema[GetApplicationByIdOutput]()
-	// Modify the Application property to use the ApplicationModel schema with oneOf constraint
-	if baseSchema.Properties == nil {
-		panic("baseSchema.Properties is nil when generating GetApplicationByIdOutput schema")
-	}
-	baseSchema.Properties["application"] = MustGenerateReadApplicationModelSchema()
-	return baseSchema
-}
-
 // GetApplicationByIdHandler retrieves a PingOne application by ID using the provided client
 func GetApplicationByIdHandler(applicationsClientFactory ApplicationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
 	ctx context.Context,
@@ -59,10 +45,10 @@ func GetApplicationByIdHandler(applicationsClientFactory ApplicationsClientFacto
 	input GetApplicationByIdInput,
 ) (
 	*mcp.CallToolResult,
-	*GetApplicationByIdOutput,
+	any,
 	error,
 ) {
-	return func(ctx context.Context, req *mcp.CallToolRequest, input GetApplicationByIdInput) (*mcp.CallToolResult, *GetApplicationByIdOutput, error) {
+	return func(ctx context.Context, req *mcp.CallToolRequest, input GetApplicationByIdInput) (*mcp.CallToolResult, any, error) {
 		ctx = initialize.InitializeToolInvocation(ctx, GetApplicationByIdDef.McpTool.Name, req)
 		ctx, err := initializeAuthContext(ctx)
 		if err != nil {
@@ -102,10 +88,55 @@ func GetApplicationByIdHandler(applicationsClientFactory ApplicationsClientFacto
 			slog.String("environmentId", input.EnvironmentId.String()),
 			slog.String("applicationId", input.ApplicationId.String()))
 
-		result := &GetApplicationByIdOutput{
-			Application: ReadApplicationModelFromSDKReadResponse(*application),
+		// Serialize the application based on its type, filtering out the _links field
+		formattedApplication, err := getOutputFormattedApplication(application)
+		if err != nil {
+			toolErr := errs.NewToolError(GetApplicationByIdDef.McpTool.Name, err)
+			errs.Log(ctx, toolErr)
+			return nil, nil, toolErr
+		}
+		applicationJsonBytes, err := json.Marshal(formattedApplication)
+		if err != nil {
+			toolErr := errs.NewToolError(GetApplicationByIdDef.McpTool.Name, fmt.Errorf("failed to marshal formatted application response: %w", err))
+			errs.Log(ctx, toolErr)
+			return nil, nil, toolErr
 		}
 
-		return nil, result, nil
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{
+					Text: string(applicationJsonBytes),
+				},
+			},
+		}, nil, nil
+	}
+}
+
+func getOutputFormattedApplication(application *management.ReadOneApplication200Response) (any, error) {
+	// Return the configured application type, and filter out the _links field
+	switch {
+	case application.ApplicationExternalLink != nil:
+		application.ApplicationExternalLink.Links = nil
+		return application.ApplicationExternalLink, nil
+	case application.ApplicationOIDC != nil:
+		application.ApplicationOIDC.Links = nil
+		return application.ApplicationOIDC, nil
+	case application.ApplicationPingOneAdminConsole != nil:
+		// No links field to remove
+		return application.ApplicationPingOneAdminConsole, nil
+	case application.ApplicationPingOnePortal != nil:
+		application.ApplicationPingOnePortal.Links = nil
+		return application.ApplicationPingOnePortal, nil
+	case application.ApplicationPingOneSelfService != nil:
+		application.ApplicationPingOneSelfService.Links = nil
+		return application.ApplicationPingOneSelfService, nil
+	case application.ApplicationSAML != nil:
+		application.ApplicationSAML.Links = nil
+		return application.ApplicationSAML, nil
+	case application.ApplicationWSFED != nil:
+		application.ApplicationWSFED.Links = nil
+		return application.ApplicationWSFED, nil
+	default:
+		return nil, fmt.Errorf("unknown application type in response")
 	}
 }

@@ -50,6 +50,78 @@ func setupErrorMock(mockClient *mockPingOneClientApplicationsWrapper, err error)
 	mockClient.On("GetApplications", mock.Anything, testEnvironmentId).Return(nil, err)
 }
 
+func assertListApplicationMatches(t *testing.T, expected management.ReadOneApplication200Response, actual applications.ApplicationSummary) {
+	t.Helper()
+	var expectedId, expectedName *string
+	var expectedProtocol management.EnumApplicationProtocol
+	var expectedType management.EnumApplicationType
+	var expectedCreatedAt *time.Time
+	switch {
+	case expected.ApplicationExternalLink != nil:
+		expectedId = expected.ApplicationExternalLink.Id
+		expectedName = &expected.ApplicationExternalLink.Name
+		expectedProtocol = expected.ApplicationExternalLink.Protocol
+		expectedType = expected.ApplicationExternalLink.Type
+		expectedCreatedAt = expected.ApplicationExternalLink.CreatedAt
+	case expected.ApplicationOIDC != nil:
+		expectedId = expected.ApplicationOIDC.Id
+		expectedName = &expected.ApplicationOIDC.Name
+		expectedProtocol = expected.ApplicationOIDC.Protocol
+		expectedType = expected.ApplicationOIDC.Type
+		expectedCreatedAt = expected.ApplicationOIDC.CreatedAt
+	case expected.ApplicationPingOneAdminConsole != nil:
+		// admin console does not define these fields
+		name := "PingOne Admin Console"
+		expectedName = &name
+		expectedType = management.ENUMAPPLICATIONTYPE_PING_ONE_ADMIN_CONSOLE
+	case expected.ApplicationPingOnePortal != nil:
+		expectedId = expected.ApplicationPingOnePortal.Id
+		expectedName = &expected.ApplicationPingOnePortal.Name
+		expectedProtocol = expected.ApplicationPingOnePortal.Protocol
+		expectedType = expected.ApplicationPingOnePortal.Type
+		expectedCreatedAt = expected.ApplicationPingOnePortal.CreatedAt
+	case expected.ApplicationPingOneSelfService != nil:
+		expectedId = expected.ApplicationPingOneSelfService.Id
+		expectedName = &expected.ApplicationPingOneSelfService.Name
+		expectedProtocol = expected.ApplicationPingOneSelfService.Protocol
+		expectedType = expected.ApplicationPingOneSelfService.Type
+		expectedCreatedAt = expected.ApplicationPingOneSelfService.CreatedAt
+	case expected.ApplicationSAML != nil:
+		expectedId = expected.ApplicationSAML.Id
+		expectedName = &expected.ApplicationSAML.Name
+		expectedProtocol = expected.ApplicationSAML.Protocol
+		expectedType = expected.ApplicationSAML.Type
+		expectedCreatedAt = expected.ApplicationSAML.CreatedAt
+	case expected.ApplicationWSFED != nil:
+		expectedId = expected.ApplicationWSFED.Id
+		expectedName = &expected.ApplicationWSFED.Name
+		expectedProtocol = expected.ApplicationWSFED.Protocol
+		expectedType = expected.ApplicationWSFED.Type
+		expectedCreatedAt = expected.ApplicationWSFED.CreatedAt
+	default:
+		t.Error("Unknown application type in expected data")
+	}
+
+	require.Equal(t, expectedId == nil, actual.Id == nil, "Application ID presence should match")
+	if expectedId != nil && actual.Id != nil {
+		assert.Equal(t, *expectedId, *actual.Id, "Application ID should match")
+	}
+	require.NotNil(t, expectedName, "Expected application name should not be nil")
+	assert.Equal(t, *expectedName, actual.Name, "Application Name should match")
+
+	require.Equal(t, expectedProtocol == "", actual.Protocol == nil, "Application Protocol presence should match")
+	if actual.Protocol != nil {
+		assert.Equal(t, expectedProtocol, *actual.Protocol, "Application Protocol should match")
+	}
+	require.NotNil(t, actual.Type, "Actual application type should not be nil")
+	assert.Equal(t, expectedType, *actual.Type, "Application Type should match")
+
+	require.Equal(t, expectedCreatedAt == nil, actual.CreatedAt == nil, "Application CreatedAt presence should match")
+	if expectedCreatedAt != nil && actual.CreatedAt != nil {
+		assert.Equal(t, *expectedCreatedAt, *actual.CreatedAt, "Application CreatedAt should match")
+	}
+}
+
 func TestListApplicationsHandler_MockClient(t *testing.T) {
 	testCases := []struct {
 		name                       string
@@ -136,22 +208,14 @@ func TestListApplicationsHandler_MockClient(t *testing.T) {
 			}
 
 			// Assert success case
-			require.NoError(t, err)
-			assert.Nil(t, mcpResult)
-			require.NotNil(t, output)
+			testutils.AssertStructuredHandlerSuccess(t, err, mcpResult, output)
 
-			outputApplications := &applications.ListApplicationsOutput{}
-			jsonBytes, err := json.Marshal(output)
-			require.NoError(t, err)
-			err = json.Unmarshal(jsonBytes, outputApplications)
-			require.NoError(t, err)
-
-			assert.Len(t, outputApplications.Applications, len(tc.expectedApplicationResults))
+			assert.Len(t, output.Applications, len(tc.expectedApplicationResults))
 
 			for i, expectedAppData := range tc.expectedApplicationResults {
-				if i < len(outputApplications.Applications) {
-					actualApp := outputApplications.Applications[i]
-					assertReadApplicationMatches(t, expectedAppData, actualApp)
+				if i < len(output.Applications) {
+					actualApp := output.Applications[i]
+					assertListApplicationMatches(t, expectedAppData, actualApp)
 				}
 			}
 
@@ -187,16 +251,16 @@ func TestListApplicationsHandler_MockClient(t *testing.T) {
 
 			outputApplications := &applications.ListApplicationsOutput{}
 			jsonBytes, err := json.Marshal(output.StructuredContent)
-			require.NoError(t, err)
+			require.NoError(t, err, "Failed to marshal structured content")
 			err = json.Unmarshal(jsonBytes, outputApplications)
-			require.NoError(t, err)
+			require.NoError(t, err, "Failed to unmarshal structured content")
 
 			assert.Len(t, outputApplications.Applications, len(tc.expectedApplicationResults))
 
 			for i, expectedAppData := range tc.expectedApplicationResults {
 				if i < len(outputApplications.Applications) {
 					actualApp := outputApplications.Applications[i]
-					assertReadApplicationMatches(t, expectedAppData, actualApp)
+					assertListApplicationMatches(t, expectedAppData, actualApp)
 				}
 			}
 
@@ -308,62 +372,6 @@ func TestListApplicationsHandler_APIErrors(t *testing.T) {
 
 			// Assert
 			testutils.AssertHandlerError(t, err, mcpResult, response, tt.WantErrContains)
-			mockClient.AssertExpectations(t)
-		})
-	}
-}
-
-func TestListApplicationsHandler_JSONSchemaValidationFailure(t *testing.T) {
-	testCases := []struct {
-		name             string
-		malformedApps    []management.ReadOneApplication200Response
-		expectedErrorMsg string
-		description      string
-	}{
-		{
-			name: "Multiple application types set",
-			malformedApps: []management.ReadOneApplication200Response{
-				testOIDCApp, testSAMLApp,
-				testMalformedMultiTypeApp, // This app has both OIDC and SAML set
-				testExternalLinkApp,
-			},
-			expectedErrorMsg: "oneOf: validated against both",
-			description:      "violates oneOf constraint by having multiple application types set simultaneously",
-		},
-		{
-			name: "No application type set",
-			malformedApps: []management.ReadOneApplication200Response{
-				testOIDCApp, testSAMLApp,
-				testMalformedEmptyApp, // This app has no application types set
-				testExternalLinkApp,
-			},
-			expectedErrorMsg: "oneOf: did not validate against any of",
-			description:      "violates oneOf constraint by having no application type set",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// This test verifies that the MCP JSON schema validation properly fails
-			// when a ReadApplicationModel violates the oneOf constraint
-			mockClient := &mockPingOneClientApplicationsWrapper{}
-
-			setupSuccessfulMock(mockClient, [][]management.ReadOneApplication200Response{
-				tc.malformedApps,
-			})
-
-			server := mcptestutils.TestMcpServer(t)
-			handler := applications.ListApplicationsHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
-			mcp.AddTool(server, applications.ListApplicationsDef.McpTool, handler)
-
-			input := applications.ListApplicationsInput{
-				EnvironmentId: testEnvironmentId,
-			}
-			_, err := mcptestutils.CallToolOverMcp(t, server, applications.ListApplicationsDef.McpTool.Name, input)
-
-			require.Error(t, err, "Expected MCP to reject response due to JSON schema validation failure that %s", tc.description)
-			assert.Contains(t, err.Error(), tc.expectedErrorMsg, "Error should mention the specific oneOf validation issue")
-
 			mockClient.AssertExpectations(t)
 		})
 	}

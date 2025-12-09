@@ -25,92 +25,53 @@ import (
 )
 
 func TestCreateApplicationHandler_MockClient(t *testing.T) {
-	// Test application configurations based on test helpers
-	oidcAppConfig := applications.CreateApplicationModel{
-		ApplicationOIDC: testOIDCApp.ApplicationOIDC,
-	}
-
-	samlAppConfig := applications.CreateApplicationModel{
-		ApplicationSAML: testSAMLApp.ApplicationSAML,
-	}
-
-	externalLinkAppConfig := applications.CreateApplicationModel{
-		ApplicationExternalLink: testExternalLinkApp.ApplicationExternalLink,
-	}
-
-	wsfedAppConfig := applications.CreateApplicationModel{
-		ApplicationWSFED: testWSFEDApp.ApplicationWSFED,
-	}
-
 	testCases := []struct {
 		name                string
-		inputApplication    applications.CreateApplicationModel
-		setupMock           func(*mockPingOneClientApplicationsWrapper, applications.CreateApplicationModel)
+		inputApplication    *management.ApplicationOIDC
+		setupMock           func(*mockPingOneClientApplicationsWrapper, *management.ApplicationOIDC)
 		expectError         bool
 		expectedError       error
-		expectedApplication *applications.CreateApplicationModel
+		expectedApplication *management.ApplicationOIDC
 	}{
 		{
 			name:             "Success - Create OIDC application",
-			inputApplication: oidcAppConfig,
-			setupMock: func(mockClient *mockPingOneClientApplicationsWrapper, app applications.CreateApplicationModel) {
-				expectedRequest := applications.CreateApplicationModelToSDKCreateRequest(app)
+			inputApplication: testOIDCApp.ApplicationOIDC,
+			setupMock: func(mockClient *mockPingOneClientApplicationsWrapper, app *management.ApplicationOIDC) {
+				expectedRequest := management.CreateApplicationRequest{
+					ApplicationOIDC: app,
+				}
 				mockResponse := &management.CreateApplication201Response{
-					ApplicationOIDC: app.ApplicationOIDC,
+					ApplicationOIDC: app,
 				}
 				mockClient.On("CreateApplication", mock.Anything, testEnvironmentId, expectedRequest).
 					Return(mockResponse, &http.Response{StatusCode: 201}, nil)
 			},
 			expectError:         false,
-			expectedApplication: &oidcAppConfig,
+			expectedApplication: testOIDCApp.ApplicationOIDC,
 		},
 		{
-			name:             "Success - Create SAML application",
-			inputApplication: samlAppConfig,
-			setupMock: func(mockClient *mockPingOneClientApplicationsWrapper, app applications.CreateApplicationModel) {
-				expectedRequest := applications.CreateApplicationModelToSDKCreateRequest(app)
+			name:             "Success - Create SPA application",
+			inputApplication: testSinglePageApp.ApplicationOIDC,
+			setupMock: func(mockClient *mockPingOneClientApplicationsWrapper, app *management.ApplicationOIDC) {
+				expectedRequest := management.CreateApplicationRequest{
+					ApplicationOIDC: app,
+				}
 				mockResponse := &management.CreateApplication201Response{
-					ApplicationSAML: app.ApplicationSAML,
+					ApplicationOIDC: app,
 				}
 				mockClient.On("CreateApplication", mock.Anything, testEnvironmentId, expectedRequest).
 					Return(mockResponse, &http.Response{StatusCode: 201}, nil)
 			},
 			expectError:         false,
-			expectedApplication: &samlAppConfig,
-		},
-		{
-			name:             "Success - Create External Link application",
-			inputApplication: externalLinkAppConfig,
-			setupMock: func(mockClient *mockPingOneClientApplicationsWrapper, app applications.CreateApplicationModel) {
-				expectedRequest := applications.CreateApplicationModelToSDKCreateRequest(app)
-				mockResponse := &management.CreateApplication201Response{
-					ApplicationExternalLink: app.ApplicationExternalLink,
-				}
-				mockClient.On("CreateApplication", mock.Anything, testEnvironmentId, expectedRequest).
-					Return(mockResponse, &http.Response{StatusCode: 201}, nil)
-			},
-			expectError:         false,
-			expectedApplication: &externalLinkAppConfig,
-		},
-		{
-			name:             "Success - Create WS-FED application",
-			inputApplication: wsfedAppConfig,
-			setupMock: func(mockClient *mockPingOneClientApplicationsWrapper, app applications.CreateApplicationModel) {
-				expectedRequest := applications.CreateApplicationModelToSDKCreateRequest(app)
-				mockResponse := &management.CreateApplication201Response{
-					ApplicationWSFED: app.ApplicationWSFED,
-				}
-				mockClient.On("CreateApplication", mock.Anything, testEnvironmentId, expectedRequest).
-					Return(mockResponse, &http.Response{StatusCode: 201}, nil)
-			},
-			expectError:         false,
-			expectedApplication: &wsfedAppConfig,
+			expectedApplication: testSinglePageApp.ApplicationOIDC,
 		},
 		{
 			name:             "Error - Client returns error",
-			inputApplication: oidcAppConfig,
-			setupMock: func(mockClient *mockPingOneClientApplicationsWrapper, app applications.CreateApplicationModel) {
-				expectedRequest := applications.CreateApplicationModelToSDKCreateRequest(app)
+			inputApplication: testOIDCApp.ApplicationOIDC,
+			setupMock: func(mockClient *mockPingOneClientApplicationsWrapper, app *management.ApplicationOIDC) {
+				expectedRequest := management.CreateApplicationRequest{
+					ApplicationOIDC: app,
+				}
 				mockClient.On("CreateApplication", mock.Anything, testEnvironmentId, expectedRequest).
 					Return(nil, &http.Response{StatusCode: 400}, assert.AnError)
 			},
@@ -119,9 +80,11 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 		},
 		{
 			name:             "Error - Nil response",
-			inputApplication: oidcAppConfig,
-			setupMock: func(mockClient *mockPingOneClientApplicationsWrapper, app applications.CreateApplicationModel) {
-				expectedRequest := applications.CreateApplicationModelToSDKCreateRequest(app)
+			inputApplication: testOIDCApp.ApplicationOIDC,
+			setupMock: func(mockClient *mockPingOneClientApplicationsWrapper, app *management.ApplicationOIDC) {
+				expectedRequest := management.CreateApplicationRequest{
+					ApplicationOIDC: app,
+				}
 				mockClient.On("CreateApplication", mock.Anything, testEnvironmentId, expectedRequest).
 					Return(nil, &http.Response{StatusCode: 201}, nil)
 			},
@@ -137,7 +100,7 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 			handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 			input := applications.CreateApplicationInput{
 				EnvironmentId: testEnvironmentId,
-				Application:   tc.inputApplication,
+				Application:   *tc.inputApplication,
 			}
 
 			// Execute
@@ -169,7 +132,7 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 			assert.NotNil(t, outputApplication.Application)
 
 			// Assert the returned application matches expected configuration
-			assertCreateApplicationMatches(t, *tc.expectedApplication, outputApplication.Application)
+			assertOIDCApplicationMatches(t, tc.expectedApplication, &outputApplication.Application)
 
 			mockClient.AssertExpectations(t)
 		})
@@ -187,7 +150,7 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 			// Execute over MCP
 			input := applications.CreateApplicationInput{
 				EnvironmentId: testEnvironmentId,
-				Application:   tc.inputApplication,
+				Application:   *tc.inputApplication,
 			}
 			output, err := mcptestutils.CallToolOverMcp(t, server, applications.CreateApplicationDef.McpTool.Name, input)
 
@@ -216,7 +179,7 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 			assert.NotNil(t, outputApplication.Application)
 
 			// Assert the returned application matches expected configuration
-			assertCreateApplicationMatches(t, *tc.expectedApplication, outputApplication.Application)
+			assertOIDCApplicationMatches(t, tc.expectedApplication, &outputApplication.Application)
 
 			mockClient.AssertExpectations(t)
 		})
@@ -227,21 +190,20 @@ func TestCreateApplicationHandler_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
-	testApp := applications.CreateApplicationModel{
+	testApp := management.CreateApplicationRequest{
 		ApplicationOIDC: testOIDCApp.ApplicationOIDC,
 	}
 
 	mockClient := &mockPingOneClientApplicationsWrapper{}
 	// Mock should return context.Canceled error when context is already cancelled
-	expectedRequest := applications.CreateApplicationModelToSDKCreateRequest(testApp)
-	mockClient.On("CreateApplication", testutils.CancelledContextMatcher, testEnvironmentId, expectedRequest).
+	mockClient.On("CreateApplication", testutils.CancelledContextMatcher, testEnvironmentId, testApp).
 		Return(nil, &http.Response{StatusCode: 400}, context.Canceled)
 
 	handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 	req := &mcp.CallToolRequest{}
 	input := applications.CreateApplicationInput{
 		EnvironmentId: testEnvironmentId,
-		Application:   testApp,
+		Application:   *testApp.ApplicationOIDC,
 	}
 
 	// Execute
@@ -257,10 +219,9 @@ func TestCreateApplicationHandler_ContextCancellation(t *testing.T) {
 }
 
 func TestCreateApplicationHandler_APIErrors(t *testing.T) {
-	testApp := applications.CreateApplicationModel{
+	testApp := management.CreateApplicationRequest{
 		ApplicationOIDC: testOIDCApp.ApplicationOIDC,
 	}
-	expectedRequest := applications.CreateApplicationModelToSDKCreateRequest(testApp)
 
 	tests := testutils.CommonAPIErrorTestCases()
 
@@ -268,70 +229,18 @@ func TestCreateApplicationHandler_APIErrors(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			// Setup
 			mockClient := &mockPingOneClientApplicationsWrapper{}
-			mockClient.On("CreateApplication", mock.Anything, testEnvironmentId, expectedRequest).
+			mockClient.On("CreateApplication", mock.Anything, testEnvironmentId, testApp).
 				Return(nil, &http.Response{StatusCode: 400}, tt.ApiError)
 			handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 
 			// Execute
 			mcpResult, response, err := handler(context.Background(), &mcp.CallToolRequest{}, applications.CreateApplicationInput{
 				EnvironmentId: testEnvironmentId,
-				Application:   testApp,
+				Application:   *testApp.ApplicationOIDC,
 			})
 
 			// Assert
 			testutils.AssertHandlerError(t, err, mcpResult, response, tt.WantErrContains)
-			mockClient.AssertExpectations(t)
-		})
-	}
-}
-
-func TestCreateApplicationHandler_JSONSchemaValidationFailure(t *testing.T) {
-	testCases := []struct {
-		name             string
-		malformedApp     applications.CreateApplicationModel
-		expectedErrorMsg string
-		description      string
-	}{
-		{
-			name: "Multiple application types set",
-			malformedApp: applications.CreateApplicationModel{
-				ApplicationOIDC: testOIDCApp.ApplicationOIDC,
-				ApplicationSAML: testSAMLApp.ApplicationSAML, // Having both OIDC and SAML violates oneOf
-			},
-			expectedErrorMsg: "oneOf: validated against both",
-			description:      "violates oneOf constraint by having multiple application types set simultaneously",
-		},
-		{
-			name:         "No application type set",
-			malformedApp: applications.CreateApplicationModel{
-				// All fields are nil/empty, violating the oneOf constraint requiring exactly one type
-			},
-			expectedErrorMsg: "oneOf: did not validate against any of",
-			description:      "violates oneOf constraint by having no application type set",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// This test verifies that the MCP JSON schema validation properly fails
-			// when a CreateApplicationModel violates the oneOf constraint
-
-			// The mock won't be called because MCP should reject the input before reaching the handler
-			mockClient := &mockPingOneClientApplicationsWrapper{}
-
-			server := mcptestutils.TestMcpServer(t)
-			handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
-			mcp.AddTool(server, applications.CreateApplicationDef.McpTool, handler)
-
-			input := applications.CreateApplicationInput{
-				EnvironmentId: testEnvironmentId,
-				Application:   tc.malformedApp,
-			}
-			_, err := mcptestutils.CallToolOverMcp(t, server, applications.CreateApplicationDef.McpTool.Name, input)
-
-			require.Error(t, err, "Expected MCP to reject request due to JSON schema validation failure that %s", tc.description)
-			assert.Contains(t, err.Error(), tc.expectedErrorMsg, "Error should mention the specific oneOf validation issue")
-
 			mockClient.AssertExpectations(t)
 		})
 	}
@@ -344,15 +253,13 @@ func TestCreateApplicationHandler_GetAuthenticatedClientError(t *testing.T) {
 	req := &mcp.CallToolRequest{}
 	input := applications.CreateApplicationInput{
 		EnvironmentId: testEnvironmentId,
-		Application: applications.CreateApplicationModel{
-			ApplicationOIDC: &management.ApplicationOIDC{
-				Name:                    "Test App",
-				Enabled:                 true,
-				Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
-				Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
-				GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
-				TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
-			},
+		Application: management.ApplicationOIDC{
+			Name:                    "Test App",
+			Enabled:                 true,
+			Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
+			Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
+			GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
+			TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
 		},
 	}
 
@@ -371,15 +278,13 @@ func TestCreateApplicationHandler_InitializeAuthContextError(t *testing.T) {
 	req := &mcp.CallToolRequest{}
 	input := applications.CreateApplicationInput{
 		EnvironmentId: testEnvironmentId,
-		Application: applications.CreateApplicationModel{
-			ApplicationOIDC: &management.ApplicationOIDC{
-				Name:                    "Test App",
-				Enabled:                 true,
-				Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
-				Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
-				GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
-				TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
-			},
+		Application: management.ApplicationOIDC{
+			Name:                    "Test App",
+			Enabled:                 true,
+			Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
+			Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
+			GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
+			TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
 		},
 	}
 
@@ -454,9 +359,7 @@ func TestCreateApplicationHandler_InitializeAuthContext(t *testing.T) {
 			req := &mcp.CallToolRequest{}
 			input := applications.CreateApplicationInput{
 				EnvironmentId: testEnvironmentId,
-				Application: applications.CreateApplicationModel{
-					ApplicationOIDC: testOIDCApp.ApplicationOIDC,
-				},
+				Application:   *testOIDCApp.ApplicationOIDC,
 			}
 
 			_, _, err := handler(context.Background(), req, input)
@@ -482,17 +385,15 @@ func TestCreateApplicationHandler_RealClient(t *testing.T) {
 	clientWrapper := applications.NewPingOneClientApplicationsWrapper(client)
 
 	// Create a simple OIDC application for testing
-	testApp := applications.CreateApplicationModel{
-		ApplicationOIDC: &management.ApplicationOIDC{
-			Name:                    "Test Real Client OIDC App",
-			Description:             testutils.Pointer("A test OIDC application created by real client test"),
-			Enabled:                 true,
-			Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
-			Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
-			GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
-			RedirectUris:            []string{"https://test.example.com/callback"},
-			TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
-		},
+	testApp := management.ApplicationOIDC{
+		Name:                    "Test Real Client OIDC App",
+		Description:             testutils.Pointer("A test OIDC application created by real client test"),
+		Enabled:                 true,
+		Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
+		Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
+		GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
+		RedirectUris:            []string{"https://test.example.com/callback"},
+		TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
 	}
 
 	req := &mcp.CallToolRequest{}
@@ -517,5 +418,5 @@ func TestCreateApplicationHandler_RealClient(t *testing.T) {
 
 	// Verify the created application matches the input
 	assert.NotNil(t, outputApplication.Application, "Application should not be nil")
-	assertCreateApplicationMatches(t, testApp, outputApplication.Application)
+	assertOIDCApplicationMatches(t, &testApp, &outputApplication.Application)
 }
