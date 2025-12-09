@@ -25,7 +25,7 @@ var GetApplicationByIdDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
 		Name:        "get_application_by_id",
 		Title:       "Get PingOne Application by ID",
-		Description: "Retrieve application configuration by ID. Use 'list_applications' first if you need to find the application ID. Call before 'update_application_by_id' to get current settings.",
+		Description: "Retrieve application configuration by ID. Use 'list_applications' first if you need to find the application ID. Call before 'update_oidc_application_by_id' to get current settings.",
 		InputSchema: schema.MustGenerateSchema[GetApplicationByIdInput](),
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint: true,

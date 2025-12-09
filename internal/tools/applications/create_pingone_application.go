@@ -19,7 +19,7 @@ import (
 
 var CreateApplicationDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
-		Name:         "create_application",
+		Name:         "create_oidc_application",
 		Title:        "Create PingOne OIDC Application",
 		Description:  "Create a new OIDC application within a specified PingOne environment.",
 		InputSchema:  schema.MustGenerateSchema[CreateApplicationInput](),

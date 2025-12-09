@@ -19,7 +19,7 @@ import (
 
 var UpdateApplicationByIdDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
-		Name:  "update_application_by_id",
+		Name:  "update_oidc_application_by_id",
 		Title: "Update PingOne OIDC Application by ID",
 		Description: `Update OIDC application configuration using full replacement (HTTP PUT).
 
