@@ -34,7 +34,7 @@ type ApiError struct {
 }
 
 func (e *ApiError) Error() string {
-	if e.OriginalError == nil && e.StatusCode == 0 && e.ResponseBody == "" {
+	if e.OriginalError == nil && e.StatusCode == 0 {
 		return "unknown API error"
 	}
 
