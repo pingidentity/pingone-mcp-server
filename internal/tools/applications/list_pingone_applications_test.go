@@ -50,68 +50,75 @@ func setupErrorMock(mockClient *mockPingOneClientApplicationsWrapper, err error)
 	mockClient.On("GetApplications", mock.Anything, testEnvironmentId).Return(nil, err)
 }
 
-// Minimal response types to validate tool responses
-type mockListApplication struct {
-	ID   *string `json:"id,omitempty"`
-	Name *string `json:"name,omitempty"`
-	Type *string `json:"type,omitempty"`
-}
-
-type mockListApplicationsResponse struct {
-	Applications []mockListApplication `json:"applications"`
-}
-
-func assertListApplicationMatches(t *testing.T, expected management.ReadOneApplication200Response, actual mockListApplication) {
+func assertListApplicationMatches(t *testing.T, expected management.ReadOneApplication200Response, actual applications.ApplicationSummary) {
 	t.Helper()
-	var expectedId, expectedName, expectedType *string
+	var expectedId, expectedName *string
+	var expectedProtocol management.EnumApplicationProtocol
+	var expectedType management.EnumApplicationType
+	var expectedCreatedAt *time.Time
 	switch {
 	case expected.ApplicationExternalLink != nil:
 		expectedId = expected.ApplicationExternalLink.Id
 		expectedName = &expected.ApplicationExternalLink.Name
-		typeStr := string(expected.ApplicationExternalLink.Type)
-		expectedType = &typeStr
+		expectedProtocol = expected.ApplicationExternalLink.Protocol
+		expectedType = expected.ApplicationExternalLink.Type
+		expectedCreatedAt = expected.ApplicationExternalLink.CreatedAt
 	case expected.ApplicationOIDC != nil:
 		expectedId = expected.ApplicationOIDC.Id
 		expectedName = &expected.ApplicationOIDC.Name
-		typeStr := string(expected.ApplicationOIDC.Type)
-		expectedType = &typeStr
+		expectedProtocol = expected.ApplicationOIDC.Protocol
+		expectedType = expected.ApplicationOIDC.Type
+		expectedCreatedAt = expected.ApplicationOIDC.CreatedAt
 	case expected.ApplicationPingOneAdminConsole != nil:
 		// admin console does not define these fields
+		name := "PingOne Admin Console"
+		expectedName = &name
+		expectedType = management.ENUMAPPLICATIONTYPE_PING_ONE_ADMIN_CONSOLE
 	case expected.ApplicationPingOnePortal != nil:
 		expectedId = expected.ApplicationPingOnePortal.Id
 		expectedName = &expected.ApplicationPingOnePortal.Name
-		typeStr := string(expected.ApplicationPingOnePortal.Type)
-		expectedType = &typeStr
+		expectedProtocol = expected.ApplicationPingOnePortal.Protocol
+		expectedType = expected.ApplicationPingOnePortal.Type
+		expectedCreatedAt = expected.ApplicationPingOnePortal.CreatedAt
 	case expected.ApplicationPingOneSelfService != nil:
 		expectedId = expected.ApplicationPingOneSelfService.Id
 		expectedName = &expected.ApplicationPingOneSelfService.Name
-		typeStr := string(expected.ApplicationPingOneSelfService.Type)
-		expectedType = &typeStr
+		expectedProtocol = expected.ApplicationPingOneSelfService.Protocol
+		expectedType = expected.ApplicationPingOneSelfService.Type
+		expectedCreatedAt = expected.ApplicationPingOneSelfService.CreatedAt
 	case expected.ApplicationSAML != nil:
 		expectedId = expected.ApplicationSAML.Id
 		expectedName = &expected.ApplicationSAML.Name
-		typeStr := string(expected.ApplicationSAML.Type)
-		expectedType = &typeStr
+		expectedProtocol = expected.ApplicationSAML.Protocol
+		expectedType = expected.ApplicationSAML.Type
+		expectedCreatedAt = expected.ApplicationSAML.CreatedAt
 	case expected.ApplicationWSFED != nil:
 		expectedId = expected.ApplicationWSFED.Id
 		expectedName = &expected.ApplicationWSFED.Name
-		typeStr := string(expected.ApplicationWSFED.Type)
-		expectedType = &typeStr
+		expectedProtocol = expected.ApplicationWSFED.Protocol
+		expectedType = expected.ApplicationWSFED.Type
+		expectedCreatedAt = expected.ApplicationWSFED.CreatedAt
 	default:
 		t.Error("Unknown application type in expected data")
 	}
 
-	require.Equal(t, expectedId == nil, actual.ID == nil, "Application ID presence should match")
-	if expectedId != nil && actual.ID != nil {
-		assert.Equal(t, *expectedId, *actual.ID, "Application ID should match")
+	require.Equal(t, expectedId == nil, actual.Id == nil, "Application ID presence should match")
+	if expectedId != nil && actual.Id != nil {
+		assert.Equal(t, *expectedId, *actual.Id, "Application ID should match")
 	}
-	require.Equal(t, expectedName == nil, actual.Name == nil, "Application Name presence should match")
-	if expectedName != nil && actual.Name != nil {
-		assert.Equal(t, *expectedName, *actual.Name, "Application Name should match")
+	require.NotNil(t, expectedName, "Expected application name should not be nil")
+	assert.Equal(t, *expectedName, actual.Name, "Application Name should match")
+
+	require.Equal(t, expectedProtocol == "", actual.Protocol == nil, "Application Protocol presence should match")
+	if actual.Protocol != nil {
+		assert.Equal(t, expectedProtocol, *actual.Protocol, "Application Protocol should match")
 	}
-	require.Equal(t, expectedType == nil, actual.Type == nil, "Application Type presence should match")
-	if expectedType != nil && actual.Type != nil {
-		assert.Equal(t, *expectedType, *actual.Type, "Application Type should match")
+	require.NotNil(t, actual.Type, "Actual application type should not be nil")
+	assert.Equal(t, expectedType, *actual.Type, "Application Type should match")
+
+	require.Equal(t, expectedCreatedAt == nil, actual.CreatedAt == nil, "Application CreatedAt presence should match")
+	if expectedCreatedAt != nil && actual.CreatedAt != nil {
+		assert.Equal(t, *expectedCreatedAt, *actual.CreatedAt, "Application CreatedAt should match")
 	}
 }
 
@@ -201,20 +208,13 @@ func TestListApplicationsHandler_MockClient(t *testing.T) {
 			}
 
 			// Assert success case
-			testutils.AssertUnstructuredHandlerSuccess(t, err, mcpResult, output)
+			testutils.AssertStructuredHandlerSuccess(t, err, mcpResult, output)
 
-			outputApplications := &mockListApplicationsResponse{}
-			require.Len(t, mcpResult.Content, 1, "Expected exactly one content item in output")
-			textContent, ok := mcpResult.Content[0].(*mcp.TextContent)
-			require.True(t, ok, "Expected content to be of type TextContent")
-			err = json.Unmarshal([]byte(textContent.Text), outputApplications)
-			require.NoError(t, err)
-
-			assert.Len(t, outputApplications.Applications, len(tc.expectedApplicationResults))
+			assert.Len(t, output.Applications, len(tc.expectedApplicationResults))
 
 			for i, expectedAppData := range tc.expectedApplicationResults {
-				if i < len(outputApplications.Applications) {
-					actualApp := outputApplications.Applications[i]
+				if i < len(output.Applications) {
+					actualApp := output.Applications[i]
 					assertListApplicationMatches(t, expectedAppData, actualApp)
 				}
 			}
@@ -249,12 +249,11 @@ func TestListApplicationsHandler_MockClient(t *testing.T) {
 			// Assert success expectations
 			testutils.AssertMcpCallSuccess(t, err, output)
 
-			outputApplications := &mockListApplicationsResponse{}
-			require.Len(t, output.Content, 1, "Expected exactly one content item in output")
-			textContent, ok := output.Content[0].(*mcp.TextContent)
-			require.True(t, ok, "Expected content to be of type TextContent")
-			err = json.Unmarshal([]byte(textContent.Text), outputApplications)
-			require.NoError(t, err)
+			outputApplications := &applications.ListApplicationsOutput{}
+			jsonBytes, err := json.Marshal(output.StructuredContent)
+			require.NoError(t, err, "Failed to marshal structured content")
+			err = json.Unmarshal(jsonBytes, outputApplications)
+			require.NoError(t, err, "Failed to unmarshal structured content")
 
 			assert.Len(t, outputApplications.Applications, len(tc.expectedApplicationResults))
 

@@ -4,13 +4,14 @@ package applications
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/patrickcping/pingone-go-sdk-v2/management"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
@@ -23,10 +24,11 @@ var ListApplicationsDef = types.ToolDefinition{
 		AllowProductionEnvironmentRead: true,
 	},
 	McpTool: &mcp.Tool{
-		Name:        "list_applications",
-		Title:       "List PingOne Applications",
-		Description: "Lists all applications in an environment. Use to discover application IDs or review configurations before updates. Returns OIDC, SAML, External Link, and PingOne system applications.",
-		InputSchema: schema.MustGenerateSchema[ListApplicationsInput](),
+		Name:         "list_applications",
+		Title:        "List PingOne Applications",
+		Description:  "Lists all applications in an environment. Use to discover application IDs or review configurations before updates. Returns OIDC, SAML, External Link, and PingOne system applications.",
+		InputSchema:  schema.MustGenerateSchema[ListApplicationsInput](),
+		OutputSchema: schema.MustGenerateSchema[ListApplicationsOutput](),
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint: true,
 		},
@@ -37,8 +39,16 @@ type ListApplicationsInput struct {
 	EnvironmentId uuid.UUID `json:"environmentId" jsonschema:"REQUIRED. Environment UUID."`
 }
 
+type ApplicationSummary struct {
+	Id        *string                             `json:"id,omitempty" jsonschema:"The UUID of the application"`
+	Name      string                              `json:"name" jsonschema:"The name of the application"`
+	Protocol  *management.EnumApplicationProtocol `json:"protocol,omitempty" jsonschema:"The protocol type of the application"`
+	Type      *management.EnumApplicationType     `json:"type,omitempty" jsonschema:"The type of the application"`
+	CreatedAt *time.Time                          `json:"createdAt,omitempty" jsonschema:"The creation timestamp of the application"`
+}
+
 type ListApplicationsOutput struct {
-	Applications []any `json:"applications" jsonschema:"List of applications with their configuration details"`
+	Applications []ApplicationSummary `json:"applications" jsonschema:"List of applications with their configuration details"`
 }
 
 // ListApplicationsHandler lists all PingOne applications using the provided client
@@ -48,10 +58,10 @@ func ListApplicationsHandler(clientFactory ApplicationsClientFactory, initialize
 	input ListApplicationsInput,
 ) (
 	*mcp.CallToolResult,
-	any,
+	*ListApplicationsOutput,
 	error,
 ) {
-	return func(ctx context.Context, req *mcp.CallToolRequest, input ListApplicationsInput) (*mcp.CallToolResult, any, error) {
+	return func(ctx context.Context, req *mcp.CallToolRequest, input ListApplicationsInput) (*mcp.CallToolResult, *ListApplicationsOutput, error) {
 		ctx = initialize.InitializeToolInvocation(ctx, ListApplicationsDef.McpTool.Name, req)
 		ctx, err := initializeAuthContext(ctx)
 		if err != nil {
@@ -78,7 +88,7 @@ func ListApplicationsHandler(clientFactory ApplicationsClientFactory, initialize
 		}
 		// Aggregate all pages into one response
 		result := ListApplicationsOutput{
-			Applications: []any{},
+			Applications: []ApplicationSummary{},
 		}
 		for next, err := range pagedIterator {
 			logger.LogHttpResponse(ctx, next.HTTPResponse)
@@ -95,29 +105,67 @@ func ListApplicationsHandler(clientFactory ApplicationsClientFactory, initialize
 			}
 			logger.FromContext(ctx).Debug("Retrieved applications page", slog.Int("count", len(next.EntityArray.Embedded.Applications)))
 			for _, sdkApp := range next.EntityArray.Embedded.Applications {
-				formattedApplication, err := getOutputFormattedApplication(&sdkApp)
+				applicationSummary, err := getApplicationSummary(&sdkApp)
 				if err != nil {
 					toolErr := errs.NewToolError(GetApplicationByIdDef.McpTool.Name, err)
 					errs.Log(ctx, toolErr)
 					return nil, nil, toolErr
 				}
-				result.Applications = append(result.Applications, formattedApplication)
+				result.Applications = append(result.Applications, *applicationSummary)
 			}
 		}
 
-		applicationJsonBytes, err := json.Marshal(result)
-		if err != nil {
-			toolErr := errs.NewToolError(GetApplicationByIdDef.McpTool.Name, fmt.Errorf("failed to marshal formatted application response: %w", err))
-			errs.Log(ctx, toolErr)
-			return nil, nil, toolErr
-		}
-
-		return &mcp.CallToolResult{
-			Content: []mcp.Content{
-				&mcp.TextContent{
-					Text: string(applicationJsonBytes),
-				},
-			},
-		}, nil, nil
+		return nil, &result, nil
 	}
+}
+
+const adminConsoleAppName = "PingOne Admin Console"
+
+func getApplicationSummary(application *management.ReadOneApplication200Response) (*ApplicationSummary, error) {
+	result := ApplicationSummary{}
+	switch {
+	case application.ApplicationExternalLink != nil:
+		result.Id = application.ApplicationExternalLink.Id
+		result.Name = application.ApplicationExternalLink.Name
+		result.Protocol = &application.ApplicationExternalLink.Protocol
+		result.Type = &application.ApplicationExternalLink.Type
+		result.CreatedAt = application.ApplicationExternalLink.CreatedAt
+	case application.ApplicationOIDC != nil:
+		result.Id = application.ApplicationOIDC.Id
+		result.Name = application.ApplicationOIDC.Name
+		result.Protocol = &application.ApplicationOIDC.Protocol
+		result.Type = &application.ApplicationOIDC.Type
+		result.CreatedAt = application.ApplicationOIDC.CreatedAt
+	case application.ApplicationPingOneAdminConsole != nil:
+		result.Name = adminConsoleAppName
+		adminConsoleType := management.ENUMAPPLICATIONTYPE_PING_ONE_ADMIN_CONSOLE
+		result.Type = &adminConsoleType
+	case application.ApplicationPingOnePortal != nil:
+		result.Id = application.ApplicationPingOnePortal.Id
+		result.Name = application.ApplicationPingOnePortal.Name
+		result.Protocol = &application.ApplicationPingOnePortal.Protocol
+		result.Type = &application.ApplicationPingOnePortal.Type
+		result.CreatedAt = application.ApplicationPingOnePortal.CreatedAt
+	case application.ApplicationPingOneSelfService != nil:
+		result.Id = application.ApplicationPingOneSelfService.Id
+		result.Name = application.ApplicationPingOneSelfService.Name
+		result.Protocol = &application.ApplicationPingOneSelfService.Protocol
+		result.Type = &application.ApplicationPingOneSelfService.Type
+		result.CreatedAt = application.ApplicationPingOneSelfService.CreatedAt
+	case application.ApplicationSAML != nil:
+		result.Id = application.ApplicationSAML.Id
+		result.Name = application.ApplicationSAML.Name
+		result.Protocol = &application.ApplicationSAML.Protocol
+		result.Type = &application.ApplicationSAML.Type
+		result.CreatedAt = application.ApplicationSAML.CreatedAt
+	case application.ApplicationWSFED != nil:
+		result.Id = application.ApplicationWSFED.Id
+		result.Name = application.ApplicationWSFED.Name
+		result.Protocol = &application.ApplicationWSFED.Protocol
+		result.Type = &application.ApplicationWSFED.Type
+		result.CreatedAt = application.ApplicationWSFED.CreatedAt
+	default:
+		return nil, fmt.Errorf("unknown application type in response")
+	}
+	return &result, nil
 }
