@@ -62,7 +62,7 @@ func TestApiError_Error(t *testing.T) {
 			statusCode:    401,
 			status:        "Unauthorized",
 			responseBody:  "{\"error\":\"invalid_token\"}",
-			expected:      "authentication failed (HTTP 401 Unauthorized). Response body: {\"error\":\"invalid_token\"}",
+			expected:      "authentication failed. Response body: {\"error\":\"invalid_token\"} (HTTP 401 Unauthorized)",
 		},
 	}
 
