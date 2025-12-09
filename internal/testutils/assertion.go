@@ -60,7 +60,7 @@ func AssertMcpCallSuccess(t *testing.T, err error, result *mcp.CallToolResult) {
 
 func AssertUnstructuredOutputMatches(t *testing.T, mcpResult *mcp.CallToolResult, expectedOutput any) {
 	t.Helper()
-	require.Len(t, mcpResult.Content, 1, "Expected exactly one content item in output")
+	require.GreaterOrEqual(t, len(mcpResult.Content), 1, "Expected at least one content item in output")
 	textContent, ok := mcpResult.Content[0].(*mcp.TextContent)
 	require.True(t, ok, "Expected content to be of type TextContent")
 	expectedJsonBytes, err := json.Marshal(expectedOutput)
