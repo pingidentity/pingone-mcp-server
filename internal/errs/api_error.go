@@ -5,6 +5,7 @@ package errs
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -28,6 +29,8 @@ type ApiError struct {
 	Method string
 	// URL is the full URL of the request that caused the error
 	URL string
+	// ResponseBody contains the raw response body from the API
+	ResponseBody string
 }
 
 func (e *ApiError) Error() string {
@@ -43,6 +46,9 @@ func (e *ApiError) Error() string {
 
 		if originalErrorMsg != "" {
 			msg = originalErrorMsg
+		} else if e.ResponseBody != "" {
+			// Append response body if available and not already parsed as a pingone error
+			msg = fmt.Sprintf("Response body: %s", e.ResponseBody)
 		} else {
 			// Fallback to the original error message
 			msg = e.OriginalError.Error()
@@ -88,6 +94,15 @@ func NewApiError(httpResp *http.Response, err error) error {
 			apiErr.Method = httpResp.Request.Method
 			if httpResp.Request.URL != nil {
 				apiErr.URL = httpResp.Request.URL.String()
+			}
+		}
+
+		// Read and store response body if available
+		if httpResp.Body != nil {
+			bodyBytes, readErr := io.ReadAll(httpResp.Body)
+			httpResp.Body.Close()
+			if readErr == nil && len(bodyBytes) > 0 {
+				apiErr.ResponseBody = string(bodyBytes)
 			}
 		}
 	}
