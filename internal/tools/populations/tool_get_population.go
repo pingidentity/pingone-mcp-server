@@ -17,7 +17,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 )
 
-var GetPopulationByIdDef = types.ToolDefinition{
+var GetPopulationDef = types.ToolDefinition{
 	ValidationPolicy: &types.ToolValidationPolicy{
 		AllowProductionEnvironmentRead: true, // this is true while the tool does not return any actual user data
 	},
@@ -25,45 +25,45 @@ var GetPopulationByIdDef = types.ToolDefinition{
 		Name:         "get_population",
 		Title:        "Get PingOne Population by ID",
 		Description:  "Retrieve population configuration by ID. Use 'list_populations' first if you need to find the population ID. Call before 'update_population' to get current settings.",
-		InputSchema:  schema.MustGenerateSchema[GetPopulationByIdInput](),
-		OutputSchema: schema.MustGenerateSchema[GetPopulationByIdOutput](),
+		InputSchema:  schema.MustGenerateSchema[GetPopulationInput](),
+		OutputSchema: schema.MustGenerateSchema[GetPopulationOutput](),
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint: true,
 		},
 	},
 }
 
-type GetPopulationByIdInput struct {
+type GetPopulationInput struct {
 	EnvironmentId uuid.UUID `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
 	PopulationId  uuid.UUID `json:"populationId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne population"`
 }
 
-type GetPopulationByIdOutput struct {
+type GetPopulationOutput struct {
 	Population management.Population `json:"population" jsonschema:"The population details retrieved by ID"`
 }
 
-// GetPopulationByIdHandler retrieves a PingOne population by ID using the provided client
-func GetPopulationByIdHandler(populationsClientFactory PopulationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+// GetPopulationHandler retrieves a PingOne population by ID using the provided client
+func GetPopulationHandler(populationsClientFactory PopulationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
-	input GetPopulationByIdInput,
+	input GetPopulationInput,
 ) (
 	*mcp.CallToolResult,
-	*GetPopulationByIdOutput,
+	*GetPopulationOutput,
 	error,
 ) {
-	return func(ctx context.Context, req *mcp.CallToolRequest, input GetPopulationByIdInput) (*mcp.CallToolResult, *GetPopulationByIdOutput, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, GetPopulationByIdDef.McpTool.Name, req)
+	return func(ctx context.Context, req *mcp.CallToolRequest, input GetPopulationInput) (*mcp.CallToolResult, *GetPopulationOutput, error) {
+		ctx = initialize.InitializeToolInvocation(ctx, GetPopulationDef.McpTool.Name, req)
 		ctx, err := initializeAuthContext(ctx)
 		if err != nil {
-			toolErr := errs.NewToolError(GetPopulationByIdDef.McpTool.Name, err)
+			toolErr := errs.NewToolError(GetPopulationDef.McpTool.Name, err)
 			errs.Log(ctx, toolErr)
 			return nil, nil, toolErr
 		}
 
 		client, err := populationsClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
-			toolErr := errs.NewToolError(GetPopulationByIdDef.McpTool.Name, err)
+			toolErr := errs.NewToolError(GetPopulationDef.McpTool.Name, err)
 			errs.Log(ctx, toolErr)
 			return nil, nil, toolErr
 		}
@@ -73,7 +73,7 @@ func GetPopulationByIdHandler(populationsClientFactory PopulationsClientFactory,
 			slog.String("populationId", input.PopulationId.String()))
 
 		// Call the API to retrieve the population
-		population, httpResponse, err := client.GetPopulationById(ctx, input.EnvironmentId, input.PopulationId)
+		population, httpResponse, err := client.GetPopulation(ctx, input.EnvironmentId, input.PopulationId)
 		logger.LogHttpResponse(ctx, httpResponse)
 
 		if err != nil {
@@ -97,7 +97,7 @@ func GetPopulationByIdHandler(populationsClientFactory PopulationsClientFactory,
 		// Filter out _links field from response
 		population.Links = nil
 
-		result := &GetPopulationByIdOutput{
+		result := &GetPopulationOutput{
 			Population: *population,
 		}
 

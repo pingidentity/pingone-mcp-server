@@ -25,15 +25,15 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func mockUpdateApplicationByIdSetup(m *mockPingOneClientApplicationsWrapper, envID uuid.UUID, appID uuid.UUID, response *management.ReadOneApplication200Response, statusCode int, err error) {
+func mockUpdateApplicationSetup(m *mockPingOneClientApplicationsWrapper, envID uuid.UUID, appID uuid.UUID, response *management.ReadOneApplication200Response, statusCode int, err error) {
 	httpResp := &http.Response{StatusCode: statusCode}
-	m.On("UpdateApplicationById", mock.Anything, envID, appID, mock.Anything).Return(response, httpResp, err)
+	m.On("UpdateApplication", mock.Anything, envID, appID, mock.Anything).Return(response, httpResp, err)
 }
 
-func TestUpdateApplicationByIdHandler_MockClient(t *testing.T) {
+func TestUpdateApplicationHandler_MockClient(t *testing.T) {
 	tests := []struct {
 		name             string
-		input            applications.UpdateApplicationByIdInput
+		input            applications.UpdateApplicationInput
 		setupMock        func(*mockPingOneClientApplicationsWrapper, uuid.UUID, uuid.UUID)
 		wantErr          bool
 		wantErrContains  string
@@ -41,50 +41,50 @@ func TestUpdateApplicationByIdHandler_MockClient(t *testing.T) {
 	}{
 		{
 			name: "Success - Update OIDC Web application by ID",
-			input: applications.UpdateApplicationByIdInput{
+			input: applications.UpdateApplicationInput{
 				EnvironmentId: testEnvironmentId,
 				ApplicationId: uuid.MustParse(*testOIDCApp.ApplicationOIDC.Id),
 				Application:   *testOIDCApp.ApplicationOIDC,
 			},
 			setupMock: func(m *mockPingOneClientApplicationsWrapper, envID uuid.UUID, appID uuid.UUID) {
-				mockUpdateApplicationByIdSetup(m, envID, appID, &testOIDCApp, 200, nil)
+				mockUpdateApplicationSetup(m, envID, appID, &testOIDCApp, 200, nil)
 			},
 			expectedResponse: testOIDCApp.ApplicationOIDC,
 		},
 		{
 			name: "Success - Update OIDC SPA by ID",
-			input: applications.UpdateApplicationByIdInput{
+			input: applications.UpdateApplicationInput{
 				EnvironmentId: testEnvironmentId,
 				ApplicationId: uuid.MustParse(*testSinglePageApp.ApplicationOIDC.Id),
 				Application:   *testSinglePageApp.ApplicationOIDC,
 			},
 			setupMock: func(m *mockPingOneClientApplicationsWrapper, envID uuid.UUID, appID uuid.UUID) {
-				mockUpdateApplicationByIdSetup(m, envID, appID, &testSinglePageApp, 200, nil)
+				mockUpdateApplicationSetup(m, envID, appID, &testSinglePageApp, 200, nil)
 			},
 			expectedResponse: testSinglePageApp.ApplicationOIDC,
 		},
 		{
 			name: "Error - Application not found (404)",
-			input: applications.UpdateApplicationByIdInput{
+			input: applications.UpdateApplicationInput{
 				EnvironmentId: testEnvironmentId,
 				ApplicationId: uuid.MustParse(*testOIDCApp.ApplicationOIDC.Id),
 				Application:   *testOIDCApp.ApplicationOIDC,
 			},
 			setupMock: func(m *mockPingOneClientApplicationsWrapper, envID uuid.UUID, appID uuid.UUID) {
-				mockUpdateApplicationByIdSetup(m, envID, appID, nil, 404, errors.New("application not found"))
+				mockUpdateApplicationSetup(m, envID, appID, nil, 404, errors.New("application not found"))
 			},
 			wantErr:         true,
 			wantErrContains: "application not found",
 		},
 		{
 			name: "Error - API returns nil response with no error",
-			input: applications.UpdateApplicationByIdInput{
+			input: applications.UpdateApplicationInput{
 				EnvironmentId: testEnvironmentId,
 				ApplicationId: uuid.MustParse(*testOIDCApp.ApplicationOIDC.Id),
 				Application:   *testOIDCApp.ApplicationOIDC,
 			},
 			setupMock: func(m *mockPingOneClientApplicationsWrapper, envID uuid.UUID, appID uuid.UUID) {
-				mockUpdateApplicationByIdSetup(m, envID, appID, nil, 200, nil)
+				mockUpdateApplicationSetup(m, envID, appID, nil, 200, nil)
 			},
 			wantErr:         true,
 			wantErrContains: "no application data in response",
@@ -97,7 +97,7 @@ func TestUpdateApplicationByIdHandler_MockClient(t *testing.T) {
 			// Setup
 			mockClient := &mockPingOneClientApplicationsWrapper{}
 			tt.setupMock(mockClient, tt.input.EnvironmentId, tt.input.ApplicationId)
-			handler := applications.UpdateApplicationByIdHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := applications.UpdateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 			req := &mcp.CallToolRequest{}
 
 			// Execute
@@ -125,13 +125,13 @@ func TestUpdateApplicationByIdHandler_MockClient(t *testing.T) {
 			// Setup
 			mockClient := &mockPingOneClientApplicationsWrapper{}
 			tt.setupMock(mockClient, tt.input.EnvironmentId, tt.input.ApplicationId)
-			handler := applications.UpdateApplicationByIdHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := applications.UpdateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 
 			server := mcptestutils.TestMcpServer(t)
-			mcp.AddTool(server, applications.UpdateApplicationByIdDef.McpTool, handler)
+			mcp.AddTool(server, applications.UpdateApplicationDef.McpTool, handler)
 
 			// Execute over MCP
-			output, err := mcptestutils.CallToolOverMcp(t, server, applications.UpdateApplicationByIdDef.McpTool.Name, tt.input)
+			output, err := mcptestutils.CallToolOverMcp(t, server, applications.UpdateApplicationDef.McpTool.Name, tt.input)
 
 			require.NoError(t, err, "Expect no error calling tool")
 			require.NotNil(t, output, "Expect non-nil output")
@@ -147,7 +147,7 @@ func TestUpdateApplicationByIdHandler_MockClient(t *testing.T) {
 			testutils.AssertMcpCallSuccess(t, err, output)
 
 			// marshal the structured content into the expected output type
-			outputApplication := &applications.UpdateApplicationByIdOutput{}
+			outputApplication := &applications.UpdateApplicationOutput{}
 			jsonBytes, err := json.Marshal(output.StructuredContent)
 			require.NoError(t, err, "Failed to marshal structured content")
 			err = json.Unmarshal(jsonBytes, outputApplication)
@@ -162,7 +162,7 @@ func TestUpdateApplicationByIdHandler_MockClient(t *testing.T) {
 	}
 }
 
-func TestUpdateApplicationByIdHandler_ContextCancellation(t *testing.T) {
+func TestUpdateApplicationHandler_ContextCancellation(t *testing.T) {
 	// Create a cancelled context
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
@@ -171,11 +171,11 @@ func TestUpdateApplicationByIdHandler_ContextCancellation(t *testing.T) {
 	envID := testEnvironmentId
 	appID := testAppId
 
-	mockClient.On("UpdateApplicationById", testutils.CancelledContextMatcher, envID, appID, mock.Anything).Return(nil, nil, context.Canceled)
+	mockClient.On("UpdateApplication", testutils.CancelledContextMatcher, envID, appID, mock.Anything).Return(nil, nil, context.Canceled)
 
-	handler := applications.UpdateApplicationByIdHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+	handler := applications.UpdateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 	req := &mcp.CallToolRequest{}
-	input := applications.UpdateApplicationByIdInput{
+	input := applications.UpdateApplicationInput{
 		EnvironmentId: envID,
 		ApplicationId: appID,
 		Application:   *testOIDCApp.ApplicationOIDC,
@@ -193,12 +193,12 @@ func TestUpdateApplicationByIdHandler_ContextCancellation(t *testing.T) {
 	mockClient.AssertExpectations(t)
 }
 
-func TestUpdateApplicationByIdHandler_APIErrors(t *testing.T) {
+func TestUpdateApplicationHandler_APIErrors(t *testing.T) {
 	tests := testutils.CommonAPIErrorTestCases()
 
 	envID := testEnvironmentId
 	appID := testAppId
-	input := applications.UpdateApplicationByIdInput{
+	input := applications.UpdateApplicationInput{
 		EnvironmentId: envID,
 		ApplicationId: appID,
 		Application:   *testOIDCApp.ApplicationOIDC,
@@ -208,8 +208,8 @@ func TestUpdateApplicationByIdHandler_APIErrors(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			// Setup
 			mockClient := &mockPingOneClientApplicationsWrapper{}
-			mockUpdateApplicationByIdSetup(mockClient, envID, appID, nil, tt.StatusCode, tt.ApiError)
-			handler := applications.UpdateApplicationByIdHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			mockUpdateApplicationSetup(mockClient, envID, appID, nil, tt.StatusCode, tt.ApiError)
+			handler := applications.UpdateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 
 			// Execute
 			mcpResult, output, err := handler(context.Background(), &mcp.CallToolRequest{}, input)
@@ -221,12 +221,12 @@ func TestUpdateApplicationByIdHandler_APIErrors(t *testing.T) {
 	}
 }
 
-func TestUpdateApplicationByIdHandler_GetAuthenticatedClientError(t *testing.T) {
+func TestUpdateApplicationHandler_GetAuthenticatedClientError(t *testing.T) {
 	mockClient := &mockPingOneClientApplicationsWrapper{}
 	clientFactoryErr := errors.New("failed to get authenticated client")
-	handler := applications.UpdateApplicationByIdHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
+	handler := applications.UpdateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
 	req := &mcp.CallToolRequest{}
-	input := applications.UpdateApplicationByIdInput{
+	input := applications.UpdateApplicationInput{
 		EnvironmentId: testEnvironmentId,
 		ApplicationId: testAppId,
 		Application: management.ApplicationOIDC{
@@ -247,12 +247,12 @@ func TestUpdateApplicationByIdHandler_GetAuthenticatedClientError(t *testing.T) 
 	assert.Nil(t, output)
 }
 
-func TestUpdateApplicationByIdHandler_InitializeAuthContextError(t *testing.T) {
+func TestUpdateApplicationHandler_InitializeAuthContextError(t *testing.T) {
 	mockClient := &mockPingOneClientApplicationsWrapper{}
 	initContextErr := errors.New("failed to initialize auth context")
-	handler := applications.UpdateApplicationByIdHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
+	handler := applications.UpdateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
 	req := &mcp.CallToolRequest{}
-	input := applications.UpdateApplicationByIdInput{
+	input := applications.UpdateApplicationInput{
 		EnvironmentId: testEnvironmentId,
 		ApplicationId: testAppId,
 		Application: management.ApplicationOIDC{
@@ -273,7 +273,7 @@ func TestUpdateApplicationByIdHandler_InitializeAuthContextError(t *testing.T) {
 	assert.Nil(t, output)
 }
 
-func TestUpdateApplicationByIdHandler_InitializeAuthContext(t *testing.T) {
+func TestUpdateApplicationHandler_InitializeAuthContext(t *testing.T) {
 	testCases := []struct {
 		name                       string
 		setupTokenStore            func() *testutils.InMemoryTokenStore
@@ -320,7 +320,7 @@ func TestUpdateApplicationByIdHandler_InitializeAuthContext(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Set up a mock update response
 			mockClient := &mockPingOneClientApplicationsWrapper{}
-			mockUpdateApplicationByIdSetup(mockClient, testEnvironmentId, testAppId, &testOIDCApp, 200, nil)
+			mockUpdateApplicationSetup(mockClient, testEnvironmentId, testAppId, &testOIDCApp, 200, nil)
 
 			// Set up auth mocks
 			tokenStore := tc.setupTokenStore()
@@ -328,9 +328,9 @@ func TestUpdateApplicationByIdHandler_InitializeAuthContext(t *testing.T) {
 			authContextInitializer := initialize.AuthContextInitializer(mockClientFactory, tokenStore, auth.GrantTypeAuthorizationCode)
 
 			// Create handler and execute
-			handler := applications.UpdateApplicationByIdHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), authContextInitializer)
+			handler := applications.UpdateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), authContextInitializer)
 			req := &mcp.CallToolRequest{}
-			input := applications.UpdateApplicationByIdInput{
+			input := applications.UpdateApplicationInput{
 				EnvironmentId: testEnvironmentId,
 				ApplicationId: testAppId,
 				Application:   *testOIDCApp.ApplicationOIDC,
@@ -347,16 +347,16 @@ func TestUpdateApplicationByIdHandler_InitializeAuthContext(t *testing.T) {
 	}
 }
 
-func TestUpdateApplicationByIdHandler_RealClient(t *testing.T) {
+func TestUpdateApplicationHandler_RealClient(t *testing.T) {
 	//TODO enable test when we have can run against a real P1 client
-	t.Skip("Skipping TestUpdateApplicationByIdHandler_RealClient since it relies on real P1 client")
+	t.Skip("Skipping TestUpdateApplicationHandler_RealClient since it relies on real P1 client")
 
 	var emptyToken string
 	client, err := legacy.NewDefaultClientFactory(testutils.TestServerVersion).NewClient(t.Context(), emptyToken)
 	require.NoError(t, err, "Failed to create PingOne client - check your credentials")
 
 	clientWrapper := applications.NewPingOneClientApplicationsWrapper(client)
-	handler := applications.UpdateApplicationByIdHandler(NewMockPingOneClientApplicationsWrapperFactory(clientWrapper, nil), testutils.MockContextInitializer())
+	handler := applications.UpdateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(clientWrapper, nil), testutils.MockContextInitializer())
 
 	// Note: Replace with a valid environment and application ID from your PingOne organization
 	testEnvironmentId := uuid.MustParse("00000000-0000-0000-0000-000000000000")
@@ -364,7 +364,7 @@ func TestUpdateApplicationByIdHandler_RealClient(t *testing.T) {
 
 	// Create a simple update payload (e.g., updating description)
 	req := &mcp.CallToolRequest{}
-	input := applications.UpdateApplicationByIdInput{
+	input := applications.UpdateApplicationInput{
 		EnvironmentId: testEnvironmentId,
 		ApplicationId: testApplicationId,
 		Application: management.ApplicationOIDC{

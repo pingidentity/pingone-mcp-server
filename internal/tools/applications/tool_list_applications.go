@@ -107,7 +107,7 @@ func ListApplicationsHandler(clientFactory ApplicationsClientFactory, initialize
 			for _, sdkApp := range next.EntityArray.Embedded.Applications {
 				applicationSummary, err := getApplicationSummary(&sdkApp)
 				if err != nil {
-					toolErr := errs.NewToolError(GetApplicationByIdDef.McpTool.Name, err)
+					toolErr := errs.NewToolError(GetApplicationDef.McpTool.Name, err)
 					errs.Log(ctx, toolErr)
 					return nil, nil, toolErr
 				}

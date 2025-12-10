@@ -81,7 +81,7 @@ func (p *PingOneClientPopulationsWrapper) CreatePopulation(ctx context.Context, 
 	return postRequest.Execute()
 }
 
-func (p *PingOneClientPopulationsWrapper) GetPopulationById(ctx context.Context, environmentId uuid.UUID, populationId uuid.UUID) (*management.Population, *http.Response, error) {
+func (p *PingOneClientPopulationsWrapper) GetPopulation(ctx context.Context, environmentId uuid.UUID, populationId uuid.UUID) (*management.Population, *http.Response, error) {
 	if p.client == nil {
 		return nil, nil, errors.New("PingOne client is not initialized")
 	}
@@ -95,7 +95,7 @@ func (p *PingOneClientPopulationsWrapper) GetPopulationById(ctx context.Context,
 	return getRequest.Execute()
 }
 
-func (p *PingOneClientPopulationsWrapper) UpdatePopulationById(ctx context.Context, environmentId uuid.UUID, populationId uuid.UUID, updateRequest management.Population) (*management.Population, *http.Response, error) {
+func (p *PingOneClientPopulationsWrapper) UpdatePopulation(ctx context.Context, environmentId uuid.UUID, populationId uuid.UUID, updateRequest management.Population) (*management.Population, *http.Response, error) {
 	if p.client == nil {
 		return nil, nil, errors.New("PingOne client is not initialized")
 	}

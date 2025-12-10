@@ -17,7 +17,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 )
 
-var GetEnvironmentServicesByIdDef = types.ToolDefinition{
+var GetEnvironmentServicesDef = types.ToolDefinition{
 	ValidationPolicy: &types.ToolValidationPolicy{
 		AllowProductionEnvironmentRead: true,
 	},
@@ -25,46 +25,46 @@ var GetEnvironmentServicesByIdDef = types.ToolDefinition{
 		Name:         "get_environment_services",
 		Title:        "Get PingOne Environment Services by ID",
 		Description:  "Retrieve all the services assigned to a specified PingOne environment, by the environment's unique ID.",
-		InputSchema:  schema.MustGenerateSchema[GetEnvironmentServicesByIdInput](),
-		OutputSchema: schema.MustGenerateSchema[GetEnvironmentServicesByIdOutput](),
+		InputSchema:  schema.MustGenerateSchema[GetEnvironmentServicesInput](),
+		OutputSchema: schema.MustGenerateSchema[GetEnvironmentServicesOutput](),
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint: true,
 		},
 	},
 }
 
-// GetEnvironmentServicesByIdInput defines the input parameters for retrieving environment services by ID
-type GetEnvironmentServicesByIdInput struct {
+// GetEnvironmentServicesInput defines the input parameters for retrieving environment services by ID
+type GetEnvironmentServicesInput struct {
 	EnvironmentId uuid.UUID `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
 }
 
-// GetEnvironmentServicesByIdOutput represents the result of retrieving environment services
-type GetEnvironmentServicesByIdOutput struct {
+// GetEnvironmentServicesOutput represents the result of retrieving environment services
+type GetEnvironmentServicesOutput struct {
 	Services pingone.EnvironmentBillOfMaterialsResponse `json:"services" jsonschema:"The bill of materials for the environment, including products and solution type"`
 }
 
-// GetEnvironmentServicesByIdHandler retrieves PingOne environment services by ID using the provided client
-func GetEnvironmentServicesByIdHandler(environmentsClientFactory EnvironmentsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+// GetEnvironmentServicesHandler retrieves PingOne environment services by ID using the provided client
+func GetEnvironmentServicesHandler(environmentsClientFactory EnvironmentsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
-	input GetEnvironmentServicesByIdInput,
+	input GetEnvironmentServicesInput,
 ) (
 	*mcp.CallToolResult,
-	*GetEnvironmentServicesByIdOutput,
+	*GetEnvironmentServicesOutput,
 	error,
 ) {
-	return func(ctx context.Context, req *mcp.CallToolRequest, input GetEnvironmentServicesByIdInput) (*mcp.CallToolResult, *GetEnvironmentServicesByIdOutput, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, GetEnvironmentServicesByIdDef.McpTool.Name, req)
+	return func(ctx context.Context, req *mcp.CallToolRequest, input GetEnvironmentServicesInput) (*mcp.CallToolResult, *GetEnvironmentServicesOutput, error) {
+		ctx = initialize.InitializeToolInvocation(ctx, GetEnvironmentServicesDef.McpTool.Name, req)
 		ctx, err := initializeAuthContext(ctx)
 		if err != nil {
-			toolErr := errs.NewToolError(GetEnvironmentServicesByIdDef.McpTool.Name, err)
+			toolErr := errs.NewToolError(GetEnvironmentServicesDef.McpTool.Name, err)
 			errs.Log(ctx, toolErr)
 			return nil, nil, toolErr
 		}
 
 		client, err := environmentsClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
-			toolErr := errs.NewToolError(GetEnvironmentServicesByIdDef.McpTool.Name, err)
+			toolErr := errs.NewToolError(GetEnvironmentServicesDef.McpTool.Name, err)
 			errs.Log(ctx, toolErr)
 			return nil, nil, toolErr
 		}
@@ -73,7 +73,7 @@ func GetEnvironmentServicesByIdHandler(environmentsClientFactory EnvironmentsCli
 			slog.String("environmentId", input.EnvironmentId.String()))
 
 		// Call the API to retrieve the environment services
-		services, httpResponse, err := client.GetEnvironmentServicesById(ctx, input.EnvironmentId)
+		services, httpResponse, err := client.GetEnvironmentServices(ctx, input.EnvironmentId)
 		logger.LogHttpResponse(ctx, httpResponse)
 
 		if err != nil {
@@ -95,7 +95,7 @@ func GetEnvironmentServicesByIdHandler(environmentsClientFactory EnvironmentsCli
 		// Filter out _links field from response
 		services.Links = nil
 
-		result := &GetEnvironmentServicesByIdOutput{
+		result := &GetEnvironmentServicesOutput{
 			Services: *services,
 		}
 

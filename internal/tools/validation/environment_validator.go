@@ -85,7 +85,7 @@ func (v *CachingEnvironmentValidator) ValidateEnvironment(ctx context.Context, e
 	}
 
 	// Validate with API
-	envResponse, httpResponse, err := client.GetEnvironmentById(ctx, environmentId)
+	envResponse, httpResponse, err := client.GetEnvironment(ctx, environmentId)
 	logger.LogHttpResponse(ctx, httpResponse)
 
 	if err != nil {

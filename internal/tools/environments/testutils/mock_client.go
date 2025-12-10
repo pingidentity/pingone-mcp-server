@@ -79,11 +79,11 @@ func (m *MockEnvironmentsClient) CreateEnvironment(ctx context.Context, request 
 	return envResponse, httpResponse, args.Error(2)
 }
 
-// GetEnvironmentById retrieves a specific environment by its unique identifier.
+// GetEnvironment retrieves a specific environment by its unique identifier.
 // Returns the environment response, HTTP response details, and any error encountered.
 // The ctx parameter provides context for the API operation including cancellation and timeouts.
 // The environmentId parameter specifies the UUID of the environment to retrieve.
-func (m *MockEnvironmentsClient) GetEnvironmentById(ctx context.Context, environmentId uuid.UUID) (*pingone.EnvironmentResponse, *http.Response, error) {
+func (m *MockEnvironmentsClient) GetEnvironment(ctx context.Context, environmentId uuid.UUID) (*pingone.EnvironmentResponse, *http.Response, error) {
 	args := m.Called(ctx, environmentId)
 	var envResponse *pingone.EnvironmentResponse
 	if args.Get(0) != nil {
@@ -96,12 +96,12 @@ func (m *MockEnvironmentsClient) GetEnvironmentById(ctx context.Context, environ
 	return envResponse, httpResponse, args.Error(2)
 }
 
-// UpdateEnvironmentById updates an existing environment with new configuration.
+// UpdateEnvironment updates an existing environment with new configuration.
 // Returns the updated environment response, HTTP response details, and any error encountered.
 // The ctx parameter provides context for the API operation including cancellation and timeouts.
 // The environmentId parameter specifies the UUID of the environment to update.
 // The request parameter contains the updated environment configuration.
-func (m *MockEnvironmentsClient) UpdateEnvironmentById(ctx context.Context, environmentId uuid.UUID, request *pingone.EnvironmentReplaceRequest) (*pingone.EnvironmentResponse, *http.Response, error) {
+func (m *MockEnvironmentsClient) UpdateEnvironment(ctx context.Context, environmentId uuid.UUID, request *pingone.EnvironmentReplaceRequest) (*pingone.EnvironmentResponse, *http.Response, error) {
 	args := m.Called(ctx, environmentId, request)
 	var envResponse *pingone.EnvironmentResponse
 	if args.Get(0) != nil {
@@ -114,11 +114,11 @@ func (m *MockEnvironmentsClient) UpdateEnvironmentById(ctx context.Context, envi
 	return envResponse, httpResponse, args.Error(2)
 }
 
-// GetEnvironmentServicesById retrieves the bill of materials (enabled services) for an environment.
+// GetEnvironmentServices retrieves the bill of materials (enabled services) for an environment.
 // Returns the bill of materials response, HTTP response details, and any error encountered.
 // The ctx parameter provides context for the API operation including cancellation and timeouts.
 // The environmentId parameter specifies the UUID of the environment whose services to retrieve.
-func (m *MockEnvironmentsClient) GetEnvironmentServicesById(ctx context.Context, environmentId uuid.UUID) (*pingone.EnvironmentBillOfMaterialsResponse, *http.Response, error) {
+func (m *MockEnvironmentsClient) GetEnvironmentServices(ctx context.Context, environmentId uuid.UUID) (*pingone.EnvironmentBillOfMaterialsResponse, *http.Response, error) {
 	args := m.Called(ctx, environmentId)
 	var bomResponse *pingone.EnvironmentBillOfMaterialsResponse
 	if args.Get(0) != nil {
@@ -131,12 +131,12 @@ func (m *MockEnvironmentsClient) GetEnvironmentServicesById(ctx context.Context,
 	return bomResponse, httpResponse, args.Error(2)
 }
 
-// UpdateEnvironmentServicesById updates the enabled services (bill of materials) for an environment.
+// UpdateEnvironmentServices updates the enabled services (bill of materials) for an environment.
 // Returns the updated bill of materials response, HTTP response details, and any error encountered.
 // The ctx parameter provides context for the API operation including cancellation and timeouts.
 // The environmentId parameter specifies the UUID of the environment whose services to update.
 // The request parameter contains the updated bill of materials configuration.
-func (m *MockEnvironmentsClient) UpdateEnvironmentServicesById(ctx context.Context, environmentId uuid.UUID, request *pingone.EnvironmentBillOfMaterialsReplaceRequest) (*pingone.EnvironmentBillOfMaterialsResponse, *http.Response, error) {
+func (m *MockEnvironmentsClient) UpdateEnvironmentServices(ctx context.Context, environmentId uuid.UUID, request *pingone.EnvironmentBillOfMaterialsReplaceRequest) (*pingone.EnvironmentBillOfMaterialsResponse, *http.Response, error) {
 	args := m.Called(ctx, environmentId, request)
 	var bomResponse *pingone.EnvironmentBillOfMaterialsResponse
 	if args.Get(0) != nil {

@@ -48,9 +48,9 @@ func (c *ApplicationsCollection) RegisterTools(ctx context.Context, server *mcp.
 		mcp.AddTool(server, ListApplicationsDef.McpTool, ListApplicationsHandler(applicationsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(&GetApplicationByIdDef) {
-		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetApplicationByIdDef.McpTool.Name))
-		mcp.AddTool(server, GetApplicationByIdDef.McpTool, GetApplicationByIdHandler(applicationsClientFactory, initializeAuthContext))
+	if toolFilter.ShouldIncludeTool(&GetApplicationDef) {
+		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetApplicationDef.McpTool.Name))
+		mcp.AddTool(server, GetApplicationDef.McpTool, GetApplicationHandler(applicationsClientFactory, initializeAuthContext))
 	}
 
 	if toolFilter.ShouldIncludeTool(&CreateApplicationDef) {
@@ -58,9 +58,9 @@ func (c *ApplicationsCollection) RegisterTools(ctx context.Context, server *mcp.
 		mcp.AddTool(server, CreateApplicationDef.McpTool, CreateApplicationHandler(applicationsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(&UpdateApplicationByIdDef) {
-		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", UpdateApplicationByIdDef.McpTool.Name))
-		mcp.AddTool(server, UpdateApplicationByIdDef.McpTool, UpdateApplicationByIdHandler(applicationsClientFactory, initializeAuthContext))
+	if toolFilter.ShouldIncludeTool(&UpdateApplicationDef) {
+		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", UpdateApplicationDef.McpTool.Name))
+		mcp.AddTool(server, UpdateApplicationDef.McpTool, UpdateApplicationHandler(applicationsClientFactory, initializeAuthContext))
 	}
 
 	return nil
@@ -69,8 +69,8 @@ func (c *ApplicationsCollection) RegisterTools(ctx context.Context, server *mcp.
 func (c *ApplicationsCollection) ListTools() []types.ToolDefinition {
 	return []types.ToolDefinition{
 		ListApplicationsDef,
-		GetApplicationByIdDef,
+		GetApplicationDef,
 		CreateApplicationDef,
-		UpdateApplicationByIdDef,
+		UpdateApplicationDef,
 	}
 }
