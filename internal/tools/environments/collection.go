@@ -53,24 +53,24 @@ func (c *EnvironmentsCollection) RegisterTools(ctx context.Context, server *mcp.
 		mcp.AddTool(server, CreateEnvironmentDef.McpTool, CreateEnvironmentHandler(environmentsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(&GetEnvironmentByIdDef) {
-		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetEnvironmentByIdDef.McpTool.Name))
-		mcp.AddTool(server, GetEnvironmentByIdDef.McpTool, GetEnvironmentByIdHandler(environmentsClientFactory, initializeAuthContext))
+	if toolFilter.ShouldIncludeTool(&GetEnvironmentDef) {
+		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetEnvironmentDef.McpTool.Name))
+		mcp.AddTool(server, GetEnvironmentDef.McpTool, GetEnvironmentHandler(environmentsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(&UpdateEnvironmentByIdDef) {
-		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", UpdateEnvironmentByIdDef.McpTool.Name))
-		mcp.AddTool(server, UpdateEnvironmentByIdDef.McpTool, UpdateEnvironmentByIdHandler(environmentsClientFactory, initializeAuthContext))
+	if toolFilter.ShouldIncludeTool(&UpdateEnvironmentDef) {
+		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", UpdateEnvironmentDef.McpTool.Name))
+		mcp.AddTool(server, UpdateEnvironmentDef.McpTool, UpdateEnvironmentHandler(environmentsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(&GetEnvironmentServicesByIdDef) {
-		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetEnvironmentServicesByIdDef.McpTool.Name))
-		mcp.AddTool(server, GetEnvironmentServicesByIdDef.McpTool, GetEnvironmentServicesByIdHandler(environmentsClientFactory, initializeAuthContext))
+	if toolFilter.ShouldIncludeTool(&GetEnvironmentServicesDef) {
+		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetEnvironmentServicesDef.McpTool.Name))
+		mcp.AddTool(server, GetEnvironmentServicesDef.McpTool, GetEnvironmentServicesHandler(environmentsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(&UpdateEnvironmentServicesByIdDef) {
-		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", UpdateEnvironmentServicesByIdDef.McpTool.Name))
-		mcp.AddTool(server, UpdateEnvironmentServicesByIdDef.McpTool, UpdateEnvironmentServicesByIdHandler(environmentsClientFactory, initializeAuthContext))
+	if toolFilter.ShouldIncludeTool(&UpdateEnvironmentServicesDef) {
+		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", UpdateEnvironmentServicesDef.McpTool.Name))
+		mcp.AddTool(server, UpdateEnvironmentServicesDef.McpTool, UpdateEnvironmentServicesHandler(environmentsClientFactory, initializeAuthContext))
 	}
 
 	return nil
@@ -80,9 +80,9 @@ func (c *EnvironmentsCollection) ListTools() []types.ToolDefinition {
 	return []types.ToolDefinition{
 		ListEnvironmentsDef,
 		CreateEnvironmentDef,
-		GetEnvironmentByIdDef,
-		UpdateEnvironmentByIdDef,
-		GetEnvironmentServicesByIdDef,
-		UpdateEnvironmentServicesByIdDef,
+		GetEnvironmentDef,
+		UpdateEnvironmentDef,
+		GetEnvironmentServicesDef,
+		UpdateEnvironmentServicesDef,
 	}
 }

@@ -21,25 +21,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
+func TestGetEnvironmentServicesHandler_MockClient(t *testing.T) {
 	tests := []struct {
 		name            string
-		input           environments.GetEnvironmentServicesByIdInput
+		input           environments.GetEnvironmentServicesInput
 		setupMock       func(*envtestutils.MockEnvironmentsClient, uuid.UUID)
 		wantErr         bool
 		wantErrContains string
-		validateOutput  func(*testing.T, *environments.GetEnvironmentServicesByIdOutput)
+		validateOutput  func(*testing.T, *environments.GetEnvironmentServicesOutput)
 	}{
 		{
 			name: "Success - Get environment services by ID",
-			input: environments.GetEnvironmentServicesByIdInput{
+			input: environments.GetEnvironmentServicesInput{
 				EnvironmentId: testEnv1.id,
 			},
 			setupMock: func(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID) {
 				expectedServices := createEnvironmentServicesResponse(t)
-				mockGetEnvironmentServicesByIdSetup(m, envID, &expectedServices, 200, nil)
+				mockGetEnvironmentServicesSetup(m, envID, &expectedServices, 200, nil)
 			},
-			validateOutput: func(t *testing.T, output *environments.GetEnvironmentServicesByIdOutput) {
+			validateOutput: func(t *testing.T, output *environments.GetEnvironmentServicesOutput) {
 				assert.NotNil(t, output.Services)
 				assert.NotEmpty(t, output.Services.Products)
 				assert.Equal(t, 2, len(output.Services.Products))
@@ -47,7 +47,7 @@ func TestGetEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 		},
 		{
 			name: "Success - Get environment services with complete data",
-			input: environments.GetEnvironmentServicesByIdInput{
+			input: environments.GetEnvironmentServicesInput{
 				EnvironmentId: testEnv1.id,
 			},
 			setupMock: func(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID) {
@@ -68,9 +68,9 @@ func TestGetEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 					CreatedAt:    &createdAt,
 					UpdatedAt:    &updatedAt,
 				}
-				mockGetEnvironmentServicesByIdSetup(m, envID, &expectedServices, 200, nil)
+				mockGetEnvironmentServicesSetup(m, envID, &expectedServices, 200, nil)
 			},
-			validateOutput: func(t *testing.T, output *environments.GetEnvironmentServicesByIdOutput) {
+			validateOutput: func(t *testing.T, output *environments.GetEnvironmentServicesOutput) {
 				assert.NotNil(t, output.Services)
 				assert.Equal(t, 2, len(output.Services.Products))
 				assert.NotNil(t, output.Services.SolutionType)
@@ -81,22 +81,22 @@ func TestGetEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 		},
 		{
 			name: "Error - Environment not found (404)",
-			input: environments.GetEnvironmentServicesByIdInput{
+			input: environments.GetEnvironmentServicesInput{
 				EnvironmentId: testEnv1.id,
 			},
 			setupMock: func(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID) {
-				mockGetEnvironmentServicesByIdSetup(m, envID, nil, 404, errors.New("environment not found"))
+				mockGetEnvironmentServicesSetup(m, envID, nil, 404, errors.New("environment not found"))
 			},
 			wantErr:         true,
 			wantErrContains: "environment not found",
 		},
 		{
 			name: "Error - API returns nil response with no error",
-			input: environments.GetEnvironmentServicesByIdInput{
+			input: environments.GetEnvironmentServicesInput{
 				EnvironmentId: testEnv1.id,
 			},
 			setupMock: func(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID) {
-				mockGetEnvironmentServicesByIdSetup(m, envID, nil, 200, nil)
+				mockGetEnvironmentServicesSetup(m, envID, nil, 200, nil)
 			},
 			wantErr:         true,
 			wantErrContains: "no services data in response",
@@ -109,7 +109,7 @@ func TestGetEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 			// Setup
 			mockClient := &envtestutils.MockEnvironmentsClient{}
 			tt.setupMock(mockClient, tt.input.EnvironmentId)
-			handler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.GetEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 			req := &mcp.CallToolRequest{}
 
 			// Execute
@@ -136,13 +136,13 @@ func TestGetEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 			// Setup
 			mockClient := &envtestutils.MockEnvironmentsClient{}
 			tt.setupMock(mockClient, tt.input.EnvironmentId)
-			handler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.GetEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 
 			server := mcptestutils.TestMcpServer(t)
-			mcp.AddTool(server, environments.GetEnvironmentServicesByIdDef.McpTool, handler)
+			mcp.AddTool(server, environments.GetEnvironmentServicesDef.McpTool, handler)
 
 			// Execute over MCP
-			output, err := mcptestutils.CallToolOverMcp(t, server, environments.GetEnvironmentServicesByIdDef.McpTool.Name, tt.input)
+			output, err := mcptestutils.CallToolOverMcp(t, server, environments.GetEnvironmentServicesDef.McpTool.Name, tt.input)
 
 			require.NoError(t, err, "Expect no error calling tool")
 			require.NotNil(t, output, "Expect non-nil output")
@@ -158,7 +158,7 @@ func TestGetEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 			testutils.AssertMcpCallSuccess(t, err, output)
 
 			// marshal the structured content into the expected output type
-			outputServices := &environments.GetEnvironmentServicesByIdOutput{}
+			outputServices := &environments.GetEnvironmentServicesOutput{}
 			jsonBytes, err := json.Marshal(output.StructuredContent)
 			require.NoError(t, err, "Failed to marshal structured content")
 			err = json.Unmarshal(jsonBytes, outputServices)
@@ -173,7 +173,7 @@ func TestGetEnvironmentServicesByIdHandler_MockClient(t *testing.T) {
 	}
 }
 
-func TestGetEnvironmentServicesByIdHandler_ContextCancellation(t *testing.T) {
+func TestGetEnvironmentServicesHandler_ContextCancellation(t *testing.T) {
 	// Create a cancelled context
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
@@ -181,11 +181,11 @@ func TestGetEnvironmentServicesByIdHandler_ContextCancellation(t *testing.T) {
 	mockClient := &envtestutils.MockEnvironmentsClient{}
 	envID := testEnv1.id
 	// Mock should return context.Canceled error when context is already cancelled
-	mockClient.On("GetEnvironmentServicesById", testutils.CancelledContextMatcher, envID).Return(nil, nil, context.Canceled)
+	mockClient.On("GetEnvironmentServices", testutils.CancelledContextMatcher, envID).Return(nil, nil, context.Canceled)
 
-	handler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+	handler := environments.GetEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 	req := &mcp.CallToolRequest{}
-	input := environments.GetEnvironmentServicesByIdInput{
+	input := environments.GetEnvironmentServicesInput{
 		EnvironmentId: testEnv1.id,
 	}
 
@@ -201,11 +201,11 @@ func TestGetEnvironmentServicesByIdHandler_ContextCancellation(t *testing.T) {
 	mockClient.AssertExpectations(t)
 }
 
-func TestGetEnvironmentServicesByIdHandler_APIErrors(t *testing.T) {
+func TestGetEnvironmentServicesHandler_APIErrors(t *testing.T) {
 	tests := testutils.CommonAPIErrorTestCases()
 
 	envID := testEnv1.id
-	input := environments.GetEnvironmentServicesByIdInput{
+	input := environments.GetEnvironmentServicesInput{
 		EnvironmentId: testEnv1.id,
 	}
 
@@ -213,8 +213,8 @@ func TestGetEnvironmentServicesByIdHandler_APIErrors(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			// Setup
 			mockClient := &envtestutils.MockEnvironmentsClient{}
-			mockGetEnvironmentServicesByIdSetup(mockClient, envID, nil, tt.StatusCode, tt.ApiError)
-			handler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			mockGetEnvironmentServicesSetup(mockClient, envID, nil, tt.StatusCode, tt.ApiError)
+			handler := environments.GetEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 
 			// Execute
 			mcpResult, output, err := handler(context.Background(), &mcp.CallToolRequest{}, input)
@@ -226,12 +226,12 @@ func TestGetEnvironmentServicesByIdHandler_APIErrors(t *testing.T) {
 	}
 }
 
-func TestGetEnvironmentServicesByIdHandler_GetAuthenticatedClientError(t *testing.T) {
+func TestGetEnvironmentServicesHandler_GetAuthenticatedClientError(t *testing.T) {
 	mockClient := &envtestutils.MockEnvironmentsClient{}
 	clientFactoryErr := errors.New("failed to get authenticated client")
-	handler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
+	handler := environments.GetEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
 	req := &mcp.CallToolRequest{}
-	input := environments.GetEnvironmentServicesByIdInput{
+	input := environments.GetEnvironmentServicesInput{
 		EnvironmentId: testEnv1.id,
 	}
 
@@ -243,12 +243,12 @@ func TestGetEnvironmentServicesByIdHandler_GetAuthenticatedClientError(t *testin
 	assert.Nil(t, output)
 }
 
-func TestGetEnvironmentServicesByIdHandler_InitializeAuthContextError(t *testing.T) {
+func TestGetEnvironmentServicesHandler_InitializeAuthContextError(t *testing.T) {
 	mockClient := &envtestutils.MockEnvironmentsClient{}
 	initContextErr := errors.New("failed to initialize auth context")
-	handler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
+	handler := environments.GetEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
 	req := &mcp.CallToolRequest{}
-	input := environments.GetEnvironmentServicesByIdInput{
+	input := environments.GetEnvironmentServicesInput{
 		EnvironmentId: testEnv1.id,
 	}
 
@@ -260,7 +260,7 @@ func TestGetEnvironmentServicesByIdHandler_InitializeAuthContextError(t *testing
 	assert.Nil(t, output)
 }
 
-func TestGetEnvironmentServicesByIdHandler_RealClient(t *testing.T) {
+func TestGetEnvironmentServicesHandler_RealClient(t *testing.T) {
 	//TODO enable test when we have can run against a real P1 client
 	t.Skip("Enable when PingOne credentials are available")
 
@@ -273,8 +273,8 @@ func TestGetEnvironmentServicesByIdHandler_RealClient(t *testing.T) {
 	// Note: Replace with a valid environment and application ID from your PingOne organization
 	testEnvID := uuid.MustParse("00000000-0000-0000-0000-000000000000")
 
-	handler := environments.GetEnvironmentServicesByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(clientWrapper, nil), testutils.MockContextInitializer())
-	input := environments.GetEnvironmentServicesByIdInput{
+	handler := environments.GetEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(clientWrapper, nil), testutils.MockContextInitializer())
+	input := environments.GetEnvironmentServicesInput{
 		EnvironmentId: testEnvID,
 	}
 

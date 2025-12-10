@@ -53,14 +53,14 @@ func (c *PopulationsCollection) RegisterTools(ctx context.Context, server *mcp.S
 		mcp.AddTool(server, CreatePopulationDef.McpTool, CreatePopulationHandler(populationsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(&GetPopulationByIdDef) {
-		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetPopulationByIdDef.McpTool.Name))
-		mcp.AddTool(server, GetPopulationByIdDef.McpTool, GetPopulationByIdHandler(populationsClientFactory, initializeAuthContext))
+	if toolFilter.ShouldIncludeTool(&GetPopulationDef) {
+		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetPopulationDef.McpTool.Name))
+		mcp.AddTool(server, GetPopulationDef.McpTool, GetPopulationHandler(populationsClientFactory, initializeAuthContext))
 	}
 
-	if toolFilter.ShouldIncludeTool(&UpdatePopulationByIdDef) {
-		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", UpdatePopulationByIdDef.McpTool.Name))
-		mcp.AddTool(server, UpdatePopulationByIdDef.McpTool, UpdatePopulationByIdHandler(populationsClientFactory, initializeAuthContext))
+	if toolFilter.ShouldIncludeTool(&UpdatePopulationDef) {
+		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", UpdatePopulationDef.McpTool.Name))
+		mcp.AddTool(server, UpdatePopulationDef.McpTool, UpdatePopulationHandler(populationsClientFactory, initializeAuthContext))
 	}
 
 	return nil
@@ -70,7 +70,7 @@ func (c *PopulationsCollection) ListTools() []types.ToolDefinition {
 	return []types.ToolDefinition{
 		ListPopulationsDef,
 		CreatePopulationDef,
-		GetPopulationByIdDef,
-		UpdatePopulationByIdDef,
+		GetPopulationDef,
+		UpdatePopulationDef,
 	}
 }

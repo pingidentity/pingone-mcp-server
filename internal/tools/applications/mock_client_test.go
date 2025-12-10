@@ -76,7 +76,7 @@ func (p *mockPingOneClientApplicationsWrapper) GetApplication(ctx context.Contex
 	return response, httpResponse, args.Error(2)
 }
 
-func (p *mockPingOneClientApplicationsWrapper) UpdateApplicationById(ctx context.Context, environmentId uuid.UUID, applicationId uuid.UUID, app management.UpdateApplicationRequest) (*management.ReadOneApplication200Response, *http.Response, error) {
+func (p *mockPingOneClientApplicationsWrapper) UpdateApplication(ctx context.Context, environmentId uuid.UUID, applicationId uuid.UUID, app management.UpdateApplicationRequest) (*management.ReadOneApplication200Response, *http.Response, error) {
 	args := p.Called(ctx, environmentId, applicationId, app)
 	var response *management.ReadOneApplication200Response
 	response, ok := args.Get(0).(*management.ReadOneApplication200Response)

@@ -25,64 +25,45 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// Helper function to set up UpdatePopulationById mock
-func mockUpdatePopulationByIdSetup(m *mockPingOneClientPopulationsWrapper, envID uuid.UUID, popID uuid.UUID, updateRequest management.Population, response *management.Population, statusCode int, err error) {
+// Helper function to set up GetPopulation mock
+func mockGetPopulationSetup(m *mockPingOneClientPopulationsWrapper, envID uuid.UUID, popID uuid.UUID, response *management.Population, statusCode int, err error) {
 	httpResp := &http.Response{StatusCode: statusCode}
-	m.On("UpdatePopulationById", mock.Anything, envID, popID, updateRequest).Return(response, httpResp, err)
+	m.On("GetPopulation", mock.Anything, envID, popID).Return(response, httpResp, err)
 }
 
-func TestUpdatePopulationByIdHandler_MockClient(t *testing.T) {
+func TestGetPopulationHandler_MockClient(t *testing.T) {
 	tests := []struct {
 		name            string
-		input           populations.UpdatePopulationByIdInput
-		setupMock       func(*mockPingOneClientPopulationsWrapper, uuid.UUID, uuid.UUID, management.Population)
+		input           populations.GetPopulationInput
+		setupMock       func(*mockPingOneClientPopulationsWrapper, uuid.UUID, uuid.UUID)
 		wantErr         bool
 		wantErrContains string
-		validateOutput  func(*testing.T, *populations.UpdatePopulationByIdOutput)
+		validateOutput  func(*testing.T, *populations.GetPopulationOutput)
 	}{
 		{
-			name:  "Success - Update population by ID",
-			input: updatePopulationByIdInputFromPopulation(testPop1, testEnvironmentId),
-			setupMock: func(m *mockPingOneClientPopulationsWrapper, envID uuid.UUID, popID uuid.UUID, updateRequest management.Population) {
-				mockUpdatePopulationByIdSetup(m, envID, popID, updateRequest, &testPop1, 200, nil)
+			name:  "Success - Get population by ID",
+			input: getPopulationInputFromPopulation(testPop1, testEnvironmentId),
+			setupMock: func(m *mockPingOneClientPopulationsWrapper, envID uuid.UUID, popID uuid.UUID) {
+				mockGetPopulationSetup(m, envID, popID, &testPop1, 200, nil)
 			},
-			validateOutput: func(t *testing.T, output *populations.UpdatePopulationByIdOutput) {
+			validateOutput: func(t *testing.T, output *populations.GetPopulationOutput) {
 				assertPopulationMatches(t, testPop1, output.Population)
 			},
 		},
 		{
-			name:  "Success - Update population with all optional fields",
-			input: updatePopulationByIdInputFromPopulation(testPop5AllFields, testEnvironmentId),
-			setupMock: func(m *mockPingOneClientPopulationsWrapper, envID uuid.UUID, popID uuid.UUID, updateRequest management.Population) {
-				mockUpdatePopulationByIdSetup(m, envID, popID, updateRequest, &testPop5AllFields, 200, nil)
-			},
-			validateOutput: func(t *testing.T, output *populations.UpdatePopulationByIdOutput) {
-				assertPopulationMatches(t, testPop5AllFields, output.Population)
-			},
-		},
-		{
 			name:  "Error - Population not found (404)",
-			input: updatePopulationByIdInputFromPopulation(testPop1, testEnvironmentId),
-			setupMock: func(m *mockPingOneClientPopulationsWrapper, envID uuid.UUID, popID uuid.UUID, updateRequest management.Population) {
-				mockUpdatePopulationByIdSetup(m, envID, popID, updateRequest, nil, 404, errors.New("population not found"))
+			input: getPopulationInputFromPopulation(testPop1, testEnvironmentId),
+			setupMock: func(m *mockPingOneClientPopulationsWrapper, envID uuid.UUID, popID uuid.UUID) {
+				mockGetPopulationSetup(m, envID, popID, nil, 404, errors.New("population not found"))
 			},
 			wantErr:         true,
 			wantErrContains: "population not found",
 		},
 		{
-			name:  "Error - Duplicate population name (409)",
-			input: updatePopulationByIdInputFromPopulation(testPop1, testEnvironmentId),
-			setupMock: func(m *mockPingOneClientPopulationsWrapper, envID uuid.UUID, popID uuid.UUID, updateRequest management.Population) {
-				mockUpdatePopulationByIdSetup(m, envID, popID, updateRequest, nil, 409, errors.New("duplicate population name"))
-			},
-			wantErr:         true,
-			wantErrContains: "duplicate population name",
-		},
-		{
 			name:  "Error - API returns nil response with no error",
-			input: updatePopulationByIdInputFromPopulation(testPop1, testEnvironmentId),
-			setupMock: func(m *mockPingOneClientPopulationsWrapper, envID uuid.UUID, popID uuid.UUID, updateRequest management.Population) {
-				mockUpdatePopulationByIdSetup(m, envID, popID, updateRequest, nil, 200, nil)
+			input: getPopulationInputFromPopulation(testPop1, testEnvironmentId),
+			setupMock: func(m *mockPingOneClientPopulationsWrapper, envID uuid.UUID, popID uuid.UUID) {
+				mockGetPopulationSetup(m, envID, popID, nil, 200, nil)
 			},
 			wantErr:         true,
 			wantErrContains: "no population data in response",
@@ -94,16 +75,8 @@ func TestUpdatePopulationByIdHandler_MockClient(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
 			mockClient := &mockPingOneClientPopulationsWrapper{}
-			updateRequest := management.Population{
-				Name:                   tt.input.Name,
-				AlternativeIdentifiers: tt.input.AlternativeIdentifiers,
-				Description:            tt.input.Description,
-				PreferredLanguage:      tt.input.PreferredLanguage,
-				PasswordPolicy:         tt.input.PasswordPolicy,
-				Theme:                  tt.input.Theme,
-			}
-			tt.setupMock(mockClient, tt.input.EnvironmentId, tt.input.PopulationId, updateRequest)
-			handler := populations.UpdatePopulationByIdHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			tt.setupMock(mockClient, tt.input.EnvironmentId, tt.input.PopulationId)
+			handler := populations.GetPopulationHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 			req := &mcp.CallToolRequest{}
 
 			// Execute
@@ -130,22 +103,14 @@ func TestUpdatePopulationByIdHandler_MockClient(t *testing.T) {
 		t.Run(tt.name+" via MCP", func(t *testing.T) {
 			// Setup
 			mockClient := &mockPingOneClientPopulationsWrapper{}
-			updateRequest := management.Population{
-				Name:                   tt.input.Name,
-				AlternativeIdentifiers: tt.input.AlternativeIdentifiers,
-				Description:            tt.input.Description,
-				PreferredLanguage:      tt.input.PreferredLanguage,
-				PasswordPolicy:         tt.input.PasswordPolicy,
-				Theme:                  tt.input.Theme,
-			}
-			tt.setupMock(mockClient, tt.input.EnvironmentId, tt.input.PopulationId, updateRequest)
-			handler := populations.UpdatePopulationByIdHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			tt.setupMock(mockClient, tt.input.EnvironmentId, tt.input.PopulationId)
+			handler := populations.GetPopulationHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 
 			server := mcptestutils.TestMcpServer(t)
-			mcp.AddTool(server, populations.UpdatePopulationByIdDef.McpTool, handler)
+			mcp.AddTool(server, populations.GetPopulationDef.McpTool, handler)
 
 			// Execute over MCP
-			output, err := mcptestutils.CallToolOverMcp(t, server, populations.UpdatePopulationByIdDef.McpTool.Name, tt.input)
+			output, err := mcptestutils.CallToolOverMcp(t, server, populations.GetPopulationDef.McpTool.Name, tt.input)
 			require.NoError(t, err, "Expect no error calling tool")
 			require.NotNil(t, output, "Expect non-nil output")
 
@@ -160,7 +125,7 @@ func TestUpdatePopulationByIdHandler_MockClient(t *testing.T) {
 			testutils.AssertMcpCallSuccess(t, err, output)
 
 			// marshal the structured content into the expected output type
-			outputPopulation := &populations.UpdatePopulationByIdOutput{}
+			outputPopulation := &populations.GetPopulationOutput{}
 			jsonBytes, err := json.Marshal(output.StructuredContent)
 			require.NoError(t, err, "Failed to marshal structured content")
 			err = json.Unmarshal(jsonBytes, outputPopulation)
@@ -175,7 +140,7 @@ func TestUpdatePopulationByIdHandler_MockClient(t *testing.T) {
 	}
 }
 
-func TestUpdatePopulationByIdHandler_ContextCancellation(t *testing.T) {
+func TestGetPopulationHandler_ContextCancellation(t *testing.T) {
 	// Create a cancelled context
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
@@ -183,17 +148,12 @@ func TestUpdatePopulationByIdHandler_ContextCancellation(t *testing.T) {
 	mockClient := &mockPingOneClientPopulationsWrapper{}
 	envID := testEnvironmentId
 	popID := uuid.MustParse(*testPop1.Id)
-	updateRequest := management.Population{Name: "Updated Name"}
 	// Mock should return context.Canceled error when context is already cancelled
-	mockClient.On("UpdatePopulationById", testutils.CancelledContextMatcher, envID, popID, updateRequest).Return(nil, nil, context.Canceled)
+	mockClient.On("GetPopulation", testutils.CancelledContextMatcher, envID, popID).Return(nil, nil, context.Canceled)
 
-	handler := populations.UpdatePopulationByIdHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+	handler := populations.GetPopulationHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 	req := &mcp.CallToolRequest{}
-	input := populations.UpdatePopulationByIdInput{
-		EnvironmentId: testEnvironmentId,
-		PopulationId:  uuid.MustParse(*testPop1.Id),
-		Name:          "Updated Name",
-	}
+	input := getPopulationInputFromPopulation(testPop1, testEnvironmentId)
 
 	// Execute
 	mcpResult, output, err := handler(ctx, req, input)
@@ -207,24 +167,19 @@ func TestUpdatePopulationByIdHandler_ContextCancellation(t *testing.T) {
 	mockClient.AssertExpectations(t)
 }
 
-func TestUpdatePopulationByIdHandler_APIErrors(t *testing.T) {
+func TestGetPopulationHandler_APIErrors(t *testing.T) {
 	tests := testutils.CommonAPIErrorTestCases()
 
 	envID := testEnvironmentId
 	popID := uuid.MustParse(*testPop1.Id)
-	input := populations.UpdatePopulationByIdInput{
-		EnvironmentId: testEnvironmentId,
-		PopulationId:  uuid.MustParse(*testPop1.Id),
-		Name:          "Updated Name",
-	}
-	updateRequest := management.Population{Name: "Updated Name"}
+	input := getPopulationInputFromPopulation(testPop1, testEnvironmentId)
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			// Setup
 			mockClient := &mockPingOneClientPopulationsWrapper{}
-			mockUpdatePopulationByIdSetup(mockClient, envID, popID, updateRequest, nil, tt.StatusCode, tt.ApiError)
-			handler := populations.UpdatePopulationByIdHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			mockGetPopulationSetup(mockClient, envID, popID, nil, tt.StatusCode, tt.ApiError)
+			handler := populations.GetPopulationHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
 
 			// Execute
 			mcpResult, output, err := handler(context.Background(), &mcp.CallToolRequest{}, input)
@@ -236,15 +191,14 @@ func TestUpdatePopulationByIdHandler_APIErrors(t *testing.T) {
 	}
 }
 
-func TestUpdatePopulationByIdHandler_GetAuthenticatedClientError(t *testing.T) {
+func TestGetPopulationHandler_GetAuthenticatedClientError(t *testing.T) {
 	mockClient := &mockPingOneClientPopulationsWrapper{}
 	clientFactoryErr := errors.New("failed to get authenticated client")
-	handler := populations.UpdatePopulationByIdHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
+	handler := populations.GetPopulationHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
 	req := &mcp.CallToolRequest{}
-	input := populations.UpdatePopulationByIdInput{
+	input := populations.GetPopulationInput{
 		EnvironmentId: testEnvironmentId,
 		PopulationId:  uuid.MustParse(*testPop1.Id),
-		Name:          "Updated Name",
 	}
 
 	mcpResult, output, err := handler(context.Background(), req, input)
@@ -255,15 +209,14 @@ func TestUpdatePopulationByIdHandler_GetAuthenticatedClientError(t *testing.T) {
 	assert.Nil(t, output)
 }
 
-func TestUpdatePopulationByIdHandler_InitializeAuthContextError(t *testing.T) {
+func TestGetPopulationHandler_InitializeAuthContextError(t *testing.T) {
 	mockClient := &mockPingOneClientPopulationsWrapper{}
 	initContextErr := errors.New("failed to initialize auth context")
-	handler := populations.UpdatePopulationByIdHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
+	handler := populations.GetPopulationHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
 	req := &mcp.CallToolRequest{}
-	input := populations.UpdatePopulationByIdInput{
+	input := populations.GetPopulationInput{
 		EnvironmentId: testEnvironmentId,
 		PopulationId:  uuid.MustParse(*testPop1.Id),
-		Name:          "Updated Name",
 	}
 
 	mcpResult, output, err := handler(context.Background(), req, input)
@@ -274,7 +227,7 @@ func TestUpdatePopulationByIdHandler_InitializeAuthContextError(t *testing.T) {
 	assert.Nil(t, output)
 }
 
-func TestUpdatePopulationByIdHandler_InitializeAuthContext(t *testing.T) {
+func TestGetPopulationHandler_InitializeAuthContext(t *testing.T) {
 	testCases := []struct {
 		name                       string
 		setupTokenStore            func() *testutils.InMemoryTokenStore
@@ -319,12 +272,11 @@ func TestUpdatePopulationByIdHandler_InitializeAuthContext(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Set up a mock update response
+			// Set up a mock get response
 			mockClient := &mockPingOneClientPopulationsWrapper{}
 			envID := testEnvironmentId
 			popID := uuid.MustParse(*testPop1.Id)
-			updateRequest := management.Population{Name: "Updated Name"}
-			mockUpdatePopulationByIdSetup(mockClient, envID, popID, updateRequest, &testPop1, 200, nil)
+			mockGetPopulationSetup(mockClient, envID, popID, &testPop1, 200, nil)
 
 			// Set up auth mocks
 			tokenStore := tc.setupTokenStore()
@@ -332,12 +284,11 @@ func TestUpdatePopulationByIdHandler_InitializeAuthContext(t *testing.T) {
 			authContextInitializer := initialize.AuthContextInitializer(mockClientFactory, tokenStore, auth.GrantTypeAuthorizationCode)
 
 			// Create handler and execute
-			handler := populations.UpdatePopulationByIdHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, nil), authContextInitializer)
+			handler := populations.GetPopulationHandler(NewMockPingOneClientPopulationsWrapperFactory(mockClient, nil), authContextInitializer)
 			req := &mcp.CallToolRequest{}
-			input := populations.UpdatePopulationByIdInput{
+			input := populations.GetPopulationInput{
 				EnvironmentId: testEnvironmentId,
 				PopulationId:  uuid.MustParse(*testPop1.Id),
-				Name:          "Updated Name",
 			}
 
 			_, _, err := handler(context.Background(), req, input)
@@ -351,27 +302,25 @@ func TestUpdatePopulationByIdHandler_InitializeAuthContext(t *testing.T) {
 	}
 }
 
-func TestUpdatePopulationByIdHandler_RealClient(t *testing.T) {
+func TestGetPopulationHandler_RealClient(t *testing.T) {
 	//TODO enable test when we have can run against a real P1 client
-	t.Skip("Skipping TestUpdatePopulationByIdHandler_RealClient since it relies on real P1 client")
+	t.Skip("Skipping TestGetPopulationHandler_RealClient since it relies on real P1 client")
 
 	var emptyToken string
 	client, err := legacy.NewDefaultClientFactory(testutils.TestServerVersion).NewClient(t.Context(), emptyToken)
 	require.NoError(t, err, "Failed to create PingOne client - check your credentials")
 
 	clientWrapper := populations.NewPingOneClientPopulationsWrapper(client)
-	handler := populations.UpdatePopulationByIdHandler(NewMockPingOneClientPopulationsWrapperFactory(clientWrapper, nil), testutils.MockContextInitializer())
+	handler := populations.GetPopulationHandler(NewMockPingOneClientPopulationsWrapperFactory(clientWrapper, nil), testutils.MockContextInitializer())
 
 	// Note: Replace with a valid environment and population ID from your PingOne organization
 	testEnvironmentId := uuid.MustParse("00000000-0000-0000-0000-000000000000")
 	testPopulationId := uuid.MustParse("00000000-0000-0000-0000-000000000000")
 
 	req := &mcp.CallToolRequest{}
-	input := populations.UpdatePopulationByIdInput{
+	input := populations.GetPopulationInput{
 		EnvironmentId: testEnvironmentId,
 		PopulationId:  testPopulationId,
-		Name:          "Updated Test Population",
-		Description:   testutils.Pointer("Updated via MCP test"),
 	}
 
 	mcpResult, response, err := handler(t.Context(), req, input)
@@ -380,5 +329,4 @@ func TestUpdatePopulationByIdHandler_RealClient(t *testing.T) {
 	assert.Nil(t, mcpResult, "MCP result should be nil for successful operations")
 	require.NotNil(t, response, "Response should not be nil")
 	assert.Equal(t, testPopulationId.String(), *response.Population.Id, "Population ID should match")
-	assert.Equal(t, "Updated Test Population", response.Population.Name, "Population name should be updated")
 }

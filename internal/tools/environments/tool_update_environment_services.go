@@ -18,13 +18,13 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 )
 
-var UpdateEnvironmentServicesByIdDef = types.ToolDefinition{
+var UpdateEnvironmentServicesDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
-		Name:         "update_environment_services_by_id",
+		Name:         "update_environment_services",
 		Title:        "Update PingOne Environment Services by ID",
 		Description:  "Update the services assigned to a PingOne environment (update's the environment's Bill of Materials) by the environment's unique ID. IMPORTANT: when changing the services for an environment, include any optional fields you wish to retain from the existing configuration, as omitting them remove those fields from the configuration.",
-		InputSchema:  mustGenerateUpdateEnvironmentServicesByIdInputSchema(),
-		OutputSchema: schema.MustGenerateSchema[UpdateEnvironmentServicesByIdOutput](),
+		InputSchema:  mustGenerateUpdateEnvironmentServicesInputSchema(),
+		OutputSchema: schema.MustGenerateSchema[UpdateEnvironmentServicesOutput](),
 	},
 }
 
@@ -37,29 +37,29 @@ type EnvironmentServiceInput struct {
 	Tags      []string                                            `json:"tags,omitempty" jsonschema:"OPTIONAL. The set of tags for the PingOne products to be initially configured. The currently supported value is DAVINCI_MINIMAL (only valid when the product type is PING_ONE_DAVINCI). This indicates that DaVinci is to be configured with a minimal set of resources."`
 }
 
-type UpdateEnvironmentServicesByIdInput struct {
+type UpdateEnvironmentServicesInput struct {
 	EnvironmentId uuid.UUID                 `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
 	Services      []EnvironmentServiceInput `json:"services" jsonschema:"REQUIRED. The services enabled for the environment. Note that 'NEO' represents both 'PING_ONE_VERIFY' and 'PING_ONE_CREDENTIALS' services."`
 }
 
-type UpdateEnvironmentServicesByIdOutput struct {
+type UpdateEnvironmentServicesOutput struct {
 	Services pingone.EnvironmentBillOfMaterialsResponse `json:"services" jsonschema:"The updated bill of materials for the environment, including products and solution type"`
 }
 
-func mustGenerateUpdateEnvironmentServicesByIdInputSchema() *jsonschema.Schema {
-	baseSchema := schema.MustGenerateSchema[UpdateEnvironmentServicesByIdInput]()
+func mustGenerateUpdateEnvironmentServicesInputSchema() *jsonschema.Schema {
+	baseSchema := schema.MustGenerateSchema[UpdateEnvironmentServicesInput]()
 
 	if baseSchema.Properties == nil {
-		panic("baseSchema.Properties is nil when generating UpdateEnvironmentServicesByIdInput schema")
+		panic("baseSchema.Properties is nil when generating UpdateEnvironmentServicesInput schema")
 	}
 
 	// Add enum values to the services field
 	servicesSchema, exists := baseSchema.Properties["services"]
 	if !exists || servicesSchema == nil || servicesSchema.Items == nil {
-		panic("services property not found in UpdateEnvironmentServicesByIdInput schema")
+		panic("services property not found in UpdateEnvironmentServicesInput schema")
 	}
 	if servicesSchema.Items.Properties == nil || servicesSchema.Items.Properties["type"] == nil {
-		panic("type property not found in services item schema for UpdateEnvironmentServicesByIdInput")
+		panic("type property not found in services item schema for UpdateEnvironmentServicesInput")
 	}
 	var itemsEnum []any
 	for _, val := range pingone.AllowedEnvironmentBillOfMaterialsProductTypeEnumValues {
@@ -82,34 +82,34 @@ func (i EnvironmentServiceInput) toBOMProductWithType(productType pingone.Enviro
 	}
 }
 
-// UpdateEnvironmentServicesByIdHandler updates PingOne environment services by ID using the provided client
-func UpdateEnvironmentServicesByIdHandler(environmentsClientFactory EnvironmentsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+// UpdateEnvironmentServicesHandler updates PingOne environment services by ID using the provided client
+func UpdateEnvironmentServicesHandler(environmentsClientFactory EnvironmentsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
-	input UpdateEnvironmentServicesByIdInput,
+	input UpdateEnvironmentServicesInput,
 ) (
 	*mcp.CallToolResult,
-	*UpdateEnvironmentServicesByIdOutput,
+	*UpdateEnvironmentServicesOutput,
 	error,
 ) {
-	return func(ctx context.Context, req *mcp.CallToolRequest, input UpdateEnvironmentServicesByIdInput) (*mcp.CallToolResult, *UpdateEnvironmentServicesByIdOutput, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, UpdateEnvironmentServicesByIdDef.McpTool.Name, req)
+	return func(ctx context.Context, req *mcp.CallToolRequest, input UpdateEnvironmentServicesInput) (*mcp.CallToolResult, *UpdateEnvironmentServicesOutput, error) {
+		ctx = initialize.InitializeToolInvocation(ctx, UpdateEnvironmentServicesDef.McpTool.Name, req)
 		ctx, err := initializeAuthContext(ctx)
 		if err != nil {
-			toolErr := errs.NewToolError(UpdateEnvironmentServicesByIdDef.McpTool.Name, err)
+			toolErr := errs.NewToolError(UpdateEnvironmentServicesDef.McpTool.Name, err)
 			errs.Log(ctx, toolErr)
 			return nil, nil, toolErr
 		}
 
 		client, err := environmentsClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
-			toolErr := errs.NewToolError(UpdateEnvironmentServicesByIdDef.McpTool.Name, err)
+			toolErr := errs.NewToolError(UpdateEnvironmentServicesDef.McpTool.Name, err)
 			errs.Log(ctx, toolErr)
 			return nil, nil, toolErr
 		}
 
 		// First, get current environment services to preserve existing configurations
-		currentServices, httpResponse, err := client.GetEnvironmentServicesById(ctx, input.EnvironmentId)
+		currentServices, httpResponse, err := client.GetEnvironmentServices(ctx, input.EnvironmentId)
 		logger.LogHttpResponse(ctx, httpResponse)
 
 		if err != nil {
@@ -141,7 +141,7 @@ func UpdateEnvironmentServicesByIdHandler(environmentsClientFactory Environments
 			} else {
 				productType, err := pingone.NewEnvironmentBillOfMaterialsProductTypeFromValue(service.Type)
 				if err != nil {
-					toolErr := errs.NewToolError(UpdateEnvironmentServicesByIdDef.McpTool.Name, fmt.Errorf("invalid service value: %s", service.Type))
+					toolErr := errs.NewToolError(UpdateEnvironmentServicesDef.McpTool.Name, fmt.Errorf("invalid service value: %s", service.Type))
 					errs.Log(ctx, toolErr)
 					return nil, nil, toolErr
 				}
@@ -169,7 +169,7 @@ func UpdateEnvironmentServicesByIdHandler(environmentsClientFactory Environments
 		}
 
 		// Call the API to update the environment services
-		services, httpResponse, err := client.UpdateEnvironmentServicesById(ctx, input.EnvironmentId, &replaceRequest)
+		services, httpResponse, err := client.UpdateEnvironmentServices(ctx, input.EnvironmentId, &replaceRequest)
 		logger.LogHttpResponse(ctx, httpResponse)
 
 		if err != nil {
@@ -191,7 +191,7 @@ func UpdateEnvironmentServicesByIdHandler(environmentsClientFactory Environments
 		// Filter out _links field from response
 		services.Links = nil
 
-		result := &UpdateEnvironmentServicesByIdOutput{
+		result := &UpdateEnvironmentServicesOutput{
 			Services: *services,
 		}
 

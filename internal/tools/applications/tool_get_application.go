@@ -18,48 +18,48 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 )
 
-var GetApplicationByIdDef = types.ToolDefinition{
+var GetApplicationDef = types.ToolDefinition{
 	ValidationPolicy: &types.ToolValidationPolicy{
 		AllowProductionEnvironmentRead: true,
 	},
 	McpTool: &mcp.Tool{
-		Name:        "get_application_by_id",
+		Name:        "get_application",
 		Title:       "Get PingOne Application by ID",
-		Description: "Retrieve application configuration by ID. Use 'list_applications' first if you need to find the application ID. Call before 'update_oidc_application_by_id' to get current settings.",
-		InputSchema: schema.MustGenerateSchema[GetApplicationByIdInput](),
+		Description: "Retrieve application configuration by ID. Use 'list_applications' first if you need to find the application ID. Call before 'update_oidc_application' to get current settings.",
+		InputSchema: schema.MustGenerateSchema[GetApplicationInput](),
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint: true,
 		},
 	},
 }
 
-type GetApplicationByIdInput struct {
+type GetApplicationInput struct {
 	EnvironmentId uuid.UUID `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
 	ApplicationId uuid.UUID `json:"applicationId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne application"`
 }
 
-// GetApplicationByIdHandler retrieves a PingOne application by ID using the provided client
-func GetApplicationByIdHandler(applicationsClientFactory ApplicationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+// GetApplicationHandler retrieves a PingOne application by ID using the provided client
+func GetApplicationHandler(applicationsClientFactory ApplicationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
-	input GetApplicationByIdInput,
+	input GetApplicationInput,
 ) (
 	*mcp.CallToolResult,
 	any,
 	error,
 ) {
-	return func(ctx context.Context, req *mcp.CallToolRequest, input GetApplicationByIdInput) (*mcp.CallToolResult, any, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, GetApplicationByIdDef.McpTool.Name, req)
+	return func(ctx context.Context, req *mcp.CallToolRequest, input GetApplicationInput) (*mcp.CallToolResult, any, error) {
+		ctx = initialize.InitializeToolInvocation(ctx, GetApplicationDef.McpTool.Name, req)
 		ctx, err := initializeAuthContext(ctx)
 		if err != nil {
-			toolErr := errs.NewToolError(GetApplicationByIdDef.McpTool.Name, err)
+			toolErr := errs.NewToolError(GetApplicationDef.McpTool.Name, err)
 			errs.Log(ctx, toolErr)
 			return nil, nil, toolErr
 		}
 
 		client, err := applicationsClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
-			toolErr := errs.NewToolError(GetApplicationByIdDef.McpTool.Name, err)
+			toolErr := errs.NewToolError(GetApplicationDef.McpTool.Name, err)
 			errs.Log(ctx, toolErr)
 			return nil, nil, toolErr
 		}
@@ -91,13 +91,13 @@ func GetApplicationByIdHandler(applicationsClientFactory ApplicationsClientFacto
 		// Serialize the application based on its type, filtering out the _links field
 		formattedApplication, err := getOutputFormattedApplication(application)
 		if err != nil {
-			toolErr := errs.NewToolError(GetApplicationByIdDef.McpTool.Name, err)
+			toolErr := errs.NewToolError(GetApplicationDef.McpTool.Name, err)
 			errs.Log(ctx, toolErr)
 			return nil, nil, toolErr
 		}
 		applicationJsonBytes, err := json.Marshal(formattedApplication)
 		if err != nil {
-			toolErr := errs.NewToolError(GetApplicationByIdDef.McpTool.Name, fmt.Errorf("failed to marshal formatted application response: %w", err))
+			toolErr := errs.NewToolError(GetApplicationDef.McpTool.Name, fmt.Errorf("failed to marshal formatted application response: %w", err))
 			errs.Log(ctx, toolErr)
 			return nil, nil, toolErr
 		}

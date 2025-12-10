@@ -61,32 +61,32 @@ func (p *mockPingOneClientPopulationsWrapper) CreatePopulation(ctx context.Conte
 	return response, httpResponse, args.Error(2)
 }
 
-func (p *mockPingOneClientPopulationsWrapper) GetPopulationById(ctx context.Context, environmentId uuid.UUID, populationId uuid.UUID) (*management.Population, *http.Response, error) {
+func (p *mockPingOneClientPopulationsWrapper) GetPopulation(ctx context.Context, environmentId uuid.UUID, populationId uuid.UUID) (*management.Population, *http.Response, error) {
 	args := p.Called(ctx, environmentId, populationId)
 	var response *management.Population
 	response, ok := args.Get(0).(*management.Population)
 	if !ok && args.Get(0) != nil {
-		panic("GetPopulationById mock setup error: expected *management.Population or nil")
+		panic("GetPopulation mock setup error: expected *management.Population or nil")
 	}
 	var httpResponse *http.Response
 	httpResponse, ok = args.Get(1).(*http.Response)
 	if !ok && args.Get(1) != nil {
-		panic("GetPopulationById mock setup error: expected *http.Response or nil")
+		panic("GetPopulation mock setup error: expected *http.Response or nil")
 	}
 	return response, httpResponse, args.Error(2)
 }
 
-func (p *mockPingOneClientPopulationsWrapper) UpdatePopulationById(ctx context.Context, environmentId uuid.UUID, populationId uuid.UUID, updateRequest management.Population) (*management.Population, *http.Response, error) {
+func (p *mockPingOneClientPopulationsWrapper) UpdatePopulation(ctx context.Context, environmentId uuid.UUID, populationId uuid.UUID, updateRequest management.Population) (*management.Population, *http.Response, error) {
 	args := p.Called(ctx, environmentId, populationId, updateRequest)
 	var response *management.Population
 	response, ok := args.Get(0).(*management.Population)
 	if !ok && args.Get(0) != nil {
-		panic("UpdatePopulationById mock setup error: expected *management.Population or nil")
+		panic("UpdatePopulation mock setup error: expected *management.Population or nil")
 	}
 	var httpResponse *http.Response
 	httpResponse, ok = args.Get(1).(*http.Response)
 	if !ok && args.Get(1) != nil {
-		panic("UpdatePopulationById mock setup error: expected *http.Response or nil")
+		panic("UpdatePopulation mock setup error: expected *http.Response or nil")
 	}
 	return response, httpResponse, args.Error(2)
 }

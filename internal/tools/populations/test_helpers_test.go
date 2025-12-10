@@ -131,8 +131,8 @@ func assertPopulationSummaryMatches(t *testing.T, expected management.Population
 	}
 }
 
-func updatePopulationByIdInputFromPopulation(pop management.Population, envID uuid.UUID) populations.UpdatePopulationByIdInput {
-	return populations.UpdatePopulationByIdInput{
+func updatePopulationInputFromPopulation(pop management.Population, envID uuid.UUID) populations.UpdatePopulationInput {
+	return populations.UpdatePopulationInput{
 		EnvironmentId:          envID,
 		PopulationId:           uuid.MustParse(*pop.Id),
 		Name:                   pop.Name,
@@ -156,8 +156,8 @@ func createPopulationInputFromPopulation(pop management.Population, envID uuid.U
 	}
 }
 
-func getPopulationByIdInputFromPopulation(pop management.Population, envID uuid.UUID) populations.GetPopulationByIdInput {
-	return populations.GetPopulationByIdInput{
+func getPopulationInputFromPopulation(pop management.Population, envID uuid.UUID) populations.GetPopulationInput {
+	return populations.GetPopulationInput{
 		EnvironmentId: envID,
 		PopulationId:  uuid.MustParse(*pop.Id),
 	}

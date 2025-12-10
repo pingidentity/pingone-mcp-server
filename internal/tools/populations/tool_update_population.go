@@ -17,24 +17,24 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 )
 
-var UpdatePopulationByIdDef = types.ToolDefinition{
+var UpdatePopulationDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
-		Name:  "update_population_by_id",
+		Name:  "update_population",
 		Title: "Update PingOne Population by ID",
 		Description: `Update population configuration using full replacement (HTTP PUT).
 
 WORKFLOW - Required to avoid data loss:
-1. Call 'get_population_by_id' to fetch current configuration
+1. Call 'get_population' to fetch current configuration
 2. Modify only the fields you want to change
 3. Pass the complete merged object to this tool
 
 Omitted optional fields will be cleared.`,
-		InputSchema:  schema.MustGenerateSchema[UpdatePopulationByIdInput](),
-		OutputSchema: schema.MustGenerateSchema[UpdatePopulationByIdOutput](),
+		InputSchema:  schema.MustGenerateSchema[UpdatePopulationInput](),
+		OutputSchema: schema.MustGenerateSchema[UpdatePopulationOutput](),
 	},
 }
 
-type UpdatePopulationByIdInput struct {
+type UpdatePopulationInput struct {
 	EnvironmentId          uuid.UUID                            `json:"environmentId" jsonschema:"REQUIRED. Environment UUID."`
 	PopulationId           uuid.UUID                            `json:"populationId" jsonschema:"REQUIRED. Population UUID."`
 	Name                   string                               `json:"name" jsonschema:"REQUIRED. Population name, must be unique within environment."`
@@ -45,32 +45,32 @@ type UpdatePopulationByIdInput struct {
 	Theme                  *management.PopulationTheme          `json:"theme,omitempty" jsonschema:"OPTIONAL. Reference to theme."`
 }
 
-type UpdatePopulationByIdOutput struct {
+type UpdatePopulationOutput struct {
 	Population management.Population `json:"population" jsonschema:"The updated population configuration"`
 }
 
-// UpdatePopulationByIdHandler updates a PingOne population by ID using the provided client
-func UpdatePopulationByIdHandler(populationsClientFactory PopulationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+// UpdatePopulationHandler updates a PingOne population by ID using the provided client
+func UpdatePopulationHandler(populationsClientFactory PopulationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
-	input UpdatePopulationByIdInput,
+	input UpdatePopulationInput,
 ) (
 	*mcp.CallToolResult,
-	*UpdatePopulationByIdOutput,
+	*UpdatePopulationOutput,
 	error,
 ) {
-	return func(ctx context.Context, req *mcp.CallToolRequest, input UpdatePopulationByIdInput) (*mcp.CallToolResult, *UpdatePopulationByIdOutput, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, UpdatePopulationByIdDef.McpTool.Name, req)
+	return func(ctx context.Context, req *mcp.CallToolRequest, input UpdatePopulationInput) (*mcp.CallToolResult, *UpdatePopulationOutput, error) {
+		ctx = initialize.InitializeToolInvocation(ctx, UpdatePopulationDef.McpTool.Name, req)
 		ctx, err := initializeAuthContext(ctx)
 		if err != nil {
-			toolErr := errs.NewToolError(UpdatePopulationByIdDef.McpTool.Name, err)
+			toolErr := errs.NewToolError(UpdatePopulationDef.McpTool.Name, err)
 			errs.Log(ctx, toolErr)
 			return nil, nil, toolErr
 		}
 
 		client, err := populationsClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
-			toolErr := errs.NewToolError(UpdatePopulationByIdDef.McpTool.Name, err)
+			toolErr := errs.NewToolError(UpdatePopulationDef.McpTool.Name, err)
 			errs.Log(ctx, toolErr)
 			return nil, nil, toolErr
 		}
@@ -90,7 +90,7 @@ func UpdatePopulationByIdHandler(populationsClientFactory PopulationsClientFacto
 		}
 
 		// Call the API to update the population
-		populationResponse, httpResponse, err := client.UpdatePopulationById(ctx, input.EnvironmentId, input.PopulationId, updateRequest)
+		populationResponse, httpResponse, err := client.UpdatePopulation(ctx, input.EnvironmentId, input.PopulationId, updateRequest)
 		logger.LogHttpResponse(ctx, httpResponse)
 
 		if err != nil {
@@ -113,7 +113,7 @@ func UpdatePopulationByIdHandler(populationsClientFactory PopulationsClientFacto
 		// Filter out _links field from response
 		populationResponse.Links = nil
 
-		result := &UpdatePopulationByIdOutput{
+		result := &UpdatePopulationOutput{
 			Population: *populationResponse,
 		}
 
