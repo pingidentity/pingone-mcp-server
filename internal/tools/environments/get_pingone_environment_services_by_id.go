@@ -22,7 +22,7 @@ var GetEnvironmentServicesByIdDef = types.ToolDefinition{
 		AllowProductionEnvironmentRead: true,
 	},
 	McpTool: &mcp.Tool{
-		Name:         "get_environment_services_by_id",
+		Name:         "get_environment_services",
 		Title:        "Get PingOne Environment Services by ID",
 		Description:  "Retrieve all the services assigned to a specified PingOne environment, by the environment's unique ID.",
 		InputSchema:  schema.MustGenerateSchema[GetEnvironmentServicesByIdInput](),

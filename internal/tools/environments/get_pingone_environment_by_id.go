@@ -22,9 +22,9 @@ var GetEnvironmentByIdDef = types.ToolDefinition{
 		AllowProductionEnvironmentRead: true,
 	},
 	McpTool: &mcp.Tool{
-		Name:         "get_environment_by_id",
+		Name:         "get_environment",
 		Title:        "Get PingOne Environment by ID",
-		Description:  "Retrieve an environment's full configuration by ID. Use 'list_environments' first if you need to find the environment ID. Call this before 'update_environment_by_id' to get current configuration.",
+		Description:  "Retrieve an environment's full configuration by ID. Use 'list_environments' first if you need to find the environment ID. Call this before 'update_environment' to get current configuration.",
 		InputSchema:  schema.MustGenerateSchema[GetEnvironmentByIdInput](),
 		OutputSchema: schema.MustGenerateSchema[GetEnvironmentByIdOutput](),
 		Annotations: &mcp.ToolAnnotations{

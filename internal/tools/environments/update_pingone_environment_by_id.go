@@ -19,12 +19,12 @@ import (
 
 var UpdateEnvironmentByIdDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
-		Name:  "update_environment_by_id",
+		Name:  "update_environment",
 		Title: "Update PingOne Environment by ID",
 		Description: `Update environment configuration using full replacement (HTTP PUT).
 
 WORKFLOW - Required to avoid data loss:
-1. Call 'get_environment_by_id' to fetch current configuration
+1. Call 'get_environment' to fetch current configuration
 2. Modify only the fields you want to change
 3. Pass the complete merged object to this tool
 

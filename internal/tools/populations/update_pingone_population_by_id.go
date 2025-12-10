@@ -19,12 +19,12 @@ import (
 
 var UpdatePopulationByIdDef = types.ToolDefinition{
 	McpTool: &mcp.Tool{
-		Name:  "update_population_by_id",
+		Name:  "update_population",
 		Title: "Update PingOne Population by ID",
 		Description: `Update population configuration using full replacement (HTTP PUT).
 
 WORKFLOW - Required to avoid data loss:
-1. Call 'get_population_by_id' to fetch current configuration
+1. Call 'get_population' to fetch current configuration
 2. Modify only the fields you want to change
 3. Pass the complete merged object to this tool
 
