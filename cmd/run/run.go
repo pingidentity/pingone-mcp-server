@@ -3,6 +3,7 @@
 package run
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"time"
@@ -16,7 +17,9 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
 	"github.com/pingidentity/pingone-mcp-server/internal/server"
 	"github.com/pingidentity/pingone-mcp-server/internal/tokenstore"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/filter"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 	"github.com/spf13/cobra"
 )
 
@@ -90,6 +93,11 @@ The server will communicate over stdin/stdout.`,
 				slog.Any("includedToolCollections", includedToolCollections),
 				slog.Any("excludedToolCollections", excludedToolCollections))
 
+			// Warn if user may have specified write tools but forgot --disable-read-only
+			if !disableReadOnly && len(includedTools) > 0 {
+				warnAboutPotentialWriteToolsFiltered(cmd.Context(), includedTools)
+			}
+
 			err = server.Start(cmd.Context(), transport, clientFactory, legacyClientFactory, authClientFactory, tokenStore, toolFilter, grantType)
 			if err != nil {
 				return errs.NewCommandError(commandName, err)
@@ -107,4 +115,31 @@ The server will communicate over stdin/stdout.`,
 	cmd.Flags().StringVar(&storeTypeFlag, "store-type", tokenstore.StoreTypeKeychain.String(), "Token store type to use (keychain or file)")
 
 	return cmd
+}
+
+// warnAboutPotentialWriteToolsFiltered checks if any of the included tools are write tools
+// and warns the user that they will be filtered out due to read-only mode being enabled
+func warnAboutPotentialWriteToolsFiltered(ctx context.Context, includedTools []string) {
+	allTools := tools.ListTools()
+	
+	// Create a map of tool names to their definitions for quick lookup
+	toolMap := make(map[string]*types.ToolDefinition)
+	for i := range allTools {
+		toolMap[allTools[i].McpTool.Name] = &allTools[i]
+	}
+	
+	var writeToolsSpecified []string
+	for _, toolName := range includedTools {
+		if toolDef, exists := toolMap[toolName]; exists {
+			if !toolDef.IsReadOnly() {
+				writeToolsSpecified = append(writeToolsSpecified, toolName)
+			}
+		}
+	}
+	
+	if len(writeToolsSpecified) > 0 {
+		logger.FromContext(ctx).Warn("Write tools specified in --include-tools will be excluded due to read-only mode",
+			slog.Any("writeTools", writeToolsSpecified),
+			slog.String("suggestion", "Add --disable-read-only flag to enable write tools"))
+	}
 }
