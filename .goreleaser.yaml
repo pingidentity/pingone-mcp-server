@@ -81,6 +81,69 @@ checksum:
   # Disable the generation/upload of the checksum file.
   disable: false
 
+brews:
+  - # Git author used to commit to the repository.
+    commit_author:
+      name: "goreleaserbot"
+      email: "bot@goreleaser.com"
+
+    # The project name and current git tag are used in the format string.
+    #
+    # Templates: allowed.
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+
+    # Directory inside the repository to put the formula.
+    directory: "Formula"
+
+    # Caveats for the user of your binary.
+    # caveats: "How to use this binary"
+
+    # Your app's homepage.
+    #
+    # Default: inferred from global metadata.
+    homepage: "https://github.com/pingidentity/pingone-mcp-server"
+
+    # Your app's description.
+    #
+    # Templates: allowed.
+    # Default: inferred from global metadata.
+    description: "The PingOne MCP (Model Context Protocol) server enables AI assistants to review and manage PingOne tenants by integrating the PingOne management API to AI assistant conversations."
+
+    # SPDX identifier of your app's license.
+    #
+    # Default: inferred from global metadata.
+    license: "Apache License 2.0"
+
+    # Setting this will prevent goreleaser to actually try to commit the updated
+    # formula - instead, the formula file will be stored on the dist directory
+    # only, leaving the responsibility of publishing it to the user.
+    # If set to auto, the release will not be uploaded to the homebrew tap
+    # in case there is an indicator for prerelease in the tag e.g. v1.0.0-rc1
+    #
+    # Templates: allowed.
+    skip_upload: "auto"
+
+    # So you can `brew test` your formula.
+    #
+    # Template: allowed
+    # test: |
+    #   system "#{bin}/foo --version"
+    #   # ...
+
+    # Repository to push the generated files to.
+    repository:
+      # Repository owner.
+      #
+      # Templates: allowed.
+      owner: "pingidentity"
+
+      # Repository name.
+      #
+      # Templates: allowed.
+      name: "homebrew-tap"
+
+      token: "{{ .Env.GORELEASER_HOMEBREW_TAP_GITHUB_PAT}}"
+
 nfpms:
   # note that this is an array of nfpm configs
   - #
