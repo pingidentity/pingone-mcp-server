@@ -255,9 +255,51 @@ To configure the MCP server to use the Device Authorization grant type, add the 
 
 </details>
 
-### Use with Claude
+### Use with Claude Desktop
 
-TODO
+To add the MCP server configuration manually, add the following configuration to your Claude Desktop config (`claude_desktop_config.json`) or via `Settings` -> `Developer` -> `Local MCP Servers`:
+
+If using Homebrew:
+
+```json
+{
+  "mcpServers": {
+    "pingone": {
+      "type": "stdio",
+      "command": "pingone-mcp-server",
+      "args": [
+        "run"
+      ],
+      "env": {
+        "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID here>>",
+        "PINGONE_AUTHORIZATION_CODE_CLIENT_ID": "<<paste worker application client ID UUID here>>",
+        "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>"
+      }
+    }
+  }
+}
+```
+
+If you've downloaded the binary manually:
+
+```json
+{
+  "mcpServers": {
+    "pingone": {
+      "type": "stdio",
+      "command": "/path/to/pingone-mcp-server",
+      "args": [
+        "run"
+      ],
+      "env": {
+        "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID here>>",
+        "PINGONE_AUTHORIZATION_CODE_CLIENT_ID": "<<paste worker application client ID UUID here>>",
+        "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>"
+      }
+    }
+  }
+}
+```
 
 ### Use with Claude Code
 
@@ -265,7 +307,7 @@ TODO
 
 ### Use with Cursor
 
-[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en-US/install-mcp?name=pingOne&config=eyJ0eXBlIjoic3RkaW8iLCJlbnYiOnsiUElOR09ORV9NQ1BfRU5WSVJPTk1FTlRfSUQiOiI8PHBhc3RlIHdvcmtlciBhcHBsaWNhdGlvbiBlbnZpcm9ubWVudCBVVUlEIGhlcmU%2BPiIsIlBJTkdPTkVfQVVUSE9SSVpBVElPTl9DT0RFX0NMSUVOVF9JRCI6Ijw8cGFzdGUgd29ya2VyIGFwcGxpY2F0aW9uIGNsaWVudCBJRCBVVUlEIGhlcmU%2BPiIsIlBJTkdPTkVfUk9PVF9ET01BSU4iOiI8PHBhc3RlIHJvb3QgZG9tYWluIG9mIHlvdXIgUGluZ09uZSB0ZW5hbnQgaGVyZSAoZS5nLiwgcGluZ29uZS5jb20pPj4ifSwiY29tbWFuZCI6InBpbmdvbmUtbWNwLXNlcnZlciBydW4ifQ%3D%3D)
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en-US/install-mcp?name=pingOne&config=eyJlbnYiOnsiUElOR09ORV9NQ1BfRU5WSVJPTk1FTlRfSUQiOiI8PHBhc3RlIHdvcmtlciBhcHBsaWNhdGlvbiBlbnZpcm9ubWVudCBVVUlEIGhlcmU%2BPiIsIlBJTkdPTkVfQVVUSE9SSVpBVElPTl9DT0RFX0NMSUVOVF9JRCI6Ijw8cGFzdGUgd29ya2VyIGFwcGxpY2F0aW9uIGNsaWVudCBJRCBVVUlEIGhlcmU%2BPiIsIlBJTkdPTkVfUk9PVF9ET01BSU4iOiI8PHBhc3RlIHJvb3QgZG9tYWluIG9mIHlvdXIgUGluZ09uZSB0ZW5hbnQgaGVyZSAoZS5nLiwgcGluZ29uZS5jb20pPj4ifSwiY29tbWFuZCI6InBpbmdvbmUtbWNwLXNlcnZlciBydW4ifQ%3D%3D)
 
 For quick installation, the install button above.
 
@@ -278,14 +320,14 @@ To add the MCP server configuration manually, add the following configuration to
       "type": "stdio",
       "command": "pingone-mcp-server",
       "args": [
-        "run",
+        "run"
       ],
       "env": {
         "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID here>>",
         "PINGONE_AUTHORIZATION_CODE_CLIENT_ID": "<<paste worker application client ID UUID here>>",
-        "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>",
-      },
-    },
+        "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>"
+      }
+    }
   }
 }
 ```
@@ -310,9 +352,9 @@ To configure the MCP server to use the Device Authorization grant type, add the 
         "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID here>>",
         "PINGONE_DEVICE_CODE_CLIENT_ID": "<<paste worker application client ID UUID here>>",
         "PINGONE_DEVICE_CODE_SCOPES": "openid",
-        "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>",
-      },
-    },
+        "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>"
+      }
+    }
   }
 }
 ```
