@@ -26,7 +26,7 @@ func main() {
 	if date != "unknown" {
 		fullVersion += " (built: " + date + ")"
 	}
-	
+
 	rootCmd := cmd.NewRootCommand(fullVersion)
 	if err := rootCmd.Execute(); err != nil {
 		errs.Log(context.Background(), err)
