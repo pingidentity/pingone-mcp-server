@@ -2,7 +2,6 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![GitHub release](https://img.shields.io/github/v/release/pingidentity/pingone-mcp-server?include_prereleases&sort=semver)](https://github.com/pingidentity/pingone-mcp-server/releases)
-[![Tests and Linting](https://github.com/pingidentity/pingone-mcp-server/actions/workflows/code-check-and-tests.yml/badge.svg)](https://github.com/pingidentity/pingone-mcp-server/actions/workflows/code-check-and-tests.yml)
 [![Go Security Scan](https://github.com/pingidentity/pingone-mcp-server/actions/workflows/gosec-scan.yml/badge.svg)](https://github.com/pingidentity/pingone-mcp-server/actions/workflows/gosec-scan.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/pingidentity/pingone-mcp-server)](https://goreportcard.com/report/github.com/pingidentity/pingone-mcp-server)
 
