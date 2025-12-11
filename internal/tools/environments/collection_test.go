@@ -77,15 +77,15 @@ func TestEnvironmentsCollection_RegisterTools_ReadOnlyToolsMarkedCorrectly(t *te
 	// Define known read-only tools
 	readOnlyTools := []string{
 		"list_environments",
-		"get_environment_by_id",
-		"get_environment_services_by_id",
+		"get_environment",
+		"get_environment_services",
 	}
 
 	// Define known write tools
 	writeTools := []string{
 		"create_environment",
-		"update_environment_by_id",
-		"update_environment_services_by_id",
+		"update_environment",
+		"update_environment_services",
 	}
 
 	for _, tool := range tools {

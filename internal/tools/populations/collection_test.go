@@ -77,13 +77,13 @@ func TestPopulationsCollection_RegisterTools_ReadOnlyToolsMarkedCorrectly(t *tes
 	// Define known read-only tools
 	readOnlyTools := []string{
 		"list_populations",
-		"get_population_by_id",
+		"get_population",
 	}
 
 	// Define known write tools
 	writeTools := []string{
 		"create_population",
-		"update_population_by_id",
+		"update_population",
 	}
 
 	for _, tool := range tools {

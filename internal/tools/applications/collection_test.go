@@ -77,13 +77,13 @@ func TestApplicationsCollection_RegisterTools_ReadOnlyToolsMarkedCorrectly(t *te
 	// Define known read-only tools
 	readOnlyTools := []string{
 		"list_applications",
-		"get_application_by_id",
+		"get_application",
 	}
 
 	// Define known write tools
 	writeTools := []string{
-		"create_application",
-		"update_application_by_id",
+		"create_oidc_application",
+		"update_oidc_application",
 	}
 
 	for _, tool := range tools {

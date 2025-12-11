@@ -89,7 +89,7 @@ func (p *PingOneClientApplicationsWrapper) GetApplication(ctx context.Context, e
 	return getRequest.Execute()
 }
 
-func (p *PingOneClientApplicationsWrapper) UpdateApplicationById(ctx context.Context, environmentId uuid.UUID, applicationId uuid.UUID, app management.UpdateApplicationRequest) (*management.ReadOneApplication200Response, *http.Response, error) {
+func (p *PingOneClientApplicationsWrapper) UpdateApplication(ctx context.Context, environmentId uuid.UUID, applicationId uuid.UUID, app management.UpdateApplicationRequest) (*management.ReadOneApplication200Response, *http.Response, error) {
 	if p.client == nil {
 		return nil, nil, errors.New("PingOne client is not initialized")
 	}

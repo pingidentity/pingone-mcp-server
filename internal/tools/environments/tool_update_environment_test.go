@@ -25,18 +25,18 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func TestUpdateEnvironmentByIdHandler_MockClient(t *testing.T) {
+func TestUpdateEnvironmentHandler_MockClient(t *testing.T) {
 	tests := []struct {
 		name            string
-		input           environments.UpdateEnvironmentByIdInput
+		input           environments.UpdateEnvironmentInput
 		setupMock       func(*envtestutils.MockEnvironmentsClient, uuid.UUID)
 		wantErr         bool
 		wantErrContains string
-		validateOutput  func(*testing.T, *environments.UpdateEnvironmentByIdOutput)
+		validateOutput  func(*testing.T, *environments.UpdateEnvironmentOutput)
 	}{
 		{
 			name: "Success - Update environment with required fields only",
-			input: environments.UpdateEnvironmentByIdInput{
+			input: environments.UpdateEnvironmentInput{
 				EnvironmentId: testEnv1.id,
 				Name:          "Updated Environment Name",
 				Region:        testEnv1.region,
@@ -54,9 +54,9 @@ func TestUpdateEnvironmentByIdHandler_MockClient(t *testing.T) {
 					Region: testEnv1.region,
 					Type:   testEnv1.envType,
 				}
-				mockUpdateEnvironmentByIdSetup(m, envID, matcher, &expectedEnv, 200, nil)
+				mockUpdateEnvironmentSetup(m, envID, matcher, &expectedEnv, 200, nil)
 			},
-			validateOutput: func(t *testing.T, output *environments.UpdateEnvironmentByIdOutput) {
+			validateOutput: func(t *testing.T, output *environments.UpdateEnvironmentOutput) {
 				assert.Equal(t, "Updated Environment Name", output.Environment.Name)
 				assert.Equal(t, testEnv1.region, output.Environment.Region)
 				assert.Equal(t, testEnv1.envType, output.Environment.Type)
@@ -64,7 +64,7 @@ func TestUpdateEnvironmentByIdHandler_MockClient(t *testing.T) {
 		},
 		{
 			name: "Success - Update environment with all optional fields",
-			input: environments.UpdateEnvironmentByIdInput{
+			input: environments.UpdateEnvironmentInput{
 				EnvironmentId: testEnv1.id,
 				Name:          "Updated Environment",
 				Region:        testEnv1.region,
@@ -92,9 +92,9 @@ func TestUpdateEnvironmentByIdHandler_MockClient(t *testing.T) {
 					Icon:        &icon,
 					Status:      &status,
 				}
-				mockUpdateEnvironmentByIdSetup(m, envID, matcher, &expectedEnv, 200, nil)
+				mockUpdateEnvironmentSetup(m, envID, matcher, &expectedEnv, 200, nil)
 			},
-			validateOutput: func(t *testing.T, output *environments.UpdateEnvironmentByIdOutput) {
+			validateOutput: func(t *testing.T, output *environments.UpdateEnvironmentOutput) {
 				assert.Equal(t, "Updated Environment", output.Environment.Name)
 				require.NotNil(t, output.Environment.Description)
 				assert.Equal(t, "Updated description", *output.Environment.Description)
@@ -106,7 +106,7 @@ func TestUpdateEnvironmentByIdHandler_MockClient(t *testing.T) {
 		},
 		{
 			name: "Success - Update environment with different region",
-			input: environments.UpdateEnvironmentByIdInput{
+			input: environments.UpdateEnvironmentInput{
 				EnvironmentId: testEnv1.id,
 				Name:          "Updated Environment",
 				Region:        pingone.ENVIRONMENTREGIONCODE_EU,
@@ -122,36 +122,36 @@ func TestUpdateEnvironmentByIdHandler_MockClient(t *testing.T) {
 					Region: pingone.ENVIRONMENTREGIONCODE_EU,
 					Type:   testEnv1.envType,
 				}
-				mockUpdateEnvironmentByIdSetup(m, envID, matcher, &expectedEnv, 200, nil)
+				mockUpdateEnvironmentSetup(m, envID, matcher, &expectedEnv, 200, nil)
 			},
-			validateOutput: func(t *testing.T, output *environments.UpdateEnvironmentByIdOutput) {
+			validateOutput: func(t *testing.T, output *environments.UpdateEnvironmentOutput) {
 				assert.Equal(t, pingone.ENVIRONMENTREGIONCODE_EU, output.Environment.Region)
 			},
 		},
 		{
 			name: "Error - Environment not found (404)",
-			input: environments.UpdateEnvironmentByIdInput{
+			input: environments.UpdateEnvironmentInput{
 				EnvironmentId: testEnv1.id,
 				Name:          "Updated Environment",
 				Region:        testEnv1.region,
 				Type:          testEnv1.envType,
 			},
 			setupMock: func(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID) {
-				mockUpdateEnvironmentByIdSetup(m, envID, nil, nil, 404, errors.New("environment not found"))
+				mockUpdateEnvironmentSetup(m, envID, nil, nil, 404, errors.New("environment not found"))
 			},
 			wantErr:         true,
 			wantErrContains: "environment not found",
 		},
 		{
 			name: "Error - API returns nil response with no error",
-			input: environments.UpdateEnvironmentByIdInput{
+			input: environments.UpdateEnvironmentInput{
 				EnvironmentId: testEnv1.id,
 				Name:          "Updated Environment",
 				Region:        testEnv1.region,
 				Type:          testEnv1.envType,
 			},
 			setupMock: func(m *envtestutils.MockEnvironmentsClient, envID uuid.UUID) {
-				mockUpdateEnvironmentByIdSetup(m, envID, nil, nil, 200, nil)
+				mockUpdateEnvironmentSetup(m, envID, nil, nil, 200, nil)
 			},
 			wantErr:         true,
 			wantErrContains: "no environment data in response",
@@ -165,7 +165,7 @@ func TestUpdateEnvironmentByIdHandler_MockClient(t *testing.T) {
 			mockClient := &envtestutils.MockEnvironmentsClient{}
 			envID := tt.input.EnvironmentId
 			tt.setupMock(mockClient, envID)
-			handler := environments.UpdateEnvironmentByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 			req := &mcp.CallToolRequest{}
 
 			// Execute
@@ -179,7 +179,7 @@ func TestUpdateEnvironmentByIdHandler_MockClient(t *testing.T) {
 			}
 
 			// Assert success expectations
-			testutils.AssertHandlerSuccess(t, err, mcpResult, output)
+			testutils.AssertStructuredHandlerSuccess(t, err, mcpResult, output)
 
 			if tt.validateOutput != nil {
 				tt.validateOutput(t, output)
@@ -193,13 +193,13 @@ func TestUpdateEnvironmentByIdHandler_MockClient(t *testing.T) {
 			mockClient := &envtestutils.MockEnvironmentsClient{}
 			envID := tt.input.EnvironmentId
 			tt.setupMock(mockClient, envID)
-			handler := environments.UpdateEnvironmentByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 
 			server := mcptestutils.TestMcpServer(t)
-			mcp.AddTool(server, environments.UpdateEnvironmentByIdDef.McpTool, handler)
+			mcp.AddTool(server, environments.UpdateEnvironmentDef.McpTool, handler)
 
 			// Execute over MCP
-			output, err := mcptestutils.CallToolOverMcp(t, server, environments.UpdateEnvironmentByIdDef.McpTool.Name, tt.input)
+			output, err := mcptestutils.CallToolOverMcp(t, server, environments.UpdateEnvironmentDef.McpTool.Name, tt.input)
 
 			require.NoError(t, err, "Expect no error calling tool")
 			require.NotNil(t, output, "Expect non-nil output")
@@ -215,7 +215,7 @@ func TestUpdateEnvironmentByIdHandler_MockClient(t *testing.T) {
 			testutils.AssertMcpCallSuccess(t, err, output)
 
 			// marshal the structured content into the expected output type
-			outputEnvironment := &environments.UpdateEnvironmentByIdOutput{}
+			outputEnvironment := &environments.UpdateEnvironmentOutput{}
 			jsonBytes, err := json.Marshal(output.StructuredContent)
 			require.NoError(t, err, "Failed to marshal structured content")
 			err = json.Unmarshal(jsonBytes, outputEnvironment)
@@ -230,7 +230,7 @@ func TestUpdateEnvironmentByIdHandler_MockClient(t *testing.T) {
 	}
 }
 
-func TestUpdateEnvironmentByIdHandler_ContextCancellation(t *testing.T) {
+func TestUpdateEnvironmentHandler_ContextCancellation(t *testing.T) {
 	// Create a cancelled context
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
@@ -238,11 +238,11 @@ func TestUpdateEnvironmentByIdHandler_ContextCancellation(t *testing.T) {
 	mockClient := &envtestutils.MockEnvironmentsClient{}
 	envID := testEnv1.id
 	// Mock should return context.Canceled error when context is already cancelled
-	mockClient.On("UpdateEnvironmentById", testutils.CancelledContextMatcher, envID, mock.Anything).Return(nil, nil, context.Canceled)
+	mockClient.On("UpdateEnvironment", testutils.CancelledContextMatcher, envID, mock.Anything).Return(nil, nil, context.Canceled)
 
-	handler := environments.UpdateEnvironmentByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+	handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 	req := &mcp.CallToolRequest{}
-	input := environments.UpdateEnvironmentByIdInput{
+	input := environments.UpdateEnvironmentInput{
 		EnvironmentId: testEnv1.id,
 		Name:          "Updated Environment",
 		Region:        testEnv1.region,
@@ -261,7 +261,7 @@ func TestUpdateEnvironmentByIdHandler_ContextCancellation(t *testing.T) {
 	mockClient.AssertExpectations(t)
 }
 
-func TestUpdateEnvironmentByIdHandler_APIErrors(t *testing.T) {
+func TestUpdateEnvironmentHandler_APIErrors(t *testing.T) {
 	tests := append(testutils.CommonAPIErrorTestCases(), testutils.APIErrorTestCase{
 		Name:            "400 Bad Request",
 		StatusCode:      400,
@@ -270,7 +270,7 @@ func TestUpdateEnvironmentByIdHandler_APIErrors(t *testing.T) {
 	})
 
 	envID := testEnv1.id
-	input := environments.UpdateEnvironmentByIdInput{
+	input := environments.UpdateEnvironmentInput{
 		EnvironmentId: testEnv1.id,
 		Name:          "Updated Environment",
 		Region:        testEnv1.region,
@@ -281,8 +281,8 @@ func TestUpdateEnvironmentByIdHandler_APIErrors(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			// Setup
 			mockClient := &envtestutils.MockEnvironmentsClient{}
-			mockUpdateEnvironmentByIdSetup(mockClient, envID, nil, nil, tt.StatusCode, tt.ApiError)
-			handler := environments.UpdateEnvironmentByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			mockUpdateEnvironmentSetup(mockClient, envID, nil, nil, tt.StatusCode, tt.ApiError)
+			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 
 			// Execute
 			mcpResult, output, err := handler(context.Background(), &mcp.CallToolRequest{}, input)
@@ -294,24 +294,24 @@ func TestUpdateEnvironmentByIdHandler_APIErrors(t *testing.T) {
 	}
 }
 
-// TestUpdateEnvironmentByIdHandler_EdgeCaseInputs tests that the handler correctly passes edge case
+// TestUpdateEnvironmentHandler_EdgeCaseInputs tests that the handler correctly passes edge case
 // input values through to the API and properly handles API validation errors.
 // Note: This does NOT test InputSchema validation (which happens in the MCP SDK layer before
 // the handler is called). Instead, it verifies:
 // 1. Handler passes all input values (including edge cases) to the API without modification
 // 2. Handler correctly wraps and returns API-level validation errors
 // 3. Handler doesn't crash or drop data on unexpected inputs
-func TestUpdateEnvironmentByIdHandler_EdgeCaseInputs(t *testing.T) {
+func TestUpdateEnvironmentHandler_EdgeCaseInputs(t *testing.T) {
 	tests := []struct {
 		name            string
-		input           environments.UpdateEnvironmentByIdInput
+		input           environments.UpdateEnvironmentInput
 		setupMock       func(*envtestutils.MockEnvironmentsClient, uuid.UUID)
 		wantErr         bool
 		wantErrContains string
 	}{
 		{
 			name: "Empty name is passed through to API",
-			input: environments.UpdateEnvironmentByIdInput{
+			input: environments.UpdateEnvironmentInput{
 				EnvironmentId: testEnv1.id,
 				Name:          "", // Empty name
 				Region:        testEnv1.region,
@@ -322,14 +322,14 @@ func TestUpdateEnvironmentByIdHandler_EdgeCaseInputs(t *testing.T) {
 				matcher := func(req *pingone.EnvironmentReplaceRequest) bool {
 					return req.Name == ""
 				}
-				mockUpdateEnvironmentByIdSetup(m, envID, matcher, nil, 400, errors.New("name is required"))
+				mockUpdateEnvironmentSetup(m, envID, matcher, nil, 400, errors.New("name is required"))
 			},
 			wantErr:         true,
 			wantErrContains: "name is required",
 		},
 		{
 			name: "Whitespace-only name is passed through to API",
-			input: environments.UpdateEnvironmentByIdInput{
+			input: environments.UpdateEnvironmentInput{
 				EnvironmentId: testEnv1.id,
 				Name:          "   ", // Whitespace only
 				Region:        testEnv1.region,
@@ -340,14 +340,14 @@ func TestUpdateEnvironmentByIdHandler_EdgeCaseInputs(t *testing.T) {
 				matcher := func(req *pingone.EnvironmentReplaceRequest) bool {
 					return req.Name == "   "
 				}
-				mockUpdateEnvironmentByIdSetup(m, envID, matcher, nil, 400, errors.New("name cannot be whitespace"))
+				mockUpdateEnvironmentSetup(m, envID, matcher, nil, 400, errors.New("name cannot be whitespace"))
 			},
 			wantErr:         true,
 			wantErrContains: "name cannot be whitespace",
 		},
 		{
 			name: "Empty description string is passed through and accepted",
-			input: environments.UpdateEnvironmentByIdInput{
+			input: environments.UpdateEnvironmentInput{
 				EnvironmentId: testEnv1.id,
 				Name:          "Updated Environment",
 				Region:        testEnv1.region,
@@ -367,7 +367,7 @@ func TestUpdateEnvironmentByIdHandler_EdgeCaseInputs(t *testing.T) {
 					Type:        testEnv1.envType,
 					Description: &description,
 				}
-				mockUpdateEnvironmentByIdSetup(m, envID, matcher, &expectedEnv, 200, nil)
+				mockUpdateEnvironmentSetup(m, envID, matcher, &expectedEnv, 200, nil)
 			},
 			wantErr: false,
 		},
@@ -378,7 +378,7 @@ func TestUpdateEnvironmentByIdHandler_EdgeCaseInputs(t *testing.T) {
 			// Setup
 			mockClient := &envtestutils.MockEnvironmentsClient{}
 			tt.setupMock(mockClient, tt.input.EnvironmentId)
-			handler := environments.UpdateEnvironmentByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 			req := &mcp.CallToolRequest{}
 
 			// Execute
@@ -388,7 +388,7 @@ func TestUpdateEnvironmentByIdHandler_EdgeCaseInputs(t *testing.T) {
 			if tt.wantErr {
 				testutils.AssertHandlerError(t, err, mcpResult, output, tt.wantErrContains)
 			} else {
-				testutils.AssertHandlerSuccess(t, err, mcpResult, output)
+				testutils.AssertStructuredHandlerSuccess(t, err, mcpResult, output)
 			}
 
 			mockClient.AssertExpectations(t)
@@ -396,7 +396,7 @@ func TestUpdateEnvironmentByIdHandler_EdgeCaseInputs(t *testing.T) {
 	}
 }
 
-func TestUpdateEnvironmentByIdHandler_AllStatusValues(t *testing.T) {
+func TestUpdateEnvironmentHandler_AllStatusValues(t *testing.T) {
 	// Test all valid status enum values to ensure proper handling
 	// Based on AllowedEnvironmentStatusValueEnumValues from PingOne SDK
 	statusTests := []struct {
@@ -435,11 +435,11 @@ func TestUpdateEnvironmentByIdHandler_AllStatusValues(t *testing.T) {
 				Type:   testEnv1.envType,
 				Status: &tt.expectedValue,
 			}
-			mockUpdateEnvironmentByIdSetup(mockClient, envID, matcher, &expectedEnv, 200, nil)
+			mockUpdateEnvironmentSetup(mockClient, envID, matcher, &expectedEnv, 200, nil)
 
-			handler := environments.UpdateEnvironmentByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 			req := &mcp.CallToolRequest{}
-			input := environments.UpdateEnvironmentByIdInput{
+			input := environments.UpdateEnvironmentInput{
 				EnvironmentId: testEnv1.id,
 				Name:          "Updated Environment",
 				Region:        testEnv1.region,
@@ -462,7 +462,7 @@ func TestUpdateEnvironmentByIdHandler_AllStatusValues(t *testing.T) {
 	}
 }
 
-func TestUpdateEnvironmentByIdHandler_StatusOmitted(t *testing.T) {
+func TestUpdateEnvironmentHandler_StatusOmitted(t *testing.T) {
 	// Test that when status is nil/omitted, it's not sent to the API
 	mockClient := &envtestutils.MockEnvironmentsClient{}
 	envID := testEnv1.id
@@ -479,11 +479,11 @@ func TestUpdateEnvironmentByIdHandler_StatusOmitted(t *testing.T) {
 		Type:   testEnv1.envType,
 		Status: nil, // No status in response
 	}
-	mockUpdateEnvironmentByIdSetup(mockClient, envID, matcher, &expectedEnv, 200, nil)
+	mockUpdateEnvironmentSetup(mockClient, envID, matcher, &expectedEnv, 200, nil)
 
-	handler := environments.UpdateEnvironmentByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+	handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
 	req := &mcp.CallToolRequest{}
-	input := environments.UpdateEnvironmentByIdInput{
+	input := environments.UpdateEnvironmentInput{
 		EnvironmentId: testEnv1.id,
 		Name:          "Updated Environment",
 		Region:        testEnv1.region,
@@ -502,12 +502,12 @@ func TestUpdateEnvironmentByIdHandler_StatusOmitted(t *testing.T) {
 	mockClient.AssertExpectations(t)
 }
 
-func TestUpdateEnvironmentByIdHandler_GetAuthenticatedClientError(t *testing.T) {
+func TestUpdateEnvironmentHandler_GetAuthenticatedClientError(t *testing.T) {
 	mockClient := &envtestutils.MockEnvironmentsClient{}
 	clientFactoryErr := errors.New("failed to get authenticated client")
-	handler := environments.UpdateEnvironmentByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
+	handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
 	req := &mcp.CallToolRequest{}
-	input := environments.UpdateEnvironmentByIdInput{
+	input := environments.UpdateEnvironmentInput{
 		EnvironmentId: testEnv1.id,
 		Name:          "Updated Environment",
 		Region:        pingone.ENVIRONMENTREGIONCODE_NA,
@@ -522,12 +522,12 @@ func TestUpdateEnvironmentByIdHandler_GetAuthenticatedClientError(t *testing.T) 
 	assert.Nil(t, output)
 }
 
-func TestUpdateEnvironmentByIdHandler_InitializeAuthContextError(t *testing.T) {
+func TestUpdateEnvironmentHandler_InitializeAuthContextError(t *testing.T) {
 	mockClient := &envtestutils.MockEnvironmentsClient{}
 	initContextErr := errors.New("failed to initialize auth context")
-	handler := environments.UpdateEnvironmentByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
+	handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
 	req := &mcp.CallToolRequest{}
-	input := environments.UpdateEnvironmentByIdInput{
+	input := environments.UpdateEnvironmentInput{
 		EnvironmentId: testEnv1.id,
 		Name:          "Updated Environment",
 		Region:        pingone.ENVIRONMENTREGIONCODE_NA,
@@ -542,7 +542,7 @@ func TestUpdateEnvironmentByIdHandler_InitializeAuthContextError(t *testing.T) {
 	assert.Nil(t, output)
 }
 
-func TestUpdateEnvironmentByIdHandler_InitializeAuthContext(t *testing.T) {
+func TestUpdateEnvironmentHandler_InitializeAuthContext(t *testing.T) {
 	testCases := []struct {
 		name                       string
 		setupTokenStore            func() *testutils.InMemoryTokenStore
@@ -595,7 +595,7 @@ func TestUpdateEnvironmentByIdHandler_InitializeAuthContext(t *testing.T) {
 				Region: testEnv1.region,
 				Type:   testEnv1.envType,
 			}
-			mockUpdateEnvironmentByIdSetup(mockClient, testEnv1.id, nil, &expectedEnv, 200, nil)
+			mockUpdateEnvironmentSetup(mockClient, testEnv1.id, nil, &expectedEnv, 200, nil)
 
 			// Set up auth mocks
 			tokenStore := tc.setupTokenStore()
@@ -603,9 +603,9 @@ func TestUpdateEnvironmentByIdHandler_InitializeAuthContext(t *testing.T) {
 			authContextInitializer := initialize.AuthContextInitializer(mockClientFactory, tokenStore, auth.GrantTypeAuthorizationCode)
 
 			// Create handler and execute
-			handler := environments.UpdateEnvironmentByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), authContextInitializer)
+			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), authContextInitializer)
 			req := &mcp.CallToolRequest{}
-			input := environments.UpdateEnvironmentByIdInput{
+			input := environments.UpdateEnvironmentInput{
 				EnvironmentId: testEnv1.id,
 				Name:          "Updated Environment",
 				Region:        testEnv1.region,
@@ -623,22 +623,22 @@ func TestUpdateEnvironmentByIdHandler_InitializeAuthContext(t *testing.T) {
 	}
 }
 
-func TestUpdateEnvironmentByIdHandler_RealClient(t *testing.T) {
+func TestUpdateEnvironmentHandler_RealClient(t *testing.T) {
 	//TODO enable test when we have can run against a real P1 client
-	t.Skip("Skipping TestUpdateEnvironmentByIdHandler_RealClient since it relies on real P1 client and modifies actual resources")
+	t.Skip("Skipping TestUpdateEnvironmentHandler_RealClient since it relies on real P1 client and modifies actual resources")
 
 	var emptyToken string
 	client, err := sdk.NewDefaultClientFactory(testutils.TestServerVersion).NewClient(emptyToken)
 	require.NoError(t, err, "Failed to create PingOne client - check your credentials")
 
 	clientWrapper := environments.NewPingOneClientEnvironmentsWrapper(client)
-	handler := environments.UpdateEnvironmentByIdHandler(envtestutils.NewMockEnvironmentsClientFactory(clientWrapper, nil), testutils.MockContextInitializer())
+	handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(clientWrapper, nil), testutils.MockContextInitializer())
 
 	// Note: Replace with a valid environment ID from your PingOne organization
 	testEnvironmentId := uuid.MustParse("00000000-0000-0000-0000-000000000000")
 
 	req := &mcp.CallToolRequest{}
-	input := environments.UpdateEnvironmentByIdInput{
+	input := environments.UpdateEnvironmentInput{
 		EnvironmentId: testEnvironmentId,
 		Name:          "Updated Test Environment",
 		Region:        pingone.ENVIRONMENTREGIONCODE_NA,

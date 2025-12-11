@@ -51,7 +51,7 @@ func TestCachingEnvironmentValidator_ValidateEnvironment_Success(t *testing.T) {
 	resp := &http.Response{StatusCode: 200}
 
 	// SANDBOX environments are not cached, so expect multiple API calls
-	mockClient.On("GetEnvironmentById", ctx, envId).Return(env, resp, nil).Times(3)
+	mockClient.On("GetEnvironment", ctx, envId).Return(env, resp, nil).Times(3)
 
 	validator := NewCachingEnvironmentValidator(mockFactory, mockAuthContextInitializer())
 
@@ -80,7 +80,7 @@ func TestCachingEnvironmentValidator_ValidateEnvironment_NotFound(t *testing.T) 
 	resp := &http.Response{StatusCode: 404}
 	apiErr := errors.New("environment not found")
 
-	mockClient.On("GetEnvironmentById", ctx, envId).Return(nil, resp, apiErr)
+	mockClient.On("GetEnvironment", ctx, envId).Return(nil, resp, apiErr)
 
 	validator := NewCachingEnvironmentValidator(mockFactory, mockAuthContextInitializer())
 
@@ -113,7 +113,7 @@ func TestCachingEnvironmentValidator_ValidateEnvironment_NilEnvironmentResponse(
 	resp := &http.Response{StatusCode: 200}
 
 	// API returns success but nil environment (should not happen in practice but code handles it)
-	mockClient.On("GetEnvironmentById", ctx, envId).Return(nil, resp, nil)
+	mockClient.On("GetEnvironment", ctx, envId).Return(nil, resp, nil)
 
 	validator := NewCachingEnvironmentValidator(mockFactory, mockAuthContextInitializer())
 
@@ -139,7 +139,7 @@ func TestCachingEnvironmentValidator_ClearCache(t *testing.T) {
 	resp := &http.Response{StatusCode: 200}
 
 	// Expect two API calls since we'll clear cache
-	mockClient.On("GetEnvironmentById", ctx, envId).Return(env, resp, nil).Twice()
+	mockClient.On("GetEnvironment", ctx, envId).Return(env, resp, nil).Twice()
 
 	validator := NewCachingEnvironmentValidator(mockFactory, mockAuthContextInitializer())
 
@@ -174,7 +174,7 @@ func TestCachingEnvironmentValidator_RemoveFromCache(t *testing.T) {
 	resp := &http.Response{StatusCode: 200}
 
 	// Expect two API calls since we'll remove from cache
-	mockClient.On("GetEnvironmentById", ctx, envId).Return(env, resp, nil).Twice()
+	mockClient.On("GetEnvironment", ctx, envId).Return(env, resp, nil).Twice()
 
 	validator := NewCachingEnvironmentValidator(mockFactory, mockAuthContextInitializer())
 
@@ -207,7 +207,7 @@ func TestCachingEnvironmentValidator_ProductionEnvironment_ReadBlocked(t *testin
 	}
 	resp := &http.Response{StatusCode: 200}
 
-	mockClient.On("GetEnvironmentById", ctx, envId).Return(env, resp, nil).Once()
+	mockClient.On("GetEnvironment", ctx, envId).Return(env, resp, nil).Once()
 
 	validator := NewCachingEnvironmentValidator(mockFactory, mockAuthContextInitializer())
 
@@ -233,7 +233,7 @@ func TestCachingEnvironmentValidator_ProductionEnvironment_WriteBlocked(t *testi
 	}
 	resp := &http.Response{StatusCode: 200}
 
-	mockClient.On("GetEnvironmentById", ctx, envId).Return(env, resp, nil).Once()
+	mockClient.On("GetEnvironment", ctx, envId).Return(env, resp, nil).Once()
 
 	validator := NewCachingEnvironmentValidator(mockFactory, mockAuthContextInitializer())
 
@@ -259,7 +259,7 @@ func TestCachingEnvironmentValidator_SandboxEnvironment_WriteAllowed(t *testing.
 	}
 	resp := &http.Response{StatusCode: 200}
 
-	mockClient.On("GetEnvironmentById", ctx, envId).Return(env, resp, nil).Once()
+	mockClient.On("GetEnvironment", ctx, envId).Return(env, resp, nil).Once()
 
 	validator := NewCachingEnvironmentValidator(mockFactory, mockAuthContextInitializer())
 
@@ -283,7 +283,7 @@ func TestCachingEnvironmentValidator_SandboxEnvironment_ReadAllowed(t *testing.T
 	}
 	resp := &http.Response{StatusCode: 200}
 
-	mockClient.On("GetEnvironmentById", ctx, envId).Return(env, resp, nil).Once()
+	mockClient.On("GetEnvironment", ctx, envId).Return(env, resp, nil).Once()
 
 	validator := NewCachingEnvironmentValidator(mockFactory, mockAuthContextInitializer())
 
@@ -308,7 +308,7 @@ func TestCachingEnvironmentValidator_SandboxEnvironment_NotCached(t *testing.T) 
 	resp := &http.Response{StatusCode: 200}
 
 	// SANDBOX environments should NOT be cached, expect API call each time
-	mockClient.On("GetEnvironmentById", ctx, envId).Return(env, resp, nil).Twice()
+	mockClient.On("GetEnvironment", ctx, envId).Return(env, resp, nil).Twice()
 
 	validator := NewCachingEnvironmentValidator(mockFactory, mockAuthContextInitializer())
 
@@ -339,7 +339,7 @@ func TestCachingEnvironmentValidator_ProductionEnvironment_IsCached(t *testing.T
 	resp := &http.Response{StatusCode: 200}
 
 	// PRODUCTION environments should be cached, expect only one API call
-	mockClient.On("GetEnvironmentById", ctx, envId).Return(env, resp, nil).Once()
+	mockClient.On("GetEnvironment", ctx, envId).Return(env, resp, nil).Once()
 
 	validator := NewCachingEnvironmentValidator(mockFactory, mockAuthContextInitializer())
 

@@ -108,8 +108,31 @@ func assertPopulationMatches(t *testing.T, expected management.Population, actua
 	}
 }
 
-func updatePopulationByIdInputFromPopulation(pop management.Population, envID uuid.UUID) populations.UpdatePopulationByIdInput {
-	return populations.UpdatePopulationByIdInput{
+// assertPopulationSummaryMatches verifies that a Population summary matches the expected, for fields that can be set via the API
+func assertPopulationSummaryMatches(t *testing.T, expected management.Population, actual populations.PopulationSummary) {
+	t.Helper()
+
+	assert.Equal(t, expected.Name, actual.Name, "Population name should match")
+	require.NotNil(t, actual.Id, "Population ID should not be nil")
+	assert.Equal(t, *expected.Id, *actual.Id, "Population ID should match")
+
+	if expected.Default != nil {
+		require.NotNil(t, actual.Default, "Default should not be nil when expected")
+		assert.Equal(t, *expected.Default, *actual.Default, "Default should match")
+	} else {
+		assert.Nil(t, actual.Default, "Default should be nil when not expected")
+	}
+
+	if expected.CreatedAt != nil {
+		require.NotNil(t, actual.CreatedAt, "CreatedAt should not be nil when expected")
+		assert.Equal(t, *expected.CreatedAt, *actual.CreatedAt, "CreatedAt should match")
+	} else {
+		assert.Nil(t, actual.CreatedAt, "CreatedAt should be nil when not expected")
+	}
+}
+
+func updatePopulationInputFromPopulation(pop management.Population, envID uuid.UUID) populations.UpdatePopulationInput {
+	return populations.UpdatePopulationInput{
 		EnvironmentId:          envID,
 		PopulationId:           uuid.MustParse(*pop.Id),
 		Name:                   pop.Name,
@@ -133,8 +156,8 @@ func createPopulationInputFromPopulation(pop management.Population, envID uuid.U
 	}
 }
 
-func getPopulationByIdInputFromPopulation(pop management.Population, envID uuid.UUID) populations.GetPopulationByIdInput {
-	return populations.GetPopulationByIdInput{
+func getPopulationInputFromPopulation(pop management.Population, envID uuid.UUID) populations.GetPopulationInput {
+	return populations.GetPopulationInput{
 		EnvironmentId: envID,
 		PopulationId:  uuid.MustParse(*pop.Id),
 	}

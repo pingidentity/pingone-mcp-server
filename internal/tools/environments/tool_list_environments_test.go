@@ -96,13 +96,13 @@ func TestListEnvironmentsHandler_MockClient(t *testing.T) {
 			}
 
 			// Assert success expectations
-			testutils.AssertHandlerSuccess(t, err, mcpResult, response)
+			testutils.AssertStructuredHandlerSuccess(t, err, mcpResult, response)
 			assert.Len(t, response.Environments, tt.wantEnvCount)
 
 			// Verify environment details if specified
 			for i, want := range tt.wantEnvironments {
 				require.Less(t, i, len(response.Environments), "Not enough environments in response")
-				assertEnvironmentMatches(t, want, response.Environments[i])
+				assertEnvironmentSummaryMatches(t, want, response.Environments[i])
 			}
 
 			mockClient.AssertExpectations(t)
@@ -145,7 +145,7 @@ func TestListEnvironmentsHandler_MockClient(t *testing.T) {
 			// Verify environment details if specified
 			for i, want := range tt.wantEnvironments {
 				require.Less(t, i, len(outputEnvironments.Environments), "Not enough environments in response")
-				assertEnvironmentMatches(t, want, outputEnvironments.Environments[i])
+				assertEnvironmentSummaryMatches(t, want, outputEnvironments.Environments[i])
 			}
 
 			mockClient.AssertExpectations(t)
@@ -382,18 +382,18 @@ func TestListEnvironmentsHandler_RealClient(t *testing.T) {
 	tests := []struct {
 		name     string
 		filter   *string
-		validate func(t *testing.T, envs []pingone.EnvironmentResponse)
+		validate func(t *testing.T, envs []environments.EnvironmentSummary)
 	}{
 		{
 			name: "no filter returns all environments",
-			validate: func(t *testing.T, envs []pingone.EnvironmentResponse) {
+			validate: func(t *testing.T, envs []environments.EnvironmentSummary) {
 				assert.Len(t, envs, len(allEnvs), "Should return all environments")
 			},
 		},
 		{
 			name:   "filter by ID returns single environment",
 			filter: testutils.Pointer(`id eq "` + allEnvs[0].Id.String() + `"`),
-			validate: func(t *testing.T, envs []pingone.EnvironmentResponse) {
+			validate: func(t *testing.T, envs []environments.EnvironmentSummary) {
 				require.Len(t, envs, 1, "Should return exactly one environment")
 				assert.Equal(t, allEnvs[0].Id, envs[0].Id, "Should return correct environment")
 			},
@@ -406,21 +406,21 @@ func TestListEnvironmentsHandler_RealClient(t *testing.T) {
 				}
 				return testutils.Pointer(`name sw "` + allEnvs[0].Name[:3] + `"`)
 			}(),
-			validate: func(t *testing.T, envs []pingone.EnvironmentResponse) {
+			validate: func(t *testing.T, envs []environments.EnvironmentSummary) {
 				assert.NotEmpty(t, envs, "Should find at least one environment")
 			},
 		},
 		{
 			name:   "filter by status",
 			filter: testutils.Pointer(`status eq "ACTIVE"`),
-			validate: func(t *testing.T, envs []pingone.EnvironmentResponse) {
+			validate: func(t *testing.T, envs []environments.EnvironmentSummary) {
 				assert.NotEmpty(t, envs, "Should find at least one environment")
 			},
 		},
 		{
 			name:   "complex AND filter",
 			filter: testutils.Pointer(`id eq "` + allEnvs[0].Id.String() + `" and status eq "ACTIVE"`),
-			validate: func(t *testing.T, envs []pingone.EnvironmentResponse) {
+			validate: func(t *testing.T, envs []environments.EnvironmentSummary) {
 				assert.LessOrEqual(t, len(envs), 1, "Should return at most one environment")
 				if len(envs) == 1 {
 					assert.Equal(t, allEnvs[0].Id, envs[0].Id)
@@ -430,7 +430,7 @@ func TestListEnvironmentsHandler_RealClient(t *testing.T) {
 		{
 			name:   "filter with no results",
 			filter: testutils.Pointer(`id eq "00000000-0000-0000-0000-000000000000"`),
-			validate: func(t *testing.T, envs []pingone.EnvironmentResponse) {
+			validate: func(t *testing.T, envs []environments.EnvironmentSummary) {
 				assert.Empty(t, envs, "Should return no environments")
 			},
 		},
