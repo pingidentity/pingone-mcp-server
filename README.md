@@ -15,7 +15,7 @@ The PingOne MCP (Model Context Protocol) server enables AI assistants to review 
 >
 > - Functionality, features, and APIs are subject to change at any time without prior notice
 > - Use against production environments or mission-critical workloads is not advised
-> - Limited support is available during the public preview phase — please report bugs and provide feedback via the [GitHub issue tracker](https://github.com/pingidentity/pingone-mcp-server)
+> - Limited support is available during the public preview phase — please report bugs and provide feedback via the [GitHub issue tracker](https://github.com/pingidentity/pingone-mcp-server/issues)
 >
 > Your use of this software constitutes acceptance of these terms.
 
