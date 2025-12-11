@@ -43,9 +43,9 @@ func (c *DirectoryCollection) RegisterTools(ctx context.Context, server *mcp.Ser
 	directoryClientFactory := NewPingOneClientDirectoryWrapperFactory(clientFactory, tokenStore)
 	initializeAuthContext := initialize.AuthContextInitializer(authClientFactory, tokenStore, grantType)
 
-	if toolFilter.ShouldIncludeTool(&GetTotalIdentitiesByEnvironmentIdDef) {
-		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetTotalIdentitiesByEnvironmentIdDef.McpTool.Name))
-		mcp.AddTool(server, GetTotalIdentitiesByEnvironmentIdDef.McpTool, GetTotalIdentitiesByEnvironmentIdHandler(directoryClientFactory, initializeAuthContext))
+	if toolFilter.ShouldIncludeTool(&GetTotalIdentitiesByEnvironmentDef) {
+		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetTotalIdentitiesByEnvironmentDef.McpTool.Name))
+		mcp.AddTool(server, GetTotalIdentitiesByEnvironmentDef.McpTool, GetTotalIdentitiesByEnvironmentHandler(directoryClientFactory, initializeAuthContext))
 	}
 
 	return nil
@@ -53,6 +53,6 @@ func (c *DirectoryCollection) RegisterTools(ctx context.Context, server *mcp.Ser
 
 func (c *DirectoryCollection) ListTools() []types.ToolDefinition {
 	return []types.ToolDefinition{
-		GetTotalIdentitiesByEnvironmentIdDef,
+		GetTotalIdentitiesByEnvironmentDef,
 	}
 }

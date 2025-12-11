@@ -45,15 +45,15 @@ func createTotalIdentitiesResponse(t testing.TB) pingone.DirectoryTotalIdentitie
 	}
 }
 
-// mockGetTotalIdentitiesByEnvironmentIdSetup configures a mock for GetTotalIdentitiesByEnvironmentId calls
-func mockGetTotalIdentitiesByEnvironmentIdSetup(m *mockPingOneClientDirectoryWrapper, envID uuid.UUID, response *pingone.DirectoryTotalIdentitiesCountCollectionResponse, statusCode int, err error) {
+// mockGetTotalIdentitiesByEnvironmentSetup configures a mock for GetTotalIdentitiesByEnvironmentId calls
+func mockGetTotalIdentitiesByEnvironmentSetup(m *mockPingOneClientDirectoryWrapper, envID uuid.UUID, response *pingone.DirectoryTotalIdentitiesCountCollectionResponse, statusCode int, err error) {
 	httpResponse := &http.Response{StatusCode: statusCode}
 	m.On("GetTotalIdentitiesByEnvironmentId", mock.Anything, envID, mock.Anything).Return(response, httpResponse, err)
 }
 
 // calculateFilter calculates the filter string based on input dates
 // Matches the logic in GetTotalIdentitiesByEnvironmentIdHandler
-func calculateFilter(input directory.GetTotalIdentitiesByEnvironmentIdInput) string {
+func calculateFilter(input directory.GetTotalIdentitiesByEnvironmentInput) string {
 	// If neither date is provided, default to today at midnight UTC with no endDate
 	if input.StartDate == nil && input.EndDate == nil {
 		now := time.Now().UTC()
