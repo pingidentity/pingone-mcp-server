@@ -301,10 +301,6 @@ If you've downloaded the binary manually:
 }
 ```
 
-### Use with Claude Code
-
-TODO
-
 ### Use with Cursor
 
 [![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en-US/install-mcp?name=pingOne&config=eyJlbnYiOnsiUElOR09ORV9NQ1BfRU5WSVJPTk1FTlRfSUQiOiI8PHBhc3RlIHdvcmtlciBhcHBsaWNhdGlvbiBlbnZpcm9ubWVudCBVVUlEIGhlcmU%2BPiIsIlBJTkdPTkVfQVVUSE9SSVpBVElPTl9DT0RFX0NMSUVOVF9JRCI6Ijw8cGFzdGUgd29ya2VyIGFwcGxpY2F0aW9uIGNsaWVudCBJRCBVVUlEIGhlcmU%2BPiIsIlBJTkdPTkVfUk9PVF9ET01BSU4iOiI8PHBhc3RlIHJvb3QgZG9tYWluIG9mIHlvdXIgUGluZ09uZSB0ZW5hbnQgaGVyZSAoZS5nLiwgcGluZ29uZS5jb20pPj4ifSwiY29tbWFuZCI6InBpbmdvbmUtbWNwLXNlcnZlciBydW4ifQ%3D%3D)
