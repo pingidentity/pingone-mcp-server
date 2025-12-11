@@ -344,7 +344,7 @@ func TestUpdateEnvironmentServicesHandler_MockClient(t *testing.T) {
 							},
 						},
 						Console: &pingone.EnvironmentBillOfMaterialsProductConsole{
-							Href: "https://console.example.com/davinci",
+							Href: testutils.Pointer("https://console.example.com/davinci"),
 						},
 						Tags: []string{"DAVINCI_MINIMAL"},
 					},
@@ -357,7 +357,7 @@ func TestUpdateEnvironmentServicesHandler_MockClient(t *testing.T) {
 							},
 						},
 						Console: &pingone.EnvironmentBillOfMaterialsProductConsole{
-							Href: "https://console.example.com/base",
+							Href: testutils.Pointer("https://console.example.com/base"),
 						},
 					},
 				},
@@ -387,7 +387,8 @@ func TestUpdateEnvironmentServicesHandler_MockClient(t *testing.T) {
 									product.Bookmarks[1].Name == "Documentation" &&
 									product.Bookmarks[1].Href == "https://example.com/docs" &&
 									product.Console != nil &&
-									product.Console.Href == "https://console.example.com/davinci" &&
+									product.Console.Href != nil &&
+									*product.Console.Href == "https://console.example.com/davinci" &&
 									len(product.Tags) == 1 &&
 									product.Tags[0] == "DAVINCI_MINIMAL"
 						}
@@ -397,7 +398,8 @@ func TestUpdateEnvironmentServicesHandler_MockClient(t *testing.T) {
 									product.Bookmarks[0].Name == "Admin Portal" &&
 									product.Bookmarks[0].Href == "https://example.com/admin" &&
 									product.Console != nil &&
-									product.Console.Href == "https://console.example.com/base" &&
+									product.Console.Href != nil &&
+									*product.Console.Href == "https://console.example.com/base" &&
 									len(product.Tags) == 0
 						}
 					}
