@@ -1,12 +1,10 @@
 name: goreleaser
 
 # Release on tags starting with "v" (semantic version tags)
-# Disable automatic triggers
 on:
-  workflow_dispatch:
-  # push:
-  #   tags:
-  #     - 'v*'
+  push:
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
@@ -41,3 +39,4 @@ jobs:
           args: release --clean 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_HOMEBREW_TAP_GITHUB_PAT: ${{ secrets.GORELEASER_HOMEBREW_TAP_GITHUB_PAT }}
