@@ -549,8 +549,6 @@ The PingOne MCP Server implements multiple security layers:
 - **No plain text secrets** - No sensitive information stored in configuration files
 - **OAuth 2.0 authentication** - PKCE flow for local deployment prevents authorization code interception; Device Code flow for containerized deployment
 - **User-based authentication** - All API calls are authenticated as the user who logged in, providing complete audit trails
-- **Input validation** - Built-in protections against path traversal and query injection attacks
-- **Tenant isolation** - Tokens are validated against the configured `AIC_BASE_URL` to prevent accidental cross-tenant operations
 
 ## Troubleshooting
 
