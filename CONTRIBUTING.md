@@ -4,12 +4,41 @@ We appreciate your help! We welcome contributions in the form of creating issues
 
 ## Before You Start
 
+**Important:** This project implements a Model Context Protocol (MCP) server and must comply with the MCP specification.
+
+- 📘 Read [.github/copilot-instructions.md](.github/copilot-instructions.md) for comprehensive development guidelines
+- 📖 Review the [MCP Specification](https://spec.modelcontextprotocol.io/) for protocol requirements
+- 🔍 Check existing code for patterns and examples
+
 Know that:
 
 1. If you have any questions, please ask! We'll help as best we can.
 2. While we appreciate perfect PRs, it's not essential. We'll fix up any housekeeping changes before merge. Any PRs that need further work, we'll point you in the right direction or can take on ourselves.
 3. We may not be able to respond quickly; our development cycles are on a priority basis.
 4. We base our priorities on customer need and the number of votes on issues/PRs by the number of 👍 reactions. If there is an existing issue or PR for something you'd like, please vote!
+
+## Key Development Guidelines
+
+### MCP Specification Compliance
+
+**CRITICAL:** All code must comply with the MCP specification. Key requirements:
+
+- ✅ **Use structured logging** in server code (`internal/server`, `internal/tools`, `internal/sdk`, `internal/auth`)
+- ❌ **Never use `fmt.Printf`** in server code (breaks MCP protocol communication)
+- ✅ **Use `fmt.Printf`** in CLI commands (`cmd/` directory) for user output
+
+**Example:**
+```go
+// ✅ CORRECT - In server/tools code
+log := logger.FromContext(ctx)
+log.Info("Processing request", "tool_name", toolName)
+
+// ❌ INCORRECT - In server/tools code
+fmt.Printf("Processing request: %s\n", toolName)  // Breaks MCP protocol
+
+// ✅ CORRECT - In cmd/ code
+fmt.Printf("Session ID: %s\n", sessionID)  // OK for CLI output
+```
 
 ## Getting Started
 
