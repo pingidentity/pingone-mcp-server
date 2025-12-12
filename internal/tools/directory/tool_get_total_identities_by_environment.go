@@ -47,9 +47,9 @@ type GetTotalIdentitiesByEnvironmentOutput struct {
 }
 
 type GetTotalIdentitiesByEnvironmentOutputReport struct {
-	Date                 *string `json:"date,omitempty" jsonschema:"The date and time the total identities count starts for the sampling period (ISO 8601 format)."`
-	TotalIdentities      *int32  `json:"totalIdentities,omitempty" jsonschema:"The total unique identities count for the sampling period."`
-	AdditionalProperties map[string]interface{}
+	Date                 *string                `json:"date,omitempty" jsonschema:"The date and time the total identities count starts for the sampling period (ISO 8601 format)."`
+	TotalIdentities      *int32                 `json:"totalIdentities,omitempty" jsonschema:"The total unique identities count for the sampling period."`
+	AdditionalProperties map[string]interface{} `json:"additionalProperties,omitempty"`
 }
 
 // GetTotalIdentitiesByEnvironmentHandler retrieves the total identities count for a PingOne environment within a specified date range using the provided client

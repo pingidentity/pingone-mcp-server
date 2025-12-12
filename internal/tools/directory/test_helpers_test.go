@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pingidentity/pingone-go-client/pingone"
+	"github.com/pingidentity/pingone-go-client/types"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/directory"
 	"github.com/stretchr/testify/mock"
 )
@@ -29,9 +30,14 @@ func createTotalIdentitiesResponse(t testing.TB) pingone.DirectoryTotalIdentitie
 
 	count := int32(100)
 	size := int32(1)
+	totalCount := int32(100)
+	date := types.UnixTime{Time: time.Now().UTC()}
 
 	// Create the inner response with identity count
-	totalIdentity := pingone.DirectoryTotalIdentitiesCountResponse{}
+	totalIdentity := pingone.DirectoryTotalIdentitiesCountResponse{
+		Date:            &date,
+		TotalIdentities: &totalCount,
+	}
 
 	// Create the embedded structure
 	embedded := pingone.DirectoryTotalIdentitiesCountCollectionResponseEmbedded{

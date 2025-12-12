@@ -76,7 +76,7 @@ func TestDirectoryCollection_RegisterTools_ReadOnlyToolsMarkedCorrectly(t *testi
 
 	// Define known read-only tools
 	readOnlyTools := []string{
-		"get_total_identities_by_environment_id",
+		"get_total_identities_by_environment",
 	}
 
 	// Define known write tools (none for directory collection currently)
