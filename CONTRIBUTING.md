@@ -26,6 +26,7 @@ Know that:
 - ✅ **Use structured logging** in server code (`internal/server`, `internal/tools`, `internal/sdk`, `internal/auth`)
 - ❌ **Never use `fmt.Printf`** in server code (breaks MCP protocol communication)
 - ✅ **Use `fmt.Printf`** in CLI commands (`cmd/` directory) for user output
+- 📝 See [.github/copilot-instructions.md](.github/copilot-instructions.md) for complete logging patterns
 
 **Example:**
 ```go
@@ -106,14 +107,14 @@ make test
 3. **Test your changes:**
 
 ```bash
-# Run tests
-make test
+# Run all validation checks
+make validate-all
 
-# Run linting
-make lint
-
-# Build to verify
-make build
+# Or run individually:
+make test           # Unit and integration tests
+make lint           # Code quality and linting
+make mcp-spec-check # MCP specification compliance
+make build          # Verify build
 ```
 
 4. **Commit your changes:**

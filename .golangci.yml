@@ -1,0 +1,74 @@
+# golangci-lint configuration for PingOne MCP Server
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 2m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck      # Check for unchecked errors
+    - gosimple      # Simplify code
+    - govet         # Vet examines Go source code
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Staticcheck is a go vet on steroids
+    - typecheck     # Type checks
+    - unused        # Check for unused constants, variables, functions and types
+    - forbidigo     # Forbid specific identifiers (used to prevent fmt.Printf in MCP server code)
+    - revive        # Fast, configurable, extensible, flexible, and beautiful linter
+
+linters-settings:
+  forbidigo:
+    # Forbid the following patterns in specific directories
+    forbid:
+      # Prevent fmt.Printf/Println in MCP server code (internal/, excluding cmd/ for CLI output)
+      - p: ^fmt\.Printf$
+        msg: "Use structured logging (logger.FromContext(ctx)) instead of fmt.Printf in server code. See MCP specification for proper logging patterns."
+        pkg: ^github\.com/pingidentity/pingone-mcp-server/internal/(server|tools|sdk|auth/client|auth/login|auth/logout).*
+      - p: ^fmt\.Println$
+        msg: "Use structured logging (logger.FromContext(ctx)) instead of fmt.Println in server code. See MCP specification for proper logging patterns."
+        pkg: ^github\.com/pingidentity/pingone-mcp-server/internal/(server|tools|sdk|auth/client|auth/login|auth/logout).*
+      - p: ^print$
+        msg: "Use structured logging (logger.FromContext(ctx)) instead of print() in server code. See MCP specification for proper logging patterns."
+        pkg: ^github\.com/pingidentity/pingone-mcp-server/internal/(server|tools|sdk|auth/client|auth/login|auth/logout).*
+      - p: ^println$
+        msg: "Use structured logging (logger.FromContext(ctx)) instead of println() in server code. See MCP specification for proper logging patterns."
+        pkg: ^github\.com/pingidentity/pingone-mcp-server/internal/(server|tools|sdk|auth/client|auth/login|auth/logout).*
+      # Allow fmt.Printf/Println in cmd/ for CLI user output
+      # Allow in internal/errs for error formatting
+      # Allow in internal/logger for logger implementation
+      # Allow in test files
+    analyze-types: true
+    
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+        disabled: false
+
+issues:
+  exclude-rules:
+    # Allow fmt.Printf/Println in test files
+    - path: _test\.go
+      linters:
+        - forbidigo
+    # Allow fmt.Printf/Println in cmd/ directory (CLI output)
+    - path: ^cmd/
+      linters:
+        - forbidigo
+    # Allow in internal/errs (error formatting)
+    - path: ^internal/errs/
+      linters:
+        - forbidigo
+    # Allow in internal/logger (logger implementation)  
+    - path: ^internal/logger/
+      linters:
+        - forbidigo
+    # Allow in internal/testutils (test utilities)
+    - path: ^internal/testutils/
+      linters:
+        - forbidigo
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
