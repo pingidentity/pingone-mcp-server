@@ -65,9 +65,39 @@ make lint
 
 This includes:
 - Go vet checks
-- golangci-lint
+- golangci-lint with forbidigo (prevents fmt.Printf in server code)
 - Import organization checks
 - Go code formatting
+
+- [ ] **MCP Specification Compliance**. **CRITICAL:** Verify code follows MCP specification requirements:
+
+```shell
+make mcp-spec-check
+```
+*Verification*: Command must exit with code 0
+
+**Important:** The MCP specification requires structured logging only. Direct output to stdout/stderr via `fmt.Printf`, `fmt.Println`, `print`, or `println` will break MCP protocol communication.
+
+- ✅ **CORRECT** - Use in MCP server code (`internal/server`, `internal/tools`, `internal/sdk`, `internal/auth`):
+  ```go
+  log := logger.FromContext(ctx)
+  log.Info("Operation completed", "resource_id", resourceID)
+  log.Error("Operation failed", "error", err)
+  ```
+
+- ❌ **INCORRECT** - Never use in MCP server code:
+  ```go
+  fmt.Printf("Operation completed\n")  // Breaks MCP protocol
+  fmt.Println("Processing...")          // Breaks MCP protocol
+  ```
+
+- ✅ **ALLOWED** - Can use in CLI commands (`cmd/` directory):
+  ```go
+  fmt.Println("Session Information:")  // OK for CLI output
+  fmt.Printf("  Status: %s\n", status) // OK for CLI output
+  ```
+
+See [.github/copilot-instructions.md](../.github/copilot-instructions.md) for complete logging patterns and MCP specification requirements.
 
 ## Testing
 
@@ -163,14 +193,17 @@ make test
 
 ## Final Checks
 
-- [ ] **All Development Checks**. Run the comprehensive development check:
+- [ ] **All Development Checks**. Run the comprehensive validation:
 
 ```shell
-make test
-make lint
-make build
+make validate-all
 ```
 *Verification*: All commands exit with code 0
+
+This runs:
+- `make test` - Unit and integration tests
+- `make lint` - Code quality and linting
+- `make mcp-spec-check` - MCP specification compliance
 
 - [ ] **CI Compatibility**. Verify your changes will pass automated CI checks by ensuring all the above steps pass locally:
   - *Verification*: All previous verification steps completed successfully
