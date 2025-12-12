@@ -156,9 +156,15 @@ See [the latest GitHub release](https://github.com/pingidentity/pingone-mcp-serv
 
 </details>
 
+Test the installation:
+
+```shell
+pingone-mcp-server --version
+```
+
 ### Use with VS Code
 
-[![Install with Docker in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=pingOne&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22pingone_environment_id%22%2C%22description%22%3A%22The%20environment%20ID%20containing%20the%20MCP%20server%20worker%20application%22%2C%22password%22%3Afalse%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22pingone_mcp_client_id%22%2C%22description%22%3A%22The%20client%20ID%20of%20the%20MCP%20server%20worker%20application%22%2C%22password%22%3Afalse%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22pingone_api_root_domain%22%2C%22description%22%3A%22The%20root%20domain%20of%20your%20PingOne%20tenant%20%28e.g.%2C%20%60pingone.com%60%20%2C%20%60pingone.eu%60%20%2C%20%60pingone.ca%60%29%22%2C%22password%22%3Afalse%7D%5D&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22pingone-mcp-server%22%2C%22args%22%3A%5B%22run%22%5D%2C%22env%22%3A%7B%22PINGONE_MCP_ENVIRONMENT_ID%22%3A%22%24%7Binput%3Apingone_environment_id%7D%22%2C%22PINGONE_AUTHORIZATION_CODE_CLIENT_ID%22%3A%22%24%7Binput%3Apingone_mcp_client_id%7D%22%2C%22PINGONE_ROOT_DOMAIN%22%3A%22%24%7Binput%3Apingone_api_root_domain%7D%22%7D%7D) [![Install with Docker in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=pingOne&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22pingone_environment_id%22%2C%22description%22%3A%22The%20environment%20ID%20containing%20the%20MCP%20server%20worker%20application%22%2C%22password%22%3Afalse%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22pingone_mcp_client_id%22%2C%22description%22%3A%22The%20client%20ID%20of%20the%20MCP%20server%20worker%20application%22%2C%22password%22%3Afalse%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22pingone_api_root_domain%22%2C%22description%22%3A%22The%20root%20domain%20of%20your%20PingOne%20tenant%20%28e.g.%2C%20%60pingone.com%60%20%2C%20%60pingone.eu%60%20%2C%20%60pingone.ca%60%29%22%2C%22password%22%3Afalse%7D%5D&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22pingone-mcp-server%22%2C%22args%22%3A%5B%22run%22%5D%2C%22env%22%3A%7B%22PINGONE_MCP_ENVIRONMENT_ID%22%3A%22%24%7Binput%3Apingone_environment_id%7D%22%2C%22PINGONE_AUTHORIZATION_CODE_CLIENT_ID%22%3A%22%24%7Binput%3Apingone_mcp_client_id%7D%22%2C%22PINGONE_ROOT_DOMAIN%22%3A%22%24%7Binput%3Apingone_api_root_domain%7D%22%7D%7D&quality=insiders)
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=pingOne&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22pingone_environment_id%22%2C%22description%22%3A%22The%20environment%20ID%20containing%20the%20MCP%20server%20worker%20application%22%2C%22password%22%3Afalse%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22pingone_mcp_client_id%22%2C%22description%22%3A%22The%20client%20ID%20of%20the%20MCP%20server%20worker%20application%22%2C%22password%22%3Afalse%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22pingone_api_root_domain%22%2C%22description%22%3A%22The%20root%20domain%20of%20your%20PingOne%20tenant%20%28e.g.%2C%20%60pingone.com%60%20%2C%20%60pingone.eu%60%20%2C%20%60pingone.ca%60%29%22%2C%22password%22%3Afalse%7D%5D&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22pingone-mcp-server%22%2C%22args%22%3A%5B%22run%22%5D%2C%22env%22%3A%7B%22PINGONE_MCP_ENVIRONMENT_ID%22%3A%22%24%7Binput%3Apingone_environment_id%7D%22%2C%22PINGONE_AUTHORIZATION_CODE_CLIENT_ID%22%3A%22%24%7Binput%3Apingone_mcp_client_id%7D%22%2C%22PINGONE_ROOT_DOMAIN%22%3A%22%24%7Binput%3Apingone_api_root_domain%7D%22%7D%7D) [![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=pingOne&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22pingone_environment_id%22%2C%22description%22%3A%22The%20environment%20ID%20containing%20the%20MCP%20server%20worker%20application%22%2C%22password%22%3Afalse%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22pingone_mcp_client_id%22%2C%22description%22%3A%22The%20client%20ID%20of%20the%20MCP%20server%20worker%20application%22%2C%22password%22%3Afalse%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22pingone_api_root_domain%22%2C%22description%22%3A%22The%20root%20domain%20of%20your%20PingOne%20tenant%20%28e.g.%2C%20%60pingone.com%60%20%2C%20%60pingone.eu%60%20%2C%20%60pingone.ca%60%29%22%2C%22password%22%3Afalse%7D%5D&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22pingone-mcp-server%22%2C%22args%22%3A%5B%22run%22%5D%2C%22env%22%3A%7B%22PINGONE_MCP_ENVIRONMENT_ID%22%3A%22%24%7Binput%3Apingone_environment_id%7D%22%2C%22PINGONE_AUTHORIZATION_CODE_CLIENT_ID%22%3A%22%24%7Binput%3Apingone_mcp_client_id%7D%22%2C%22PINGONE_ROOT_DOMAIN%22%3A%22%24%7Binput%3Apingone_api_root_domain%7D%22%7D%7D&quality=insiders)
 
 For quick installation, use one of the install buttons above.
 
@@ -258,8 +264,6 @@ To configure the MCP server to use the Device Authorization grant type, add the 
 
 To add the MCP server configuration manually, add the following configuration to your Claude Desktop config (`claude_desktop_config.json`) or via `Settings` -> `Developer` -> `Local MCP Servers`:
 
-If using Homebrew:
-
 ```json
 {
   "mcpServers": {
@@ -270,8 +274,8 @@ If using Homebrew:
         "run"
       ],
       "env": {
-        "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID here>>",
-        "PINGONE_AUTHORIZATION_CODE_CLIENT_ID": "<<paste worker application client ID UUID here>>",
+        "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID {{admin environment id}} here>>",
+        "PINGONE_AUTHORIZATION_CODE_CLIENT_ID": "<<paste worker application client ID UUID {{mcp application client id}} here>>",
         "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>"
       }
     }
@@ -279,25 +283,65 @@ If using Homebrew:
 }
 ```
 
-If you've downloaded the binary manually:
+If you've downloaded the binary manually to a location not on the `PATH`, change the `command` to refer to the full path to the binary file.
+
+<details>
+<summary>Alternative: Using the Device Authorization Grant</summary>
+
+To configure the MCP server to use the Device Authorization grant type, add the `--grant-type` command argument with a value of `device_code` and add the environment variables `PINGONE_DEVICE_CODE_CLIENT_ID` and `PINGONE_DEVICE_CODE_SCOPES` as shown in the example:
 
 ```json
 {
   "mcpServers": {
-    "pingone": {
+    "pingOne": {
       "type": "stdio",
-      "command": "/path/to/pingone-mcp-server",
+      "command": "pingone-mcp-server",
       "args": [
-        "run"
+        "run",
+        "--grant-type",
+        "device_code"
       ],
       "env": {
-        "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID here>>",
-        "PINGONE_AUTHORIZATION_CODE_CLIENT_ID": "<<paste worker application client ID UUID here>>",
+        "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID {{admin environment id}} here>>",
+        "PINGONE_DEVICE_CODE_CLIENT_ID": "<<paste worker application client ID UUID {{mcp application client id}} here>>",
+        "PINGONE_DEVICE_CODE_SCOPES": "openid",
         "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>"
       }
     }
   }
 }
+```
+
+</details>
+
+### Use with Claude Code
+
+To install the MCP server in Claude code, run the following commands, changing the `PINGONE_MCP_ENVIRONMENT_ID`, `PINGONE_AUTHORIZATION_CODE_CLIENT_ID` and `PINGONE_ROOT_DOMAIN` environment variables for your tenant.
+
+```shell
+export PINGONE_MCP_ENVIRONMENT_ID="<<paste worker application environment UUID {{admin environment id}} here>>"
+export PINGONE_AUTHORIZATION_CODE_CLIENT_ID="<<paste worker application client ID UUID {{mcp application client id}} here>>"
+export PINGONE_ROOT_DOMAIN="<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>"
+```
+
+```shell
+claude mcp add --transport stdio pingOne \
+--env PINGONE_MCP_ENVIRONMENT_ID=$PINGONE_MCP_ENVIRONMENT_ID \
+--env PINGONE_AUTHORIZATION_CODE_CLIENT_ID=$PINGONE_AUTHORIZATION_CODE_CLIENT_ID \
+--env PINGONE_ROOT_DOMAIN=$PINGONE_ROOT_DOMAIN \
+-- pingone-mcp-server run
+```
+
+Check the MCP server has been loaded correctly:
+
+```shell
+claude mcp list
+```
+
+```shell
+Checking MCP server health...
+
+pingOne: pingone-mcp-server run - ✓ Connected
 ```
 
 ### Use with Cursor
@@ -306,7 +350,9 @@ If you've downloaded the binary manually:
 
 For quick installation, the install button above.
 
-To add the MCP server configuration manually, add the following configuration to your Cursor config (`~/.cursor/mcp.json`) or via `Settings` -> `Cursor Settings` -> `MCP`:
+Be sure to change the `PINGONE_MCP_ENVIRONMENT_ID`, `PINGONE_AUTHORIZATION_CODE_CLIENT_ID` and `PINGONE_ROOT_DOMAIN` environment variables for your tenant.
+
+To add the MCP server configuration manually, add the following configuration to your Cursor config (`~/.cursor/mcp.json`) or via `Settings` -> `Cursor Settings` -> `Tools & MCP`:
 
 ```json
 {
@@ -318,8 +364,8 @@ To add the MCP server configuration manually, add the following configuration to
         "run"
       ],
       "env": {
-        "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID here>>",
-        "PINGONE_AUTHORIZATION_CODE_CLIENT_ID": "<<paste worker application client ID UUID here>>",
+        "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID {{admin environment id}} here>>",
+        "PINGONE_AUTHORIZATION_CODE_CLIENT_ID": "<<paste worker application client ID UUID {{mcp application client id}} here>>",
         "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>"
       }
     }
@@ -344,8 +390,8 @@ To configure the MCP server to use the Device Authorization grant type, add the 
         "device_code"
       ],
       "env": {
-        "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID here>>",
-        "PINGONE_DEVICE_CODE_CLIENT_ID": "<<paste worker application client ID UUID here>>",
+        "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID {{admin environment id}} here>>",
+        "PINGONE_DEVICE_CODE_CLIENT_ID": "<<paste worker application client ID UUID {{mcp application client id}} here>>",
         "PINGONE_DEVICE_CODE_SCOPES": "openid",
         "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>"
       }
@@ -373,8 +419,8 @@ When configuring MCP clients, ensure that the `command` value refers to the full
       ],
       "env": {
         "PINGONE_MCP_DEBUG": "true",
-        "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID here>>",
-        "PINGONE_AUTHORIZATION_CODE_CLIENT_ID": "<<paste worker application client ID UUID here>>",
+        "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID {{admin environment id}} here>>",
+        "PINGONE_AUTHORIZATION_CODE_CLIENT_ID": "<<paste worker application client ID UUID {{mcp application client id}} here>>",
         "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>",
       },
     },
