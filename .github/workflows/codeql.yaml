@@ -11,17 +11,14 @@
 #
 name: "CodeQL"
 
-# Disable automatic triggers
 on:
-  workflow_dispatch:
-# on:
-#   push:
-#     branches: [ "main" ]
-#   pull_request:
-#     # The branches below must be a subset of the branches above
-#     branches: [ "main" ]
-#   schedule:
-#     - cron: '44 8 * * 6'
+  push:
+    branches: [ "main" ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ "main" ]
+  schedule:
+    - cron: '44 8 * * 6'
 
 jobs:
   analyze:

@@ -2,8 +2,7 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![GitHub release](https://img.shields.io/github/v/release/pingidentity/pingone-mcp-server?include_prereleases&sort=semver)](https://github.com/pingidentity/pingone-mcp-server/releases)
-[![Tests and Linting](https://github.com/pingidentity/pingone-mcp-server/actions/workflows/go-test.yml/badge.svg)](https://github.com/pingidentity/pingone-mcp-server/actions/workflows/code-check-and-tests.yml)
-[![Go Security Scan](https://github.com/pingidentity/pingone-mcp-server/actions/workflows/go-security.yml/badge.svg)](https://github.com/pingidentity/pingone-mcp-server/actions/workflows/gosec-scan.yml)
+[![Go Security Scan](https://github.com/pingidentity/pingone-mcp-server/actions/workflows/gosec-scan.yml/badge.svg)](https://github.com/pingidentity/pingone-mcp-server/actions/workflows/gosec-scan.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/pingidentity/pingone-mcp-server)](https://goreportcard.com/report/github.com/pingidentity/pingone-mcp-server)
 
 The PingOne MCP (Model Context Protocol) server enables AI assistants to review and manage PingOne tenants by integrating the PingOne management API to AI assistant conversations.
@@ -255,17 +254,55 @@ To configure the MCP server to use the Device Authorization grant type, add the 
 
 </details>
 
-### Use with Claude
+### Use with Claude Desktop
 
-TODO
+To add the MCP server configuration manually, add the following configuration to your Claude Desktop config (`claude_desktop_config.json`) or via `Settings` -> `Developer` -> `Local MCP Servers`:
 
-### Use with Claude Code
+If using Homebrew:
 
-TODO
+```json
+{
+  "mcpServers": {
+    "pingone": {
+      "type": "stdio",
+      "command": "pingone-mcp-server",
+      "args": [
+        "run"
+      ],
+      "env": {
+        "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID here>>",
+        "PINGONE_AUTHORIZATION_CODE_CLIENT_ID": "<<paste worker application client ID UUID here>>",
+        "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>"
+      }
+    }
+  }
+}
+```
+
+If you've downloaded the binary manually:
+
+```json
+{
+  "mcpServers": {
+    "pingone": {
+      "type": "stdio",
+      "command": "/path/to/pingone-mcp-server",
+      "args": [
+        "run"
+      ],
+      "env": {
+        "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID here>>",
+        "PINGONE_AUTHORIZATION_CODE_CLIENT_ID": "<<paste worker application client ID UUID here>>",
+        "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>"
+      }
+    }
+  }
+}
+```
 
 ### Use with Cursor
 
-[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en-US/install-mcp?name=pingOne&config=eyJ0eXBlIjoic3RkaW8iLCJlbnYiOnsiUElOR09ORV9NQ1BfRU5WSVJPTk1FTlRfSUQiOiI8PHBhc3RlIHdvcmtlciBhcHBsaWNhdGlvbiBlbnZpcm9ubWVudCBVVUlEIGhlcmU%2BPiIsIlBJTkdPTkVfQVVUSE9SSVpBVElPTl9DT0RFX0NMSUVOVF9JRCI6Ijw8cGFzdGUgd29ya2VyIGFwcGxpY2F0aW9uIGNsaWVudCBJRCBVVUlEIGhlcmU%2BPiIsIlBJTkdPTkVfUk9PVF9ET01BSU4iOiI8PHBhc3RlIHJvb3QgZG9tYWluIG9mIHlvdXIgUGluZ09uZSB0ZW5hbnQgaGVyZSAoZS5nLiwgcGluZ29uZS5jb20pPj4ifSwiY29tbWFuZCI6InBpbmdvbmUtbWNwLXNlcnZlciBydW4ifQ%3D%3D)
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en-US/install-mcp?name=pingOne&config=eyJlbnYiOnsiUElOR09ORV9NQ1BfRU5WSVJPTk1FTlRfSUQiOiI8PHBhc3RlIHdvcmtlciBhcHBsaWNhdGlvbiBlbnZpcm9ubWVudCBVVUlEIGhlcmU%2BPiIsIlBJTkdPTkVfQVVUSE9SSVpBVElPTl9DT0RFX0NMSUVOVF9JRCI6Ijw8cGFzdGUgd29ya2VyIGFwcGxpY2F0aW9uIGNsaWVudCBJRCBVVUlEIGhlcmU%2BPiIsIlBJTkdPTkVfUk9PVF9ET01BSU4iOiI8PHBhc3RlIHJvb3QgZG9tYWluIG9mIHlvdXIgUGluZ09uZSB0ZW5hbnQgaGVyZSAoZS5nLiwgcGluZ29uZS5jb20pPj4ifSwiY29tbWFuZCI6InBpbmdvbmUtbWNwLXNlcnZlciBydW4ifQ%3D%3D)
 
 For quick installation, the install button above.
 
@@ -278,14 +315,14 @@ To add the MCP server configuration manually, add the following configuration to
       "type": "stdio",
       "command": "pingone-mcp-server",
       "args": [
-        "run",
+        "run"
       ],
       "env": {
         "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID here>>",
         "PINGONE_AUTHORIZATION_CODE_CLIENT_ID": "<<paste worker application client ID UUID here>>",
-        "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>",
-      },
-    },
+        "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>"
+      }
+    }
   }
 }
 ```
@@ -310,9 +347,9 @@ To configure the MCP server to use the Device Authorization grant type, add the 
         "PINGONE_MCP_ENVIRONMENT_ID": "<<paste worker application environment UUID here>>",
         "PINGONE_DEVICE_CODE_CLIENT_ID": "<<paste worker application client ID UUID here>>",
         "PINGONE_DEVICE_CODE_SCOPES": "openid",
-        "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>",
-      },
-    },
+        "PINGONE_ROOT_DOMAIN": "<<paste root domain of your PingOne tenant here (e.g., pingone.com)>>"
+      }
+    }
   }
 }
 ```
@@ -499,7 +536,6 @@ Tool collections group related tools together for easier management. Each collec
 | Collection | Description | Tools Included |
 |------------|-------------|----------------|
 | `applications` | Manage OIDC/OAuth 2.0 applications in PingOne environments | `list_applications`, `get_application`, `create_oidc_application`, `update_oidc_application` |
-| `directory` | Manage directory configuration PingOne environments | `get_total_identities_by_environment` |
 | `environments` | Manage PingOne environments and their service configurations | `list_environments`, `get_environment`, `create_environment`, `update_environment`, `get_environment_services`, `update_environment_services` |
 | `populations` | Manage user populations within PingOne environments | `list_populations`, `get_population`, `create_population`, `update_population` |
 
@@ -517,14 +553,6 @@ Create, update, view applications within an environment.
 | `get_application` | `applications` | ✓ | Retrieve the detailed configuration of an application | - `Show me application abc-123` <br> - `Get the config for My Web App` <br> - `Display the OIDC settings for app xyz` |
 | `list_applications` | `applications` | ✓ | List applications accessible to the authenticated user, each with a basic configuration summary, within an environment | - `Show all applications in environment xyz` <br> - `List OIDC apps` <br> - `What applications exist and are enabled?` |
 | `update_oidc_application` | `applications` | | Update an OpenID Connect/OAuth 2.0 application's configuration | - `Update app xyz to add a new redirect URI` <br> - `Change the token lifetime for My Web App` <br> - `Modify the grant types for application abc-123` <br> - `Disable application abc-123` |
-
-#### Directory Operations
-
-Read or manage directory operations within an environment.
-
-| Tool | Collections | Read Only | Description | Usage Examples |
-|------|-------------|-------------|-------------|----------------|
-| `get_total_identities_by_environment` | `directory` | ✓ | Generate a per-day report on total identities within an environment. | - `How many total identities are there in environment abc-123` <br> - `Show me the changes in total identities between now and last week` |
 
 #### Environments
 

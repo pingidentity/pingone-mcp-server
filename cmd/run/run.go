@@ -121,13 +121,13 @@ The server will communicate over stdin/stdout.`,
 // and warns the user that they will be filtered out due to read-only mode being enabled
 func warnAboutPotentialWriteToolsFiltered(ctx context.Context, includedTools []string) {
 	allTools := tools.ListTools()
-	
+
 	// Create a map of tool names to their definitions for quick lookup
 	toolMap := make(map[string]*types.ToolDefinition)
 	for i := range allTools {
 		toolMap[allTools[i].McpTool.Name] = &allTools[i]
 	}
-	
+
 	var writeToolsSpecified []string
 	for _, toolName := range includedTools {
 		if toolDef, exists := toolMap[toolName]; exists {
@@ -136,7 +136,7 @@ func warnAboutPotentialWriteToolsFiltered(ctx context.Context, includedTools []s
 			}
 		}
 	}
-	
+
 	if len(writeToolsSpecified) > 0 {
 		logger.FromContext(ctx).Warn("Write tools specified in --include-tools will be excluded due to read-only mode",
 			slog.Any("writeTools", writeToolsSpecified),

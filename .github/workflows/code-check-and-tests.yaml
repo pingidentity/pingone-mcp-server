@@ -1,19 +1,17 @@
 name: Code Check and Tests
 
-# Disable automatic triggers
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/code-check-and-tests.yaml"
+      - "**.go"
+      - "go.mod"
+      - "go.sum"
+      - "Makefile"
+  push:
+    branches:
+      - "main"
   workflow_dispatch:
-# on:
-#   pull_request:
-#     paths:
-#       - ".github/workflows/code-check-and-tests.yaml"
-#       - "**.go"
-#       - "go.mod"
-#       - "go.sum"
-#       - "Makefile"
-#   push:
-#     branches:
-#       - "main"
 
 permissions:
   contents: read
