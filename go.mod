@@ -11,7 +11,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.1.0
 	github.com/patrickcping/pingone-go-sdk-v2 v0.14.0
 	github.com/patrickcping/pingone-go-sdk-v2/management v0.60.0
-	github.com/pingidentity/pingone-go-client v0.4.0
+	github.com/pingidentity/pingone-go-client v0.4.1
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
 	github.com/zalando/go-keyring v0.2.6
