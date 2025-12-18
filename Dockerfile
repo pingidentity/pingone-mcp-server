@@ -22,8 +22,8 @@ ENV PINGONE_TOP_LEVEL_DOMAIN="" \
     PINGONE_REGION_CODE="" \
     PINGONE_MCP_ENVIRONMENT_ID="" \
     PINGONE_DEVICE_CODE_CLIENT_ID="" \
-    PINGONE_DEVICE_CODE_SCOPES="" \
-    PINGONE_MCP_DEBUG=""
+    PINGONE_DEVICE_CODE_SCOPES="openid" \
+    PINGONE_MCP_DEBUG="false"
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/pingone-mcp-server .
