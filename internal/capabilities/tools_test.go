@@ -5,7 +5,7 @@ package capabilities_test
 import (
 	"testing"
 
-	tools "github.com/pingidentity/pingone-mcp-server/internal/capabilities"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/applications"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/environments"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/populations"
@@ -16,7 +16,7 @@ import (
 
 func TestAllToolsRegistered(t *testing.T) {
 	// Get tools from ListTools that are actually registered with the server
-	allTools := tools.ListTools()
+	allTools := capabilities.ListTools()
 
 	// Get tools from individual collections
 	var expectedTools []types.ToolDefinition
@@ -53,7 +53,7 @@ func TestAllToolsRegistered(t *testing.T) {
 }
 
 func TestAllToolsHaveSchemas(t *testing.T) {
-	for _, toolDef := range tools.ListTools() {
+	for _, toolDef := range capabilities.ListTools() {
 		t.Run(toolDef.McpTool.Name, func(t *testing.T) {
 			require.NotNil(t, toolDef.McpTool, "McpTool should not be nil for tool %s", toolDef.McpTool.Name)
 			assert.NotNil(t, toolDef.McpTool.InputSchema, "tool InputSchema should not be nil for tool %s", toolDef.McpTool.Name)
