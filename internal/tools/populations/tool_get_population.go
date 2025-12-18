@@ -12,7 +12,6 @@ import (
 	"github.com/patrickcping/pingone-go-sdk-v2/management"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/schema"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 )
@@ -43,7 +42,7 @@ type GetPopulationOutput struct {
 }
 
 // GetPopulationHandler retrieves a PingOne population by ID using the provided client
-func GetPopulationHandler(populationsClientFactory PopulationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+func GetPopulationHandler(populationsClientFactory PopulationsClientFactory) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
 	input GetPopulationInput,
@@ -53,14 +52,6 @@ func GetPopulationHandler(populationsClientFactory PopulationsClientFactory, ini
 	error,
 ) {
 	return func(ctx context.Context, req *mcp.CallToolRequest, input GetPopulationInput) (*mcp.CallToolResult, *GetPopulationOutput, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, GetPopulationDef.McpTool.Name, req)
-		ctx, err := initializeAuthContext(ctx)
-		if err != nil {
-			toolErr := errs.NewToolError(GetPopulationDef.McpTool.Name, err)
-			errs.Log(ctx, toolErr)
-			return nil, nil, toolErr
-		}
-
 		client, err := populationsClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
 			toolErr := errs.NewToolError(GetPopulationDef.McpTool.Name, err)

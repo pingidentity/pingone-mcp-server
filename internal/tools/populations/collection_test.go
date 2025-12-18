@@ -47,7 +47,7 @@ func TestPopulationsCollection_RegisterTools_NilClient(t *testing.T) {
 	toolFilter := filter.PassthroughFilter()
 
 	// Attempt to register tools with nil client factory
-	err := collection.RegisterTools(t.Context(), server, nil, testutils.NewEmptyMockAuthClientFactory(), &testutils.InMemoryTokenStore{}, toolFilter, defaultGrantType)
+	err := collection.RegisterTools(t.Context(), server, nil, &testutils.InMemoryTokenStore{}, toolFilter)
 
 	// Should return an error
 	require.Error(t, err)
@@ -63,7 +63,7 @@ func TestPopulationsCollection_RegisterTools_NilTokenStore(t *testing.T) {
 	toolFilter := filter.PassthroughFilter()
 
 	// Attempt to register tools with nil token store
-	err := collection.RegisterTools(t.Context(), server, legacy.NewEmptyClientFactory(), testutils.NewEmptyMockAuthClientFactory(), nil, toolFilter, defaultGrantType)
+	err := collection.RegisterTools(t.Context(), server, legacy.NewEmptyClientFactory(), nil, toolFilter)
 
 	// Should return an error
 	require.Error(t, err)

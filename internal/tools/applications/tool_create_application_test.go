@@ -8,20 +8,16 @@ import (
 	"errors"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/patrickcping/pingone-go-sdk-v2/management"
-	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
 	mcptestutils "github.com/pingidentity/pingone-mcp-server/internal/testutils/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/applications"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/oauth2"
 )
 
 func TestCreateApplicationHandler_MockClient(t *testing.T) {
@@ -97,7 +93,7 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockClient := &mockPingOneClientApplicationsWrapper{}
 			tc.setupMock(mockClient, tc.inputApplication)
-			handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil))
 			input := applications.CreateApplicationInput{
 				EnvironmentId: testEnvironmentId,
 				Application:   *tc.inputApplication,
@@ -142,7 +138,7 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 			mockClient := &mockPingOneClientApplicationsWrapper{}
 			tc.setupMock(mockClient, tc.inputApplication)
 
-			handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil))
 
 			server := mcptestutils.TestMcpServer(t)
 			mcp.AddTool(server, applications.CreateApplicationDef.McpTool, handler)
@@ -199,7 +195,7 @@ func TestCreateApplicationHandler_ContextCancellation(t *testing.T) {
 	mockClient.On("CreateApplication", testutils.CancelledContextMatcher, testEnvironmentId, testApp).
 		Return(nil, &http.Response{StatusCode: 400}, context.Canceled)
 
-	handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+	handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil))
 	req := &mcp.CallToolRequest{}
 	input := applications.CreateApplicationInput{
 		EnvironmentId: testEnvironmentId,
@@ -231,7 +227,7 @@ func TestCreateApplicationHandler_APIErrors(t *testing.T) {
 			mockClient := &mockPingOneClientApplicationsWrapper{}
 			mockClient.On("CreateApplication", mock.Anything, testEnvironmentId, testApp).
 				Return(nil, &http.Response{StatusCode: 400}, tt.ApiError)
-			handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil))
 
 			// Execute
 			mcpResult, response, err := handler(context.Background(), &mcp.CallToolRequest{}, applications.CreateApplicationInput{
@@ -249,7 +245,7 @@ func TestCreateApplicationHandler_APIErrors(t *testing.T) {
 func TestCreateApplicationHandler_GetAuthenticatedClientError(t *testing.T) {
 	mockClient := &mockPingOneClientApplicationsWrapper{}
 	clientFactoryErr := errors.New("failed to get authenticated client")
-	handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
+	handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, clientFactoryErr))
 	req := &mcp.CallToolRequest{}
 	input := applications.CreateApplicationInput{
 		EnvironmentId: testEnvironmentId,
@@ -269,108 +265,6 @@ func TestCreateApplicationHandler_GetAuthenticatedClientError(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to get authenticated client")
 	assert.Nil(t, mcpResult)
 	assert.Nil(t, output)
-}
-
-func TestCreateApplicationHandler_InitializeAuthContextError(t *testing.T) {
-	mockClient := &mockPingOneClientApplicationsWrapper{}
-	initContextErr := errors.New("failed to initialize auth context")
-	handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
-	req := &mcp.CallToolRequest{}
-	input := applications.CreateApplicationInput{
-		EnvironmentId: testEnvironmentId,
-		Application: management.ApplicationOIDC{
-			Name:                    "Test App",
-			Enabled:                 true,
-			Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
-			Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
-			GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
-			TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
-		},
-	}
-
-	mcpResult, output, err := handler(context.Background(), req, input)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to initialize auth context")
-	assert.Nil(t, mcpResult)
-	assert.Nil(t, output)
-}
-
-func TestCreateApplicationHandler_InitializeAuthContext(t *testing.T) {
-	testCases := []struct {
-		name                       string
-		setupTokenStore            func() *testutils.InMemoryTokenStore
-		setupAuthClient            func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory)
-		expectTokenSourceRetrieval bool
-	}{
-		{
-			name: "Auto auth - no existing session",
-			setupTokenStore: func() *testutils.InMemoryTokenStore {
-				return testutils.NewInMemoryTokenStore()
-			},
-			setupAuthClient: func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory) {
-				authzCodeTokenSource := testutils.NewStaticTokenSource(&oauth2.Token{
-					AccessToken:  "authz-code-access-token",
-					RefreshToken: "authz-code-refresh-token",
-					Expiry:       time.Now().Add(time.Hour),
-				})
-				mockAuthClient := &testutils.MockAuthClient{}
-				mockAuthClient.On("TokenSource", mock.Anything, auth.GrantTypeAuthorizationCode).Return(authzCodeTokenSource, nil)
-				mockAuthClient.On("BrowserLoginAvailable", auth.GrantTypeAuthorizationCode).Return(true)
-				mockClientFactory := &testutils.MockAuthClientFactory{}
-				mockClientFactory.On("NewAuthClient").Return(mockAuthClient, nil)
-				return mockAuthClient, mockClientFactory
-			},
-			expectTokenSourceRetrieval: true,
-		},
-		{
-			name: "Use existing auth session",
-			setupTokenStore: func() *testutils.InMemoryTokenStore {
-				return testutils.NewInMemoryTokenStoreWithDefaultSession()
-			},
-			setupAuthClient: func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory) {
-				mockAuthClient := &testutils.MockAuthClient{}
-				mockAuthClient.On("BrowserLoginAvailable", auth.GrantTypeAuthorizationCode).Return(true)
-				mockClientFactory := &testutils.MockAuthClientFactory{}
-				mockClientFactory.On("NewAuthClient").Return(mockAuthClient, nil)
-				return mockAuthClient, mockClientFactory
-			},
-			expectTokenSourceRetrieval: false,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Set up a mock create response
-			mockClient := &mockPingOneClientApplicationsWrapper{}
-			mockResponse := &management.CreateApplication201Response{
-				ApplicationOIDC: testOIDCApp.ApplicationOIDC,
-			}
-			mockClient.On("CreateApplication", mock.Anything, mock.Anything, mock.Anything).
-				Return(mockResponse, &http.Response{StatusCode: 201}, nil)
-
-			// Set up auth mocks
-			tokenStore := tc.setupTokenStore()
-			mockAuthClient, mockClientFactory := tc.setupAuthClient()
-			authContextInitializer := initialize.AuthContextInitializer(mockClientFactory, tokenStore, auth.GrantTypeAuthorizationCode)
-
-			// Create handler and execute
-			handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(mockClient, nil), authContextInitializer)
-			req := &mcp.CallToolRequest{}
-			input := applications.CreateApplicationInput{
-				EnvironmentId: testEnvironmentId,
-				Application:   *testOIDCApp.ApplicationOIDC,
-			}
-
-			_, _, err := handler(context.Background(), req, input)
-
-			require.NoError(t, err)
-
-			// Verify expectations - validate whether or not the token source was retrieved
-			mockClientFactory.AssertExpectations(t)
-			mockAuthClient.AssertExpectations(t)
-		})
-	}
 }
 
 func TestCreateApplicationHandler_RealClient(t *testing.T) {
@@ -397,7 +291,7 @@ func TestCreateApplicationHandler_RealClient(t *testing.T) {
 	}
 
 	req := &mcp.CallToolRequest{}
-	handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(clientWrapper, nil), testutils.MockContextInitializer())
+	handler := applications.CreateApplicationHandler(NewMockPingOneClientApplicationsWrapperFactory(clientWrapper, nil))
 	input := applications.CreateApplicationInput{
 		EnvironmentId: testEnvironmentId,
 		Application:   testApp,
