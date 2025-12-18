@@ -20,10 +20,11 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/validation"
 )
 
-func Start(ctx context.Context, transport mcp.Transport, clientFactory sdk.ClientFactory, legacySdkClientFactory legacy.ClientFactory, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, toolFilter *filter.Filter, grantType auth.GrantType) error {
+func Start(ctx context.Context, version string, transport mcp.Transport, clientFactory sdk.ClientFactory, legacySdkClientFactory legacy.ClientFactory, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, toolFilter *filter.Filter, grantType auth.GrantType) error {
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "pingone-mcp-server",
-		Version: "v0.0.1",
+		Title:   "PingOne MCP Server",
+		Version: version,
 	}, &mcp.ServerOptions{
 		Logger: logger.FromContext(ctx),
 	})

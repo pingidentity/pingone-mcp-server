@@ -41,7 +41,7 @@ func NewRootCommand(serverVersion string) *cobra.Command {
 
 	authClientFactory := client.NewPingOneClientAuthWrapperFactory(serverVersion, mcpEnvironmentId)
 	// Always run on stdio transport
-	result.AddCommand(run.NewCommand(tokenStoreFactory, clientFactory, legacyClientFactory, authClientFactory, &mcp.StdioTransport{}))
+	result.AddCommand(run.NewCommand(tokenStoreFactory, clientFactory, legacyClientFactory, authClientFactory, &mcp.StdioTransport{}, serverVersion))
 
 	result.AddCommand(logout.NewCommand(tokenStoreFactory))
 
