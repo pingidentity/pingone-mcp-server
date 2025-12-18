@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
@@ -15,8 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-const defaultGrantType = auth.GrantTypeAuthorizationCode
 
 func TestEnvironmentsCollection_Name(t *testing.T) {
 	collection := &environments.EnvironmentsCollection{}
