@@ -11,7 +11,6 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/schema"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 )
@@ -49,7 +48,7 @@ type ListPopulationsOutput struct {
 }
 
 // ListPopulationsHandler lists all PingOne populations using the provided client
-func ListPopulationsHandler(populationsClientFactory PopulationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+func ListPopulationsHandler(populationsClientFactory PopulationsClientFactory) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
 	input ListPopulationsInput,
@@ -59,14 +58,6 @@ func ListPopulationsHandler(populationsClientFactory PopulationsClientFactory, i
 	error,
 ) {
 	return func(ctx context.Context, req *mcp.CallToolRequest, input ListPopulationsInput) (*mcp.CallToolResult, *ListPopulationsOutput, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, ListPopulationsDef.McpTool.Name, req)
-		ctx, err := initializeAuthContext(ctx)
-		if err != nil {
-			toolErr := errs.NewToolError(ListPopulationsDef.McpTool.Name, err)
-			errs.Log(ctx, toolErr)
-			return nil, nil, toolErr
-		}
-
 		client, err := populationsClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
 			toolErr := errs.NewToolError(ListPopulationsDef.McpTool.Name, err)

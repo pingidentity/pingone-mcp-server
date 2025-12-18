@@ -11,7 +11,6 @@ import (
 	"github.com/pingidentity/pingone-go-client/pingone"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/schema"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 )
@@ -48,7 +47,7 @@ type CreateEnvironmentOutput struct {
 }
 
 // CreateEnvironmentHandler creates a new PingOne environment using the provided client
-func CreateEnvironmentHandler(environmentsClientFactory EnvironmentsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+func CreateEnvironmentHandler(environmentsClientFactory EnvironmentsClientFactory) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
 	input CreateEnvironmentInput,
@@ -58,14 +57,6 @@ func CreateEnvironmentHandler(environmentsClientFactory EnvironmentsClientFactor
 	error,
 ) {
 	return func(ctx context.Context, req *mcp.CallToolRequest, input CreateEnvironmentInput) (*mcp.CallToolResult, *CreateEnvironmentOutput, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, CreateEnvironmentDef.McpTool.Name, req)
-		ctx, err := initializeAuthContext(ctx)
-		if err != nil {
-			toolErr := errs.NewToolError(CreateEnvironmentDef.McpTool.Name, err)
-			errs.Log(ctx, toolErr)
-			return nil, nil, toolErr
-		}
-
 		client, err := environmentsClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
 			toolErr := errs.NewToolError(CreateEnvironmentDef.McpTool.Name, err)

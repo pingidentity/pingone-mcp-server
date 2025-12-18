@@ -12,7 +12,6 @@ import (
 	"github.com/patrickcping/pingone-go-sdk-v2/management"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/schema"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 )
@@ -40,7 +39,7 @@ type CreateApplicationOutput struct {
 }
 
 // CreateApplicationHandler creates a new PingOne application using the provided client
-func CreateApplicationHandler(applicationsClientFactory ApplicationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+func CreateApplicationHandler(applicationsClientFactory ApplicationsClientFactory) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
 	input CreateApplicationInput,
@@ -50,14 +49,6 @@ func CreateApplicationHandler(applicationsClientFactory ApplicationsClientFactor
 	error,
 ) {
 	return func(ctx context.Context, req *mcp.CallToolRequest, input CreateApplicationInput) (*mcp.CallToolResult, *CreateApplicationOutput, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, CreateApplicationDef.McpTool.Name, req)
-		ctx, err := initializeAuthContext(ctx)
-		if err != nil {
-			toolErr := errs.NewToolError(CreateApplicationDef.McpTool.Name, err)
-			errs.Log(ctx, toolErr)
-			return nil, nil, toolErr
-		}
-
 		client, err := applicationsClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
 			toolErr := errs.NewToolError(CreateApplicationDef.McpTool.Name, err)
