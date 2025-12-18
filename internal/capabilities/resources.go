@@ -10,6 +10,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/staticresources"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/types"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
@@ -32,6 +33,10 @@ func RegisterResources(ctx context.Context, server *mcp.Server, clientFactory sd
 
 func RegisterStaticResources(ctx context.Context, server *mcp.Server) error {
 	return staticresources.RegisterStaticResources(ctx, server)
+}
+
+func ListStaticResources() []types.StaticResourceDefinition {
+	return staticresources.ListStaticResources()
 }
 
 func RegisterDynamicResources(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, legacySdkClientFactory legacy.ClientFactory, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, grantType auth.GrantType) error {
@@ -57,4 +62,19 @@ func RegisterDynamicResources(ctx context.Context, server *mcp.Server, clientFac
 		}
 	}
 	return nil
+}
+
+func ListDynamicResources() []types.DynamicResourceDefinition {
+	var tools []types.DynamicResourceDefinition
+	defaultCollections := getDefaultCollections()
+	for _, collection := range defaultCollections {
+		tools = append(tools, collection.ListDynamicResources()...)
+	}
+
+	// List tools from legacy collections
+	legacyCollections := getLegacySdkCollections()
+	for _, collection := range legacyCollections {
+		tools = append(tools, collection.ListDynamicResources()...)
+	}
+	return tools
 }
