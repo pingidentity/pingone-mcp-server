@@ -13,7 +13,6 @@ import (
 	"github.com/patrickcping/pingone-go-sdk-v2/management"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/schema"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 )
@@ -39,7 +38,7 @@ type GetApplicationInput struct {
 }
 
 // GetApplicationHandler retrieves a PingOne application by ID using the provided client
-func GetApplicationHandler(applicationsClientFactory ApplicationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+func GetApplicationHandler(applicationsClientFactory ApplicationsClientFactory) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
 	input GetApplicationInput,
@@ -49,14 +48,6 @@ func GetApplicationHandler(applicationsClientFactory ApplicationsClientFactory, 
 	error,
 ) {
 	return func(ctx context.Context, req *mcp.CallToolRequest, input GetApplicationInput) (*mcp.CallToolResult, any, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, GetApplicationDef.McpTool.Name, req)
-		ctx, err := initializeAuthContext(ctx)
-		if err != nil {
-			toolErr := errs.NewToolError(GetApplicationDef.McpTool.Name, err)
-			errs.Log(ctx, toolErr)
-			return nil, nil, toolErr
-		}
-
 		client, err := applicationsClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
 			toolErr := errs.NewToolError(GetApplicationDef.McpTool.Name, err)

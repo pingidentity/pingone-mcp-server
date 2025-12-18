@@ -7,22 +7,18 @@ import (
 	"encoding/json"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-go-client/pingone"
-	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
 	mcptestutils "github.com/pingidentity/pingone-mcp-server/internal/testutils/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
 	envtestutils "github.com/pingidentity/pingone-mcp-server/internal/tools/environments/testutils"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/oauth2"
 )
 
 func TestUpdateEnvironmentHandler_MockClient(t *testing.T) {
@@ -165,7 +161,7 @@ func TestUpdateEnvironmentHandler_MockClient(t *testing.T) {
 			mockClient := &envtestutils.MockEnvironmentsClient{}
 			envID := tt.input.EnvironmentId
 			tt.setupMock(mockClient, envID)
-			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil))
 			req := &mcp.CallToolRequest{}
 
 			// Execute
@@ -193,7 +189,7 @@ func TestUpdateEnvironmentHandler_MockClient(t *testing.T) {
 			mockClient := &envtestutils.MockEnvironmentsClient{}
 			envID := tt.input.EnvironmentId
 			tt.setupMock(mockClient, envID)
-			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil))
 
 			server := mcptestutils.TestMcpServer(t)
 			mcp.AddTool(server, environments.UpdateEnvironmentDef.McpTool, handler)
@@ -240,7 +236,7 @@ func TestUpdateEnvironmentHandler_ContextCancellation(t *testing.T) {
 	// Mock should return context.Canceled error when context is already cancelled
 	mockClient.On("UpdateEnvironment", testutils.CancelledContextMatcher, envID, mock.Anything).Return(nil, nil, context.Canceled)
 
-	handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+	handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil))
 	req := &mcp.CallToolRequest{}
 	input := environments.UpdateEnvironmentInput{
 		EnvironmentId: testEnv1.id,
@@ -282,7 +278,7 @@ func TestUpdateEnvironmentHandler_APIErrors(t *testing.T) {
 			// Setup
 			mockClient := &envtestutils.MockEnvironmentsClient{}
 			mockUpdateEnvironmentSetup(mockClient, envID, nil, nil, tt.StatusCode, tt.ApiError)
-			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil))
 
 			// Execute
 			mcpResult, output, err := handler(context.Background(), &mcp.CallToolRequest{}, input)
@@ -378,7 +374,7 @@ func TestUpdateEnvironmentHandler_EdgeCaseInputs(t *testing.T) {
 			// Setup
 			mockClient := &envtestutils.MockEnvironmentsClient{}
 			tt.setupMock(mockClient, tt.input.EnvironmentId)
-			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil))
 			req := &mcp.CallToolRequest{}
 
 			// Execute
@@ -437,7 +433,7 @@ func TestUpdateEnvironmentHandler_AllStatusValues(t *testing.T) {
 			}
 			mockUpdateEnvironmentSetup(mockClient, envID, matcher, &expectedEnv, 200, nil)
 
-			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil))
 			req := &mcp.CallToolRequest{}
 			input := environments.UpdateEnvironmentInput{
 				EnvironmentId: testEnv1.id,
@@ -481,7 +477,7 @@ func TestUpdateEnvironmentHandler_StatusOmitted(t *testing.T) {
 	}
 	mockUpdateEnvironmentSetup(mockClient, envID, matcher, &expectedEnv, 200, nil)
 
-	handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+	handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil))
 	req := &mcp.CallToolRequest{}
 	input := environments.UpdateEnvironmentInput{
 		EnvironmentId: testEnv1.id,
@@ -505,7 +501,7 @@ func TestUpdateEnvironmentHandler_StatusOmitted(t *testing.T) {
 func TestUpdateEnvironmentHandler_GetAuthenticatedClientError(t *testing.T) {
 	mockClient := &envtestutils.MockEnvironmentsClient{}
 	clientFactoryErr := errors.New("failed to get authenticated client")
-	handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
+	handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, clientFactoryErr))
 	req := &mcp.CallToolRequest{}
 	input := environments.UpdateEnvironmentInput{
 		EnvironmentId: testEnv1.id,
@@ -522,107 +518,6 @@ func TestUpdateEnvironmentHandler_GetAuthenticatedClientError(t *testing.T) {
 	assert.Nil(t, output)
 }
 
-func TestUpdateEnvironmentHandler_InitializeAuthContextError(t *testing.T) {
-	mockClient := &envtestutils.MockEnvironmentsClient{}
-	initContextErr := errors.New("failed to initialize auth context")
-	handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
-	req := &mcp.CallToolRequest{}
-	input := environments.UpdateEnvironmentInput{
-		EnvironmentId: testEnv1.id,
-		Name:          "Updated Environment",
-		Region:        pingone.ENVIRONMENTREGIONCODE_NA,
-		Type:          pingone.ENVIRONMENTTYPEVALUE_SANDBOX,
-	}
-
-	mcpResult, output, err := handler(context.Background(), req, input)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to initialize auth context")
-	assert.Nil(t, mcpResult)
-	assert.Nil(t, output)
-}
-
-func TestUpdateEnvironmentHandler_InitializeAuthContext(t *testing.T) {
-	testCases := []struct {
-		name                       string
-		setupTokenStore            func() *testutils.InMemoryTokenStore
-		setupAuthClient            func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory)
-		expectTokenSourceRetrieval bool
-	}{
-		{
-			name: "Auto auth - no existing session",
-			setupTokenStore: func() *testutils.InMemoryTokenStore {
-				return testutils.NewInMemoryTokenStore()
-			},
-			setupAuthClient: func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory) {
-				authzCodeTokenSource := testutils.NewStaticTokenSource(&oauth2.Token{
-					AccessToken:  "authz-code-access-token",
-					RefreshToken: "authz-code-refresh-token",
-					Expiry:       time.Now().Add(time.Hour),
-				})
-				mockAuthClient := &testutils.MockAuthClient{}
-				mockAuthClient.On("TokenSource", mock.Anything, auth.GrantTypeAuthorizationCode).Return(authzCodeTokenSource, nil)
-				mockAuthClient.On("BrowserLoginAvailable", auth.GrantTypeAuthorizationCode).Return(true)
-				mockClientFactory := &testutils.MockAuthClientFactory{}
-				mockClientFactory.On("NewAuthClient").Return(mockAuthClient, nil)
-				return mockAuthClient, mockClientFactory
-			},
-			expectTokenSourceRetrieval: true,
-		},
-		{
-			name: "Use existing auth session",
-			setupTokenStore: func() *testutils.InMemoryTokenStore {
-				return testutils.NewInMemoryTokenStoreWithDefaultSession()
-			},
-			setupAuthClient: func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory) {
-				mockAuthClient := &testutils.MockAuthClient{}
-				mockAuthClient.On("BrowserLoginAvailable", auth.GrantTypeAuthorizationCode).Return(true)
-				mockClientFactory := &testutils.MockAuthClientFactory{}
-				mockClientFactory.On("NewAuthClient").Return(mockAuthClient, nil)
-				return mockAuthClient, mockClientFactory
-			},
-			expectTokenSourceRetrieval: false,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Set up a mock update response
-			mockClient := &envtestutils.MockEnvironmentsClient{}
-			expectedEnv := pingone.EnvironmentResponse{
-				Id:     testEnv1.id,
-				Name:   "Updated Environment",
-				Region: testEnv1.region,
-				Type:   testEnv1.envType,
-			}
-			mockUpdateEnvironmentSetup(mockClient, testEnv1.id, nil, &expectedEnv, 200, nil)
-
-			// Set up auth mocks
-			tokenStore := tc.setupTokenStore()
-			mockAuthClient, mockClientFactory := tc.setupAuthClient()
-			authContextInitializer := initialize.AuthContextInitializer(mockClientFactory, tokenStore, auth.GrantTypeAuthorizationCode)
-
-			// Create handler and execute
-			handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), authContextInitializer)
-			req := &mcp.CallToolRequest{}
-			input := environments.UpdateEnvironmentInput{
-				EnvironmentId: testEnv1.id,
-				Name:          "Updated Environment",
-				Region:        testEnv1.region,
-				Type:          testEnv1.envType,
-			}
-
-			_, _, err := handler(context.Background(), req, input)
-
-			require.NoError(t, err)
-
-			// Verify expectations
-			mockClientFactory.AssertExpectations(t)
-			mockAuthClient.AssertExpectations(t)
-		})
-	}
-}
-
 func TestUpdateEnvironmentHandler_RealClient(t *testing.T) {
 	//TODO enable test when we have can run against a real P1 client
 	t.Skip("Skipping TestUpdateEnvironmentHandler_RealClient since it relies on real P1 client and modifies actual resources")
@@ -632,7 +527,7 @@ func TestUpdateEnvironmentHandler_RealClient(t *testing.T) {
 	require.NoError(t, err, "Failed to create PingOne client - check your credentials")
 
 	clientWrapper := environments.NewPingOneClientEnvironmentsWrapper(client)
-	handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(clientWrapper, nil), testutils.MockContextInitializer())
+	handler := environments.UpdateEnvironmentHandler(envtestutils.NewMockEnvironmentsClientFactory(clientWrapper, nil))
 
 	// Note: Replace with a valid environment ID from your PingOne organization
 	testEnvironmentId := uuid.MustParse("00000000-0000-0000-0000-000000000000")
