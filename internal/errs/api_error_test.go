@@ -23,6 +23,7 @@ func TestApiError_Error(t *testing.T) {
 		status        string
 		method        string
 		url           string
+		responseBody  string
 		expected      string
 	}{
 		{
@@ -55,6 +56,14 @@ func TestApiError_Error(t *testing.T) {
 			url:        "https://api.pingone.com/v1/environments",
 			expected:   "GET https://api.pingone.com/v1/environments: HTTP 500 Internal Server Error",
 		},
+		{
+			name:          "original error with HTTP response and response body",
+			originalError: errors.New("authentication failed"),
+			statusCode:    401,
+			status:        "Unauthorized",
+			responseBody:  "{\"error\":\"invalid_token\"}",
+			expected:      "Response body: {\"error\":\"invalid_token\"} (HTTP 401 Unauthorized)",
+		},
 	}
 
 	for _, tt := range tests {
@@ -65,6 +74,7 @@ func TestApiError_Error(t *testing.T) {
 				Status:        tt.status,
 				Method:        tt.method,
 				URL:           tt.url,
+				ResponseBody:  tt.responseBody,
 			}
 
 			result := apiErr.Error()
@@ -163,6 +173,82 @@ func TestNewApiError(t *testing.T) {
 				}
 				if apiErr.URL != "" {
 					t.Errorf("Expected empty URL, got: %s", apiErr.URL)
+				}
+			},
+		},
+		{
+			name: "HTTP response with JSON error body",
+			httpResp: &http.Response{
+				StatusCode: 400,
+				Status:     "Bad Request",
+				Request: &http.Request{
+					Method: "POST",
+					URL: &url.URL{
+						Scheme: "https",
+						Host:   "api.pingone.com",
+						Path:   "/v1/environments",
+					},
+				},
+				Body: io.NopCloser(bytes.NewBufferString(`{"error":"invalid_request","error_description":"Missing required field"}`)),
+			},
+			originalErr:  nil,
+			expectedType: "*errs.ApiError",
+			checkFunc: func(t *testing.T, err error) {
+				apiErr := err.(*errs.ApiError)
+				if apiErr.StatusCode != 400 {
+					t.Errorf("Expected status code 400, got: %d", apiErr.StatusCode)
+				}
+				expectedBody := `{"error":"invalid_request","error_description":"Missing required field"}`
+				if apiErr.ResponseBody != expectedBody {
+					t.Errorf("Expected response body %q, got: %q", expectedBody, apiErr.ResponseBody)
+				}
+			},
+		},
+		{
+			name: "HTTP response with empty body",
+			httpResp: &http.Response{
+				StatusCode: 204,
+				Status:     "No Content",
+				Request: &http.Request{
+					Method: "DELETE",
+					URL: &url.URL{
+						Scheme: "https",
+						Host:   "api.pingone.com",
+						Path:   "/v1/environments/123",
+					},
+				},
+				Body: io.NopCloser(bytes.NewBufferString("")),
+			},
+			originalErr:  nil,
+			expectedType: "*errs.ApiError",
+			checkFunc: func(t *testing.T, err error) {
+				apiErr := err.(*errs.ApiError)
+				if apiErr.ResponseBody != "" {
+					t.Errorf("Expected empty response body, got: %q", apiErr.ResponseBody)
+				}
+			},
+		},
+		{
+			name: "HTTP response with nil body",
+			httpResp: &http.Response{
+				StatusCode: 503,
+				Status:     "Service Unavailable",
+				Request: &http.Request{
+					Method: "GET",
+					URL: &url.URL{
+						Scheme: "https",
+						Host:   "api.pingone.com",
+						Path:   "/v1/status",
+					},
+				},
+				Body: nil,
+			},
+			originalErr:  nil,
+			expectedType: "*errs.ApiError",
+			checkFunc: func(t *testing.T, err error) {
+				apiErr := err.(*errs.ApiError)
+				if apiErr.ResponseBody != "" {
+					t.Errorf("Expected empty response body with nil Body, got: %q", apiErr.ResponseBody)
 				}
 			},
 		},

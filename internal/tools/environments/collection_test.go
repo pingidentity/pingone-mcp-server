@@ -77,15 +77,15 @@ func TestEnvironmentsCollection_RegisterTools_ReadOnlyToolsMarkedCorrectly(t *te
 	// Define known read-only tools
 	readOnlyTools := []string{
 		"list_environments",
-		"get_environment_by_id",
-		"get_environment_services_by_id",
+		"get_environment",
+		"get_environment_services",
 	}
 
 	// Define known write tools
 	writeTools := []string{
 		"create_environment",
-		"update_environment_by_id",
-		"update_environment_services_by_id",
+		"update_environment",
+		"update_environment_services",
 	}
 
 	for _, tool := range tools {
@@ -97,10 +97,10 @@ func TestEnvironmentsCollection_RegisterTools_ReadOnlyToolsMarkedCorrectly(t *te
 			"Tool %s must be categorized as either read-only or write in this test", tool.McpTool.Name)
 
 		if inReadOnly {
-			assert.True(t, tool.IsReadOnly, "Tool %s should be marked as read-only", tool.McpTool.Name)
+			assert.True(t, tool.IsReadOnly(), "Tool %s should be marked as read-only", tool.McpTool.Name)
 		}
 		if inWrite {
-			assert.False(t, tool.IsReadOnly, "Tool %s should NOT be marked as read-only", tool.McpTool.Name)
+			assert.False(t, tool.IsReadOnly(), "Tool %s should NOT be marked as read-only", tool.McpTool.Name)
 		}
 	}
 }

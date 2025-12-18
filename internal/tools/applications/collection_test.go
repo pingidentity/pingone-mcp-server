@@ -77,13 +77,13 @@ func TestApplicationsCollection_RegisterTools_ReadOnlyToolsMarkedCorrectly(t *te
 	// Define known read-only tools
 	readOnlyTools := []string{
 		"list_applications",
-		"get_application_by_id",
+		"get_application",
 	}
 
 	// Define known write tools
 	writeTools := []string{
-		"create_application",
-		"update_application_by_id",
+		"create_oidc_application",
+		"update_oidc_application",
 	}
 
 	for _, tool := range tools {
@@ -95,10 +95,10 @@ func TestApplicationsCollection_RegisterTools_ReadOnlyToolsMarkedCorrectly(t *te
 			"Tool %s must be categorized as either read-only or write in this test", tool.McpTool.Name)
 
 		if inReadOnly {
-			assert.True(t, tool.IsReadOnly, "Tool %s should be marked as read-only", tool.McpTool.Name)
+			assert.True(t, tool.IsReadOnly(), "Tool %s should be marked as read-only", tool.McpTool.Name)
 		}
 		if inWrite {
-			assert.False(t, tool.IsReadOnly, "Tool %s should NOT be marked as read-only", tool.McpTool.Name)
+			assert.False(t, tool.IsReadOnly(), "Tool %s should NOT be marked as read-only", tool.McpTool.Name)
 		}
 	}
 }

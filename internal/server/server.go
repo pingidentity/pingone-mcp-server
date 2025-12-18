@@ -14,7 +14,10 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
 	"github.com/pingidentity/pingone-mcp-server/internal/tokenstore"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/filter"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/validation"
 )
 
 func Start(ctx context.Context, transport mcp.Transport, clientFactory sdk.ClientFactory, legacySdkClientFactory legacy.ClientFactory, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, toolFilter *filter.Filter, grantType auth.GrantType) error {
@@ -30,6 +33,20 @@ func Start(ctx context.Context, transport mcp.Transport, clientFactory sdk.Clien
 	if err != nil {
 		return err
 	}
+
+	// Create and add environment validation middleware
+	// This middleware validates that:
+	// 1. Environment exists and is accessible
+	// 2. Write operations are not performed on PRODUCTION environments
+	logger.FromContext(ctx).Debug("Setting up environment validation middleware")
+	allTools := tools.ListTools()
+	toolRegistry := validation.NewToolRegistry(allTools)
+	environmentsFactory := environments.NewPingOneClientEnvironmentsWrapperFactory(clientFactory, tokenStore)
+	initializeAuthContext := initialize.AuthContextInitializer(authClientFactory, tokenStore, grantType)
+	validator := validation.NewCachingEnvironmentValidator(environmentsFactory, initializeAuthContext)
+	validationMiddleware := validation.NewEnvironmentValidationMiddleware(validator, toolRegistry)
+	server.AddReceivingMiddleware(validationMiddleware.Handler)
+	logger.FromContext(ctx).Info("Environment validation middleware enabled - production environments are protected from write operations")
 
 	log.Println("Starting PingOne MCP server...")
 

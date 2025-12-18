@@ -11,7 +11,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.1.0
 	github.com/patrickcping/pingone-go-sdk-v2 v0.14.0
 	github.com/patrickcping/pingone-go-sdk-v2/management v0.60.0
-	github.com/pingidentity/pingone-go-client v0.3.2-0.20251126183323-527681e5fdce
+	github.com/pingidentity/pingone-go-client v0.4.1
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
 	github.com/zalando/go-keyring v0.2.6
@@ -74,7 +74,7 @@ require (
 	github.com/go-toolsmith/astp v1.1.0 // indirect
 	github.com/go-toolsmith/strparse v1.1.0 // indirect
 	github.com/go-toolsmith/typep v1.1.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/go-xmlfmt/xmlfmt v1.1.3 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect

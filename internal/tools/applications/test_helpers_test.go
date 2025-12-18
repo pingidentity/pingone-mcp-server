@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/patrickcping/pingone-go-sdk-v2/management"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/applications"
 )
 
 var testEnvironmentId = uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
@@ -147,69 +146,14 @@ var (
 			TokenEndpointAuthMethod: testutils.Pointer(management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC),
 		},
 	}
-
-	// testMalformedMultiTypeApp is an intentionally malformed application that violates
-	// the oneOf JSON schema constraint by having multiple application types set.
-	// This should cause JSON schema validation to fail when processed through MCP.
-	testMalformedMultiTypeApp = management.ReadOneApplication200Response{
-		ApplicationOIDC: &management.ApplicationOIDC{
-			Id:                      testutils.Pointer(testAppId.String()),
-			Name:                    "Broken Multi-Type App",
-			Description:             testutils.Pointer("An app with multiple types set to test schema validation"),
-			Enabled:                 true,
-			Protocol:                management.ENUMAPPLICATIONPROTOCOL_OPENID_CONNECT,
-			Type:                    management.ENUMAPPLICATIONTYPE_WEB_APP,
-			GrantTypes:              []management.EnumApplicationOIDCGrantType{management.ENUMAPPLICATIONOIDCGRANTTYPE_AUTHORIZATION_CODE},
-			RedirectUris:            []string{"https://broken.example.com/callback"},
-			TokenEndpointAuthMethod: management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_CLIENT_SECRET_BASIC,
-		},
-		ApplicationSAML: &management.ApplicationSAML{
-			Id:          testutils.Pointer(testAppId.String()),
-			Name:        "Broken Multi-Type App",
-			Description: testutils.Pointer("An app with multiple types set to test schema validation"),
-			Enabled:     true,
-			Protocol:    management.ENUMAPPLICATIONPROTOCOL_SAML,
-			Type:        management.ENUMAPPLICATIONTYPE_WEB_APP,
-			AcsUrls:     []string{"https://broken.example.com/acs"},
-		},
-	}
-
-	// testMalformedEmptyApp is an intentionally malformed application that violates
-	// the oneOf JSON schema constraint by having no application type set.
-	// This should cause JSON schema validation to fail when processed through MCP.
-	testMalformedEmptyApp = management.ReadOneApplication200Response{
-		// All application type fields are nil, violating the oneOf requirement
-	}
 )
 
 // Helper functions to assert applications match expected values using go-cmp
 
-func assertReadApplicationMatches(t *testing.T, expected management.ReadOneApplication200Response, actual applications.ReadApplicationModel) {
-	t.Helper()
-
-	// Convert expected to ApplicationModel for comparison
-	expectedModel := applications.ReadApplicationModelFromSDKReadResponse(expected)
-
-	if diff := cmp.Diff(expectedModel, actual); diff != "" {
-		t.Errorf("Read application mismatch (-expected +actual):\n%s", diff)
-	}
-}
-
-func assertCreateApplicationMatches(t *testing.T, expected applications.CreateApplicationModel, actual applications.CreateApplicationModel) {
+func assertOIDCApplicationMatches(t *testing.T, expected *management.ApplicationOIDC, actual *management.ApplicationOIDC) {
 	t.Helper()
 
 	if diff := cmp.Diff(expected, actual); diff != "" {
-		t.Errorf("Create application mismatch (-expected +actual):\n%s", diff)
-	}
-}
-
-func assertUpdateApplicationMatches(t *testing.T, expected management.ReadOneApplication200Response, actual applications.UpdateApplicationModel) {
-	t.Helper()
-
-	// Convert expected to UpdateApplicationModel for comparison
-	expectedModel := applications.UpdateApplicationModelFromSDKReadResponse(expected)
-
-	if diff := cmp.Diff(expectedModel, actual); diff != "" {
-		t.Errorf("Update application mismatch (-expected +actual):\n%s", diff)
+		t.Errorf("OIDC application mismatch (-expected +actual):\n%s", diff)
 	}
 }

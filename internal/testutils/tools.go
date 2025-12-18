@@ -17,7 +17,7 @@ func ReadOnlyToolNames() []string {
 	allTools := tools.ListTools()
 	var toolNames []string
 	for _, tool := range allTools {
-		if tool.IsReadOnly {
+		if tool.IsReadOnly() {
 			toolNames = append(toolNames, tool.McpTool.Name)
 		}
 	}
@@ -28,7 +28,7 @@ func WriteToolNames() []string {
 	allTools := tools.ListTools()
 	var toolNames []string
 	for _, tool := range allTools {
-		if !tool.IsReadOnly {
+		if !tool.IsReadOnly() {
 			toolNames = append(toolNames, tool.McpTool.Name)
 		}
 	}

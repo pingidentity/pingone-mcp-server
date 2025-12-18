@@ -3,6 +3,7 @@
 package testutils
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -21,12 +22,20 @@ func AssertHandlerError(t *testing.T, err error, mcpResult *mcp.CallToolResult, 
 	assert.Nil(t, output)
 }
 
-// AssertHandlerSuccess is a helper to assert that a tool handler succeeded
-func AssertHandlerSuccess(t *testing.T, err error, mcpResult *mcp.CallToolResult, output interface{}) {
+// AssertStructuredHandlerSuccess is a helper to assert that a tool handler that returns structured output succeeded
+func AssertStructuredHandlerSuccess(t *testing.T, err error, mcpResult *mcp.CallToolResult, output interface{}) {
 	t.Helper()
 	require.NoError(t, err)
 	assert.Nil(t, mcpResult)
 	require.NotNil(t, output)
+}
+
+// AssertUnstructuredHandlerSuccess is a helper to assert that a tool handler that returns unstructured output succeeded
+func AssertUnstructuredHandlerSuccess(t *testing.T, err error, mcpResult *mcp.CallToolResult, output interface{}) {
+	t.Helper()
+	require.NoError(t, err)
+	require.NotNil(t, mcpResult)
+	require.Nil(t, output)
 }
 
 // AssertMcpCallError is a helper to assert that an MCP call returned an expected error
@@ -47,4 +56,15 @@ func AssertMcpCallSuccess(t *testing.T, err error, result *mcp.CallToolResult) {
 	require.NoError(t, err)
 	assert.False(t, result.IsError)
 	require.NotNil(t, result)
+}
+
+func AssertUnstructuredOutputMatches(t *testing.T, mcpResult *mcp.CallToolResult, expectedOutput any) {
+	t.Helper()
+	require.GreaterOrEqual(t, len(mcpResult.Content), 1, "Expected at least one content item in output")
+	textContent, ok := mcpResult.Content[0].(*mcp.TextContent)
+	require.True(t, ok, "Expected content to be of type TextContent")
+	expectedJsonBytes, err := json.Marshal(expectedOutput)
+	require.NoError(t, err, "Failed to marshal expected response")
+
+	assert.JSONEq(t, string(expectedJsonBytes), string(textContent.Text), "Output JSON should match expected JSON")
 }

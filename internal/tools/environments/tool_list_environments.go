@@ -1,0 +1,142 @@
+// Copyright © 2025 Ping Identity Corporation
+
+package environments
+
+import (
+	"context"
+	"errors"
+	"log/slog"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/pingidentity/pingone-go-client/pingone"
+	"github.com/pingidentity/pingone-mcp-server/internal/errs"
+	"github.com/pingidentity/pingone-mcp-server/internal/logger"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/schema"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
+)
+
+var ListEnvironmentsDef = types.ToolDefinition{
+	ValidationPolicy: &types.ToolValidationPolicy{
+		ProductionEnvironmentNotApplicable: true, // Tool not applicable to a single environment
+	},
+	McpTool: &mcp.Tool{
+		Name:  "list_environments",
+		Title: "List PingOne Environments",
+		Description: `Lists all PingOne environments accessible to the authenticated user.
+
+Use to discover environment IDs needed for other operations or to find environments by name/status.
+
+Only filters that 'name' with 'sw' (starts with); 'id', 'organization.id', 'license.id', 'status' with 'eq' (equals); 'and' to combine are valid.
+
+Filter examples:
+- name sw "Prod"
+- status eq "ACTIVE"
+- name sw "Dev" and status eq "ACTIVE"
+
+Returns: Array of environments with ID, name, type, region, license, and metadata.`,
+		InputSchema:  schema.MustGenerateSchema[ListEnvironmentsInput](),
+		OutputSchema: schema.MustGenerateSchema[ListEnvironmentsOutput](),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
+	},
+}
+
+// ListEnvironmentsInput defines the input parameters for listing environments
+type ListEnvironmentsInput struct {
+	Filter *string `json:"filter,omitempty" jsonschema:"OPTIONAL. SCIM filter. Only filters that 'name' with 'sw' (starts with); 'id', 'organization.id', 'license.id', 'status' with 'eq' (equals); 'and' to combine are valid."`
+}
+
+// EnvironmentSummary contains the essential fields of an environment
+type EnvironmentSummary struct {
+	Id        uuid.UUID                       `json:"id" jsonschema:"The unique identifier of the environment"`
+	Name      string                          `json:"name" jsonschema:"The name of the environment"`
+	CreatedAt time.Time                       `json:"createdAt" jsonschema:"The timestamp when the environment was created"`
+	Type      pingone.EnvironmentTypeValue    `json:"type" jsonschema:"The type of the environment (e.g., PRODUCTION, SANDBOX)"`
+	Status    *pingone.EnvironmentStatusValue `json:"status,omitempty" jsonschema:"OPTIONAL. The status of the environment (e.g., ACTIVE, DELETE_PENDING)"`
+}
+
+// ListEnvironmentsOutput represents the result of listing environments
+type ListEnvironmentsOutput struct {
+	Environments []EnvironmentSummary `json:"environments" jsonschema:"List of environments with their basic details"`
+}
+
+// ListEnvironmentsHandler lists all PingOne environments using the provided client
+func ListEnvironmentsHandler(environmentsClientFactory EnvironmentsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input ListEnvironmentsInput,
+) (
+	*mcp.CallToolResult,
+	*ListEnvironmentsOutput,
+	error,
+) {
+	return func(ctx context.Context, req *mcp.CallToolRequest, input ListEnvironmentsInput) (*mcp.CallToolResult, *ListEnvironmentsOutput, error) {
+		ctx = initialize.InitializeToolInvocation(ctx, ListEnvironmentsDef.McpTool.Name, req)
+		ctx, err := initializeAuthContext(ctx)
+		if err != nil {
+			toolErr := errs.NewToolError(ListEnvironmentsDef.McpTool.Name, err)
+			errs.Log(ctx, toolErr)
+			return nil, nil, toolErr
+		}
+
+		client, err := environmentsClientFactory.GetAuthenticatedClient(ctx)
+		if err != nil {
+			toolErr := errs.NewToolError(ListEnvironmentsDef.McpTool.Name, err)
+			errs.Log(ctx, toolErr)
+			return nil, nil, toolErr
+		}
+
+		if input.Filter != nil {
+			logger.FromContext(ctx).Debug("Using filter",
+				slog.String("filter", *input.Filter))
+		}
+
+		// Call the API to list environments
+		pagedIterator, err := client.GetEnvironments(ctx, input.Filter)
+		if err != nil {
+			toolErr := errs.NewToolError(ListEnvironmentsDef.McpTool.Name, err)
+			errs.Log(ctx, toolErr)
+			return nil, nil, toolErr
+		}
+
+		// Aggregate all pages into one response
+		result := ListEnvironmentsOutput{
+			Environments: []EnvironmentSummary{},
+		}
+		for next, err := range pagedIterator {
+			logger.LogHttpResponse(ctx, next.HTTPResponse)
+
+			if err != nil {
+				apiErr := errs.NewApiError(next.HTTPResponse, err)
+				errs.Log(ctx, apiErr)
+				return nil, nil, apiErr
+			}
+
+			if next.Data == nil || next.Data.Embedded == nil {
+				// This should never happen, err should be set if no data
+				apiErr := errs.NewApiError(next.HTTPResponse, errors.New("no data in response"))
+				errs.Log(ctx, apiErr)
+				return nil, nil, apiErr
+			}
+
+			logger.FromContext(ctx).Debug("Retrieved environments page",
+				slog.Int("count", len(next.Data.Embedded.Environments)))
+
+			for _, env := range next.Data.Embedded.Environments {
+				result.Environments = append(result.Environments, EnvironmentSummary{
+					Id:        env.Id,
+					Name:      env.Name,
+					CreatedAt: env.CreatedAt,
+					Type:      env.Type,
+					Status:    env.Status,
+				})
+			}
+		}
+
+		return nil, &result, nil
+	}
+}

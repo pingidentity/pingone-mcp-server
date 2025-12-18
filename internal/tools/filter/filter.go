@@ -2,6 +2,10 @@
 
 package filter
 
+import (
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
+)
+
 // Filter holds configuration for filtering which tools and tool collections to make available in the server
 type Filter struct {
 	// If true, only read-only tools will be included by the filter
@@ -28,8 +32,13 @@ func PassthroughFilter() *Filter {
 	}
 }
 
-func (f *Filter) ShouldIncludeTool(toolName string, toolIsReadOnly bool) bool {
-	return ShouldInclude(toolName, f.IncludedTools, f.ExcludedTools) && (!f.ReadOnly || toolIsReadOnly)
+// ShouldIncludeTool determines if a tool should be included based on the filter configuration.
+// It checks the tool name against include/exclude lists and respects the read-only filter setting.
+func (f *Filter) ShouldIncludeTool(toolDef *types.ToolDefinition) bool {
+	if toolDef == nil {
+		return false
+	}
+	return ShouldInclude(toolDef.McpTool.Name, f.IncludedTools, f.ExcludedTools) && (!f.ReadOnly || toolDef.IsReadOnly())
 }
 
 func (f *Filter) ShouldIncludeCollection(collectionName string) bool {

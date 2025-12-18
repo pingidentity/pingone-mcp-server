@@ -83,7 +83,7 @@ func (p *PingOneClientEnvironmentsWrapper) CreateEnvironment(ctx context.Context
 	return createRequest.Execute()
 }
 
-func (p *PingOneClientEnvironmentsWrapper) GetEnvironmentById(ctx context.Context, environmentId uuid.UUID) (*pingone.EnvironmentResponse, *http.Response, error) {
+func (p *PingOneClientEnvironmentsWrapper) GetEnvironment(ctx context.Context, environmentId uuid.UUID) (*pingone.EnvironmentResponse, *http.Response, error) {
 	if p.client == nil {
 		return nil, nil, errors.New("PingOne client is not initialized")
 	}
@@ -95,7 +95,7 @@ func (p *PingOneClientEnvironmentsWrapper) GetEnvironmentById(ctx context.Contex
 	return getRequest.Execute()
 }
 
-func (p *PingOneClientEnvironmentsWrapper) UpdateEnvironmentById(ctx context.Context, environmentId uuid.UUID, request *pingone.EnvironmentReplaceRequest) (*pingone.EnvironmentResponse, *http.Response, error) {
+func (p *PingOneClientEnvironmentsWrapper) UpdateEnvironment(ctx context.Context, environmentId uuid.UUID, request *pingone.EnvironmentReplaceRequest) (*pingone.EnvironmentResponse, *http.Response, error) {
 	if p.client == nil {
 		return nil, nil, errors.New("PingOne client is not initialized")
 	}
@@ -113,7 +113,7 @@ func (p *PingOneClientEnvironmentsWrapper) UpdateEnvironmentById(ctx context.Con
 	return replaceRequest.Execute()
 }
 
-func (p *PingOneClientEnvironmentsWrapper) GetEnvironmentServicesById(ctx context.Context, environmentId uuid.UUID) (*pingone.EnvironmentBillOfMaterialsResponse, *http.Response, error) {
+func (p *PingOneClientEnvironmentsWrapper) GetEnvironmentServices(ctx context.Context, environmentId uuid.UUID) (*pingone.EnvironmentBillOfMaterialsResponse, *http.Response, error) {
 	if p.client == nil {
 		return nil, nil, errors.New("PingOne client is not initialized")
 	}
@@ -125,7 +125,7 @@ func (p *PingOneClientEnvironmentsWrapper) GetEnvironmentServicesById(ctx contex
 	return getRequest.Execute()
 }
 
-func (p *PingOneClientEnvironmentsWrapper) UpdateEnvironmentServicesById(ctx context.Context, environmentId uuid.UUID, request *pingone.EnvironmentBillOfMaterialsReplaceRequest) (*pingone.EnvironmentBillOfMaterialsResponse, *http.Response, error) {
+func (p *PingOneClientEnvironmentsWrapper) UpdateEnvironmentServices(ctx context.Context, environmentId uuid.UUID, request *pingone.EnvironmentBillOfMaterialsReplaceRequest) (*pingone.EnvironmentBillOfMaterialsResponse, *http.Response, error) {
 	if p.client == nil {
 		return nil, nil, errors.New("PingOne client is not initialized")
 	}

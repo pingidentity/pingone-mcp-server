@@ -9,7 +9,6 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-mcp-server/cmd"
-	"github.com/pingidentity/pingone-mcp-server/cmd/login"
 	"github.com/pingidentity/pingone-mcp-server/cmd/logout"
 	"github.com/pingidentity/pingone-mcp-server/cmd/run"
 	"github.com/pingidentity/pingone-mcp-server/cmd/session"
@@ -44,15 +43,6 @@ func ExecuteCliRunCommand(t *testing.T, ctx context.Context, tokenStoreFactory t
 	prepareTestCommand(runCmd, args...)
 
 	return runCmd.ExecuteContext(ctx)
-}
-
-func ExecuteCliLoginCommand(t *testing.T, ctx context.Context, authClientFactory client.AuthClientFactory, tokenStoreFactory tokenstore.TokenStoreFactory, args ...string) (err error) {
-	t.Helper()
-
-	loginCmd := login.NewCommand(authClientFactory, tokenStoreFactory)
-	prepareTestCommand(loginCmd, args...)
-
-	return loginCmd.ExecuteContext(ctx)
 }
 
 func ExecuteCliLogoutCommand(t *testing.T, ctx context.Context, tokenStoreFactory tokenstore.TokenStoreFactory, args ...string) (err error) {
