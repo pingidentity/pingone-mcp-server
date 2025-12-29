@@ -48,6 +48,17 @@ Have you got an interesting use case or project you'd like to share with the com
 
 ## Getting Started
 
+The PingOne MCP server may be run as a Docker container or as a binary distribution executable.
+
+> [!IMPORTANT]
+> **Docker requires MCP client URL mode elicitation support**
+>
+> The Docker method can only be used with MCP clients that support [URL mode elicitation](https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation#url-mode-elicitation-for-oauth-flows) (introduced in the 2025-11-25 MCP specification). This capability is essential for securely providing the authorization URL to the user during device mode authentication, ensuring the URL is only presented to the human user and not presented to be processed by the AI agent.
+
+To use the Docker container method, see the [Docker Usage Instructions](./docs/docker-usage-instructions.md).
+
+The following instructions in this readme describe how to get started with the binary distribution executable, which suits the majority of MCP clients.
+
 ### Prerequisites
 
 - **A licensed or trial PingOne cloud subscription.** - Don't have a tenant? [Sign up for a free trial here](https://www.pingidentity.com/en/try-ping.html).

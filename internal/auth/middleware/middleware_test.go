@@ -166,7 +166,7 @@ func TestAuthMiddleware_InitializeAuthContext(t *testing.T) {
 					Expiry:       time.Now().Add(time.Hour),
 				})
 				mockAuthClient := &authtestutils.MockAuthClient{}
-				mockAuthClient.On("TokenSource", mock.Anything, grantType).Return(authzCodeTokenSource, nil)
+				mockAuthClient.On("TokenSource", mock.Anything, grantType, (*mcp.ServerSession)(nil)).Return(authzCodeTokenSource, nil)
 				mockAuthClient.On("BrowserLoginAvailable", grantType).Return(true)
 				mockClientFactory := &authtestutils.MockAuthClientFactory{}
 				mockClientFactory.On("NewAuthClient").Return(mockAuthClient, nil)

@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-go-client/config"
 	pingoneOauth2 "github.com/pingidentity/pingone-go-client/oauth2"
 	"github.com/pingidentity/pingone-go-client/pingone"
@@ -31,7 +33,7 @@ func NewPingOneClientAuthWrapper(serverVersion, environmentId string) *PingOneCl
 	}
 }
 
-func (p *PingOneClientAuthWrapper) TokenSource(ctx context.Context, grantType auth.GrantType) (oauth2.TokenSource, error) {
+func (p *PingOneClientAuthWrapper) TokenSource(ctx context.Context, grantType auth.GrantType, mcpServerSession *mcp.ServerSession) (oauth2.TokenSource, error) {
 	logger.FromContext(ctx).Debug("Creating token source from PingOne go client")
 
 	var clientGrantType pingoneOauth2.GrantType
@@ -51,7 +53,10 @@ func (p *PingOneClientAuthWrapper) TokenSource(ctx context.Context, grantType au
 		WithStorageType(config.StorageTypeNone) // keychain storage will be managed by the mcp server
 
 	// Configure custom UX handlers for headless operation
-	p.configureHeadlessHandlers(ctx, clientConfig, grantType)
+	err := p.configureHeadlessHandlers(ctx, clientConfig, grantType, mcpServerSession)
+	if err != nil {
+		return nil, err
+	}
 
 	pingoneConfig := pingone.NewConfiguration(clientConfig)
 	pingoneConfig.AppendUserAgent(audit.PingOneAPIUserAgent(p.serverVersion))
@@ -73,7 +78,7 @@ func (p *PingOneClientAuthWrapper) BrowserLoginAvailable(grantType auth.GrantTyp
 // This provides environment-aware browser handling:
 // - If browser is available: opens browser for both auth code and device code flows
 // - If no browser: auth code fails (requires browser), device code prints instructions
-func (p *PingOneClientAuthWrapper) configureHeadlessHandlers(ctx context.Context, cfg *config.Configuration, grantType auth.GrantType) {
+func (p *PingOneClientAuthWrapper) configureHeadlessHandlers(ctx context.Context, cfg *config.Configuration, grantType auth.GrantType, mcpServerSession *mcp.ServerSession) error {
 	log := logger.FromContext(ctx)
 
 	// Check if we're in an environment with browser support
@@ -81,6 +86,11 @@ func (p *PingOneClientAuthWrapper) configureHeadlessHandlers(ctx context.Context
 
 	switch grantType {
 	case auth.GrantTypeDeviceCode:
+		// If mcpServerSession is nil, we cannot proceed
+		if mcpServerSession == nil {
+			return fmt.Errorf("no MCP server session found. The MCP server session is required to elicit the URL for device code flow")
+		}
+
 		// Initialize DeviceCode struct if it doesn't exist
 		if cfg.Auth.DeviceCode == nil {
 			cfg.Auth.DeviceCode = &config.DeviceCode{}
@@ -116,10 +126,27 @@ func (p *PingOneClientAuthWrapper) configureHeadlessHandlers(ctx context.Context
 				log.Info("Alternatively, open this URL to enter the code manually", "url", verificationURI)
 				log.Info("Enter this code when prompted", "code", userCode)
 			} else {
-				// Browser failed to open or not available - show manual instructions
-				log.Info("Please open this URL in your browser to complete authentication", "url", fullURL)
-				log.Info("Alternatively, open this URL to enter the code manually", "url", verificationURI)
-				log.Info("Enter this code when prompted", "code", userCode)
+				// Browser failed to open or not available - elicit with url mode elicitation
+				elicitID := uuid.New().String()
+				elicitResult, err := mcpServerSession.Elicit(
+					ctx,
+					&mcp.ElicitParams{
+						Message:       "Open the following URL in your browser to complete authentication",
+						URL:           fullURL,
+						ElicitationID: elicitID,
+					},
+				)
+
+				if err != nil {
+					return fmt.Errorf("failed to elicit device code URL: %w", err)
+				}
+
+				switch elicitResult.Action {
+				case "decline":
+					return fmt.Errorf("device code URL elicitation was not completed. The request was declined.")
+				case "cancel":
+					return fmt.Errorf("device code URL elicitation was not completed. The request was canceled.")
+				}
 			}
 
 			log.Info("Waiting for authorization...")
@@ -170,6 +197,8 @@ func (p *PingOneClientAuthWrapper) configureHeadlessHandlers(ctx context.Context
 			Message:     "An error occurred.",
 		}
 	}
+
+	return nil
 }
 
 type PingOneClientAuthWrapperFactory struct {
