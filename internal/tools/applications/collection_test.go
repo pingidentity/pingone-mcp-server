@@ -78,6 +78,7 @@ func TestApplicationsCollection_RegisterTools_ReadOnlyToolsMarkedCorrectly(t *te
 	readOnlyTools := []string{
 		"list_applications",
 		"get_application",
+		"get_application_secret",
 	}
 
 	// Define known write tools

@@ -120,7 +120,7 @@ func TestCreateApplicationHandler_MockClient(t *testing.T) {
 
 			// Assert success case
 			require.NoError(t, err)
-			assert.Nil(t, mcpResult)
+			require.NotNil(t, mcpResult) // Now returns content about secret retrieval
 			require.NotNil(t, output)
 
 			outputApplication := &applications.CreateApplicationOutput{}

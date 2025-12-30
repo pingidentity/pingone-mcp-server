@@ -99,6 +99,19 @@ func CreateApplicationHandler(applicationsClientFactory ApplicationsClientFactor
 			Application: *applicationResponse.ApplicationOIDC,
 		}
 
-		return nil, result, nil
+		// Build secret return content for the response
+		mcpResultContent := make([]mcp.Content, 0)
+
+		if result.Application.TokenEndpointAuthMethod != management.ENUMAPPLICATIONOIDCTOKENAUTHMETHOD_NONE {
+			mcpResultContent = append(mcpResultContent,
+				&mcp.TextContent{
+					Text: "Application client secret auto-generated and now retrievable by the user.",
+				},
+			)
+		}
+
+		return &mcp.CallToolResult{
+			Content: mcpResultContent,
+		}, result, nil
 	}
 }

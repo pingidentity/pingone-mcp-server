@@ -63,6 +63,11 @@ func (c *ApplicationsCollection) RegisterTools(ctx context.Context, server *mcp.
 		mcp.AddTool(server, UpdateApplicationDef.McpTool, UpdateApplicationHandler(applicationsClientFactory, initializeAuthContext))
 	}
 
+	if toolFilter.ShouldIncludeTool(&GetApplicationSecretDef) {
+		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetApplicationSecretDef.McpTool.Name))
+		mcp.AddTool(server, GetApplicationSecretDef.McpTool, GetApplicationSecretHandler(initializeAuthContext))
+	}
+
 	return nil
 }
 
@@ -72,5 +77,6 @@ func (c *ApplicationsCollection) ListTools() []types.ToolDefinition {
 		GetApplicationDef,
 		CreateApplicationDef,
 		UpdateApplicationDef,
+		GetApplicationSecretDef,
 	}
 }
