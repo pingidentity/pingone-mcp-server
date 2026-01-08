@@ -20,13 +20,10 @@ type Collection interface {
 
 	// RegisterDynamicResources registers dynamic resources with the MCP server.
 	// Dynamic resources are generated at runtime based on the current PingOne environment state.
-	// The filter determines which resources are registered based on configuration settings.
-	// This function requires valid authentication credentials through the clientFactory parameter.
 	RegisterDynamicResources(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, tokenStore tokenstore.TokenStore) error
 
 	// RegisterTools registers the tools with the server.
 	// The filter determines which tools are registered based on read-only mode, included/excluded tools.
-	// This function requires valid authentication credentials through the clientFactory parameter.
 	RegisterTools(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, tokenStore tokenstore.TokenStore, toolFilter *filter.Filter) error
 
 	// ListDynamicResources returns a slice of all dynamic resource definitions available in this collection.
@@ -45,13 +42,10 @@ type LegacySdkCollection interface {
 
 	// RegisterDynamicResources registers dynamic resources with the MCP server using the legacy SDK.
 	// Dynamic resources are generated at runtime based on the current PingOne environment state.
-	// The filter determines which resources are registered based on configuration settings.
-	// This function requires valid authentication credentials through the clientFactory parameter.
 	RegisterDynamicResources(ctx context.Context, server *mcp.Server, clientFactory legacy.ClientFactory, tokenStore tokenstore.TokenStore) error
 
 	// RegisterTools registers the tools with the server using the legacy SDK.
 	// The filter determines which tools are registered based on read-only mode, included/excluded tools.
-	// This function requires valid authentication credentials through the clientFactory parameter.
 	RegisterTools(ctx context.Context, server *mcp.Server, clientFactory legacy.ClientFactory, tokenStore tokenstore.TokenStore, toolFilter *filter.Filter) error
 
 	// ListDynamicResources returns a slice of all dynamic resource definitions available in this collection.
