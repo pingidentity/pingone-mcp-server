@@ -5,6 +5,7 @@ package testutils
 import (
 	"context"
 
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
 	"github.com/stretchr/testify/mock"
@@ -24,8 +25,8 @@ func NewMockAuthClient(tokenSource oauth2.TokenSource) *MockAuthClient {
 	return result
 }
 
-func (m *MockAuthClient) TokenSource(ctx context.Context, grantType auth.GrantType) (oauth2.TokenSource, error) {
-	args := m.Called(ctx, grantType)
+func (m *MockAuthClient) TokenSource(ctx context.Context, grantType auth.GrantType, mcpServerSession *mcp.ServerSession) (oauth2.TokenSource, error) {
+	args := m.Called(ctx, grantType, mcpServerSession)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
