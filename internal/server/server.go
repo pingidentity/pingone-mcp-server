@@ -4,11 +4,11 @@ package server
 
 import (
 	"context"
-	"log"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
+	authmiddleware "github.com/pingidentity/pingone-mcp-server/internal/auth/middleware"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
@@ -30,30 +30,46 @@ func Start(ctx context.Context, version string, transport mcp.Transport, clientF
 	})
 
 	logger.FromContext(ctx).Debug("Registering MCP tool collections")
-	err := tools.RegisterCollections(ctx, server, clientFactory, legacySdkClientFactory, authClientFactory, tokenStore, toolFilter, grantType)
+	err := tools.RegisterCollections(ctx, server, clientFactory, legacySdkClientFactory, tokenStore, toolFilter)
 	if err != nil {
 		return err
 	}
 
-	// Create and add environment validation middleware
-	// This middleware validates that:
-	// 1. Environment exists and is accessible
-	// 2. Write operations are not performed on PRODUCTION environments
-	logger.FromContext(ctx).Debug("Setting up environment validation middleware")
-	allTools := tools.ListTools()
-	toolRegistry := validation.NewToolRegistry(allTools)
-	environmentsFactory := environments.NewPingOneClientEnvironmentsWrapperFactory(clientFactory, tokenStore)
-	initializeAuthContext := initialize.AuthContextInitializer(authClientFactory, tokenStore, grantType)
-	validator := validation.NewCachingEnvironmentValidator(environmentsFactory, initializeAuthContext)
-	validationMiddleware := validation.NewEnvironmentValidationMiddleware(validator, toolRegistry)
-	server.AddReceivingMiddleware(validationMiddleware.Handler)
-	logger.FromContext(ctx).Info("Environment validation middleware enabled - production environments are protected from write operations")
+	// Setup middleware
+	invocationMiddleware := setupInvocationMiddleware(ctx, server)
+	authMiddleware := setupAuthMiddleware(ctx, server, authClientFactory, tokenStore, grantType)
+	validationMiddleware := setupValidationMiddleware(ctx, server, clientFactory, tokenStore)
 
-	log.Println("Starting PingOne MCP server...")
+	// Register middleware in order: invocation -> auth -> validation
+	// Order matters: invocation sets up logging/audit, auth establishes session, validation checks permissions using the auth context
+	server.AddReceivingMiddleware(invocationMiddleware, authMiddleware, validationMiddleware)
+	logger.FromContext(ctx).Info("Middleware enabled - all tool calls will be authenticated and validated")
+
+	logger.FromContext(ctx).Info("Starting PingOne MCP server...")
 
 	if err := server.Run(ctx, transport); err != nil {
 		return err
 	}
 	return nil
 
+}
+
+func setupInvocationMiddleware(ctx context.Context, server *mcp.Server) mcp.Middleware {
+	invocationMiddleware := initialize.NewToolInvocationMiddleware()
+	return invocationMiddleware.Handler
+}
+
+func setupAuthMiddleware(ctx context.Context, server *mcp.Server, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, grantType auth.GrantType) mcp.Middleware {
+	authMiddleware := authmiddleware.NewAuthMiddleware(authClientFactory, tokenStore, grantType)
+	return authMiddleware.Handler
+}
+
+func setupValidationMiddleware(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, tokenStore tokenstore.TokenStore) mcp.Middleware {
+	allTools := tools.ListTools()
+	toolRegistry := validation.NewToolRegistry(allTools)
+	environmentsFactory := environments.NewPingOneClientEnvironmentsWrapperFactory(clientFactory, tokenStore)
+
+	validator := validation.NewCachingEnvironmentValidator(environmentsFactory)
+	validationMiddleware := validation.NewEnvironmentValidationMiddleware(validator, toolRegistry)
+	return validationMiddleware.Handler
 }
