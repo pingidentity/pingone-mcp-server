@@ -13,6 +13,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/tokenstore"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/applications"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/collections"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/directory"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/filter"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/populations"
@@ -22,6 +23,7 @@ import (
 // getDefaultCollections creates SDK collections
 func getDefaultCollections() []collections.Collection {
 	return []collections.Collection{
+		&directory.DirectoryCollection{},
 		&environments.EnvironmentsCollection{},
 	}
 }
@@ -29,8 +31,8 @@ func getDefaultCollections() []collections.Collection {
 // getLegacySdkCollections creates legacy SDK collections
 func getLegacySdkCollections() []collections.LegacySdkCollection {
 	return []collections.LegacySdkCollection{
-		&populations.PopulationsCollection{},
 		&applications.ApplicationsCollection{},
+		&populations.PopulationsCollection{},
 	}
 }
 

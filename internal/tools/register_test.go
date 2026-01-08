@@ -7,6 +7,7 @@ import (
 
 	"github.com/pingidentity/pingone-mcp-server/internal/tools"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/applications"
+	"github.com/pingidentity/pingone-mcp-server/internal/tools/directory"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/populations"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
@@ -20,6 +21,7 @@ func TestAllToolsRegistered(t *testing.T) {
 
 	// Get tools from individual collections
 	var expectedTools []types.ToolDefinition
+	expectedTools = append(expectedTools, (&directory.DirectoryCollection{}).ListTools()...)
 	expectedTools = append(expectedTools, (&environments.EnvironmentsCollection{}).ListTools()...)
 	expectedTools = append(expectedTools, (&populations.PopulationsCollection{}).ListTools()...)
 	expectedTools = append(expectedTools, (&applications.ApplicationsCollection{}).ListTools()...)
