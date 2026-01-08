@@ -7,8 +7,6 @@ import (
 	"log/slog"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/pingidentity/pingone-mcp-server/internal/auth"
-	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
@@ -38,7 +36,7 @@ func getLegacySdkCollections() []collections.LegacySdkCollection {
 	}
 }
 
-func RegisterCollections(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, legacySdkClientFactory legacy.ClientFactory, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, toolFilter *filter.Filter, grantType auth.GrantType) error {
+func RegisterCollections(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, legacySdkClientFactory legacy.ClientFactory, tokenStore tokenstore.TokenStore, toolFilter *filter.Filter) error {
 	// Get SDK collections
 	defaultCollections := getDefaultCollections()
 
@@ -49,7 +47,7 @@ func RegisterCollections(ctx context.Context, server *mcp.Server, clientFactory 
 		}
 		logger.FromContext(ctx).Debug("Registering MCP tool collection", slog.String("collection", collection.Name()))
 
-		if err := collection.RegisterTools(ctx, server, clientFactory, authClientFactory, tokenStore, toolFilter, grantType); err != nil {
+		if err := collection.RegisterTools(ctx, server, clientFactory, tokenStore, toolFilter); err != nil {
 			return err
 		}
 	}
@@ -64,7 +62,7 @@ func RegisterCollections(ctx context.Context, server *mcp.Server, clientFactory 
 		}
 		logger.FromContext(ctx).Debug("Registering MCP tool collection", slog.String("collection", collection.Name()))
 
-		if err := collection.RegisterTools(ctx, server, legacySdkClientFactory, authClientFactory, tokenStore, toolFilter, grantType); err != nil {
+		if err := collection.RegisterTools(ctx, server, legacySdkClientFactory, tokenStore, toolFilter); err != nil {
 			return err
 		}
 	}
