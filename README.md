@@ -468,7 +468,7 @@ Enabling/disabling tools (or collections of tools) provides the user control ove
 
 By default, the server starts in **read-only mode**, which only exposes tools that retrieve information without modifying any configuration or data. This provides a safety layer against accidental changes.
 
-To enable write operations (create, update, delete), add the `--disable-read-only` flag when starting the server:
+To enable write operations (create, update), add the `--disable-read-only` flag when starting the server:
 
 ```bash
 pingone-mcp-server run --disable-read-only
@@ -506,7 +506,7 @@ You can fine-tune which tools are available using inclusion and exclusion flags.
 - `--exclude-tools` - Disable specified tools
 - `--include-tool-collections` - Enable only specified collections
 - `--exclude-tool-collections` - Disable specified collections
-- `--disable-read-only` - Include write tools (required for create/update/delete operations)
+- `--disable-read-only` - Include write tools (required for create/update operations)
 
 #### Filtering Behavior
 
