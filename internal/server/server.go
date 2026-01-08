@@ -26,10 +26,20 @@ func Start(ctx context.Context, version string, transport mcp.Transport, clientF
 		Title:   "PingOne MCP Server",
 		Version: version,
 	}, &mcp.ServerOptions{
-		Logger:       logger.FromContext(ctx),
-		HasPrompts:   false, // to flip on first prompt
-		HasResources: false, // to flip on first resource
-		HasTools:     true,
+		Logger: logger.FromContext(ctx),
+		Capabilities: &mcp.ServerCapabilities{
+			Completions: nil,
+			Logging:     &mcp.LoggingCapabilities{},
+			Prompts: &mcp.PromptCapabilities{
+				ListChanged: true,
+			},
+			Resources: &mcp.ResourceCapabilities{
+				ListChanged: true,
+			},
+			Tools: &mcp.ToolCapabilities{
+				ListChanged: true,
+			},
+		},
 	})
 
 	logger.FromContext(ctx).Debug("Registering MCP tool collections")
