@@ -7,8 +7,6 @@ import (
 	"log/slog"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/pingidentity/pingone-mcp-server/internal/auth"
-	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/staticresources"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/types"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
@@ -17,13 +15,13 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/tokenstore"
 )
 
-func RegisterResources(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, legacySdkClientFactory legacy.ClientFactory, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, grantType auth.GrantType) error {
+func RegisterResources(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, legacySdkClientFactory legacy.ClientFactory, tokenStore tokenstore.TokenStore) error {
 	err := RegisterStaticResources(ctx, server)
 	if err != nil {
 		return err
 	}
 
-	err = RegisterDynamicResources(ctx, server, clientFactory, legacySdkClientFactory, authClientFactory, tokenStore, grantType)
+	err = RegisterDynamicResources(ctx, server, clientFactory, legacySdkClientFactory, tokenStore)
 	if err != nil {
 		return err
 	}
@@ -39,14 +37,14 @@ func ListStaticResources() []types.StaticResourceDefinition {
 	return staticresources.ListStaticResources()
 }
 
-func RegisterDynamicResources(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, legacySdkClientFactory legacy.ClientFactory, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, grantType auth.GrantType) error {
+func RegisterDynamicResources(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, legacySdkClientFactory legacy.ClientFactory, tokenStore tokenstore.TokenStore) error {
 	// Get SDK collections
 	defaultCollections := getDefaultCollections()
 
 	for _, collection := range defaultCollections {
 		logger.FromContext(ctx).Debug("Registering MCP dynamic resources", slog.String("collection", collection.Name()))
 
-		if err := collection.RegisterDynamicResources(ctx, server, clientFactory, authClientFactory, tokenStore, grantType); err != nil {
+		if err := collection.RegisterDynamicResources(ctx, server, clientFactory, tokenStore); err != nil {
 			return err
 		}
 	}
@@ -57,7 +55,7 @@ func RegisterDynamicResources(ctx context.Context, server *mcp.Server, clientFac
 	for _, collection := range legacyCollections {
 		logger.FromContext(ctx).Debug("Registering MCP dynamic resources", slog.String("collection", collection.Name()))
 
-		if err := collection.RegisterDynamicResources(ctx, server, legacySdkClientFactory, authClientFactory, tokenStore, grantType); err != nil {
+		if err := collection.RegisterDynamicResources(ctx, server, legacySdkClientFactory, tokenStore); err != nil {
 			return err
 		}
 	}

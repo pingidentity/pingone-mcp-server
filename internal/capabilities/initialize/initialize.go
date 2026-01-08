@@ -10,7 +10,7 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 )
 
-func InitializeToolInvocation(ctx context.Context, name string, req *mcp.CallToolRequest) context.Context {
+func initializeToolInvocation(ctx context.Context, name string, req *mcp.CallToolRequest) context.Context {
 	transactionId := audit.GenerateTransactionId()
 	ctx = logger.InitToolLoggerContext(ctx, name, req, transactionId)
 	ctx = audit.ContextWithTransactionId(ctx, transactionId)

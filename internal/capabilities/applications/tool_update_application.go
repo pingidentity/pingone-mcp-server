@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/patrickcping/pingone-go-sdk-v2/management"
-	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/schema"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/types"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
@@ -44,7 +43,7 @@ type UpdateApplicationOutput struct {
 	Application management.ApplicationOIDC `json:"application" jsonschema:"The updated application configuration details"`
 }
 
-func UpdateApplicationHandler(applicationsClientFactory ApplicationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+func UpdateApplicationHandler(applicationsClientFactory ApplicationsClientFactory) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
 	input UpdateApplicationInput,
@@ -54,14 +53,6 @@ func UpdateApplicationHandler(applicationsClientFactory ApplicationsClientFactor
 	error,
 ) {
 	return func(ctx context.Context, req *mcp.CallToolRequest, input UpdateApplicationInput) (*mcp.CallToolResult, *UpdateApplicationOutput, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, UpdateApplicationDef.McpTool.Name, req)
-		ctx, err := initializeAuthContext(ctx)
-		if err != nil {
-			toolErr := errs.NewToolError(UpdateApplicationDef.McpTool.Name, err)
-			errs.Log(ctx, toolErr)
-			return nil, nil, toolErr
-		}
-
 		client, err := applicationsClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
 			toolErr := errs.NewToolError(UpdateApplicationDef.McpTool.Name, err)

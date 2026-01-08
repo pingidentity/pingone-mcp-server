@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/patrickcping/pingone-go-sdk-v2/management"
-	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/schema"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/types"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
@@ -45,7 +44,7 @@ type CreatePopulationOutput struct {
 }
 
 // CreatePopulationHandler creates a new PingOne population using the provided client
-func CreatePopulationHandler(populationsClientFactory PopulationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+func CreatePopulationHandler(populationsClientFactory PopulationsClientFactory) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
 	input CreatePopulationInput,
@@ -55,14 +54,6 @@ func CreatePopulationHandler(populationsClientFactory PopulationsClientFactory, 
 	error,
 ) {
 	return func(ctx context.Context, req *mcp.CallToolRequest, input CreatePopulationInput) (*mcp.CallToolResult, *CreatePopulationOutput, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, CreatePopulationDef.McpTool.Name, req)
-		ctx, err := initializeAuthContext(ctx)
-		if err != nil {
-			toolErr := errs.NewToolError(CreatePopulationDef.McpTool.Name, err)
-			errs.Log(ctx, toolErr)
-			return nil, nil, toolErr
-		}
-
 		client, err := populationsClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
 			toolErr := errs.NewToolError(CreatePopulationDef.McpTool.Name, err)

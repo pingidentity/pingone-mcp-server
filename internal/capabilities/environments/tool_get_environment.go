@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-go-client/pingone"
-	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/schema"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/types"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
@@ -44,7 +43,7 @@ type GetEnvironmentOutput struct {
 }
 
 // GetEnvironmentHandler retrieves a PingOne environment by ID using the provided client
-func GetEnvironmentHandler(environmentsClientFactory EnvironmentsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+func GetEnvironmentHandler(environmentsClientFactory EnvironmentsClientFactory) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
 	input GetEnvironmentInput,
@@ -54,14 +53,6 @@ func GetEnvironmentHandler(environmentsClientFactory EnvironmentsClientFactory, 
 	error,
 ) {
 	return func(ctx context.Context, req *mcp.CallToolRequest, input GetEnvironmentInput) (*mcp.CallToolResult, *GetEnvironmentOutput, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, GetEnvironmentDef.McpTool.Name, req)
-		ctx, err := initializeAuthContext(ctx)
-		if err != nil {
-			toolErr := errs.NewToolError(GetEnvironmentDef.McpTool.Name, err)
-			errs.Log(ctx, toolErr)
-			return nil, nil, toolErr
-		}
-
 		client, err := environmentsClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
 			toolErr := errs.NewToolError(GetEnvironmentDef.McpTool.Name, err)

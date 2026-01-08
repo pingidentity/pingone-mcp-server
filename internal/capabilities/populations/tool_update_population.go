@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/patrickcping/pingone-go-sdk-v2/management"
-	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/schema"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/types"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
@@ -50,7 +49,7 @@ type UpdatePopulationOutput struct {
 }
 
 // UpdatePopulationHandler updates a PingOne population by ID using the provided client
-func UpdatePopulationHandler(populationsClientFactory PopulationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+func UpdatePopulationHandler(populationsClientFactory PopulationsClientFactory) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
 	input UpdatePopulationInput,
@@ -60,14 +59,6 @@ func UpdatePopulationHandler(populationsClientFactory PopulationsClientFactory, 
 	error,
 ) {
 	return func(ctx context.Context, req *mcp.CallToolRequest, input UpdatePopulationInput) (*mcp.CallToolResult, *UpdatePopulationOutput, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, UpdatePopulationDef.McpTool.Name, req)
-		ctx, err := initializeAuthContext(ctx)
-		if err != nil {
-			toolErr := errs.NewToolError(UpdatePopulationDef.McpTool.Name, err)
-			errs.Log(ctx, toolErr)
-			return nil, nil, toolErr
-		}
-
 		client, err := populationsClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
 			toolErr := errs.NewToolError(UpdatePopulationDef.McpTool.Name, err)

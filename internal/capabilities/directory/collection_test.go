@@ -1,13 +1,13 @@
 // Copyright © 2025 Ping Identity Corporation
 
-package environments_test
+package directory_test
 
 import (
 	"slices"
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/environments"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/directory"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/filter"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
@@ -15,13 +15,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEnvironmentsCollection_Name(t *testing.T) {
-	collection := &environments.EnvironmentsCollection{}
-	assert.Equal(t, "environments", collection.Name())
+func TestDirectoryCollection_Name(t *testing.T) {
+	collection := &directory.DirectoryCollection{}
+	assert.Equal(t, "directory", collection.Name())
 }
 
-func TestEnvironmentsCollection_ListTools(t *testing.T) {
-	collection := &environments.EnvironmentsCollection{}
+func TestDirectoryCollection_ListTools(t *testing.T) {
+	collection := &directory.DirectoryCollection{}
 	tools := collection.ListTools()
 
 	// Verify we have tools registered
@@ -35,8 +35,8 @@ func TestEnvironmentsCollection_ListTools(t *testing.T) {
 	}
 }
 
-func TestEnvironmentsCollection_RegisterTools_NilClientFactory(t *testing.T) {
-	collection := &environments.EnvironmentsCollection{}
+func TestDirectoryCollection_RegisterTools_NilClientFactory(t *testing.T) {
+	collection := &directory.DirectoryCollection{}
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "test-server",
 		Version: "v0.0.1",
@@ -51,8 +51,8 @@ func TestEnvironmentsCollection_RegisterTools_NilClientFactory(t *testing.T) {
 	assert.Contains(t, err.Error(), "PingOne API client factory is nil")
 }
 
-func TestEnvironmentsCollection_RegisterTools_NilTokenStore(t *testing.T) {
-	collection := &environments.EnvironmentsCollection{}
+func TestDirectoryCollection_RegisterTools_NilTokenStore(t *testing.T) {
+	collection := &directory.DirectoryCollection{}
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "test-server",
 		Version: "v0.0.1",
@@ -67,23 +67,17 @@ func TestEnvironmentsCollection_RegisterTools_NilTokenStore(t *testing.T) {
 	assert.Contains(t, err.Error(), "token store is nil")
 }
 
-func TestEnvironmentsCollection_RegisterTools_ReadOnlyToolsMarkedCorrectly(t *testing.T) {
-	collection := &environments.EnvironmentsCollection{}
+func TestDirectoryCollection_RegisterTools_ReadOnlyToolsMarkedCorrectly(t *testing.T) {
+	collection := &directory.DirectoryCollection{}
 	tools := collection.ListTools()
 
 	// Define known read-only tools
 	readOnlyTools := []string{
-		"list_environments",
-		"get_environment",
-		"get_environment_services",
+		"get_total_identities_by_environment",
 	}
 
-	// Define known write tools
-	writeTools := []string{
-		"create_environment",
-		"update_environment",
-		"update_environment_services",
-	}
+	// Define known write tools (none for directory collection currently)
+	writeTools := []string{}
 
 	for _, tool := range tools {
 		inReadOnly := slices.Contains(readOnlyTools, tool.McpTool.Name)
@@ -102,8 +96,8 @@ func TestEnvironmentsCollection_RegisterTools_ReadOnlyToolsMarkedCorrectly(t *te
 	}
 }
 
-func TestEnvironmentsCollection_ToolDefinitionsHaveRequiredFields(t *testing.T) {
-	collection := &environments.EnvironmentsCollection{}
+func TestDirectoryCollection_ToolDefinitionsHaveRequiredFields(t *testing.T) {
+	collection := &directory.DirectoryCollection{}
 	tools := collection.ListTools()
 
 	for _, tool := range tools {
@@ -117,7 +111,7 @@ func TestEnvironmentsCollection_ToolDefinitionsHaveRequiredFields(t *testing.T) 
 			// Every tool should have a description
 			assert.NotEmpty(t, tool.McpTool.Description, "Tool description should not be empty")
 
-			// Tool names should follow kebab-case convention
+			// Tool names should follow snake_case convention
 			assert.NotContains(t, tool.McpTool.Name, "pingone", "Tool name should not contain 'pingone'")
 			assert.NotContains(t, tool.McpTool.Name, "-", "Tool name should use snake_case, not kebab-case")
 			assert.NotContains(t, tool.McpTool.Name, " ", "Tool name should not contain spaces")

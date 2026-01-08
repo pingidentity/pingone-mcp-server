@@ -8,11 +8,8 @@ import (
 	"log/slog"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/pingidentity/pingone-mcp-server/internal/auth"
-	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/collections"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/filter"
-	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/types"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
@@ -29,48 +26,44 @@ func (c *EnvironmentsCollection) Name() string {
 	return CollectionName
 }
 
-func (c *EnvironmentsCollection) RegisterTools(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, toolFilter *filter.Filter, grantType auth.GrantType) error {
+func (c *EnvironmentsCollection) RegisterTools(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, tokenStore tokenstore.TokenStore, toolFilter *filter.Filter) error {
 	if clientFactory == nil {
 		return fmt.Errorf("PingOne API client factory is nil")
 	}
 	if tokenStore == nil {
 		return fmt.Errorf("token store is nil")
 	}
-	if authClientFactory == nil {
-		return fmt.Errorf("auth client factory is nil")
-	}
 
 	environmentsClientFactory := NewPingOneClientEnvironmentsWrapperFactory(clientFactory, tokenStore)
-	initializeAuthContext := initialize.AuthContextInitializer(authClientFactory, tokenStore, grantType)
 
 	if toolFilter.ShouldIncludeTool(&ListEnvironmentsDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", ListEnvironmentsDef.McpTool.Name))
-		mcp.AddTool(server, ListEnvironmentsDef.McpTool, ListEnvironmentsHandler(environmentsClientFactory, initializeAuthContext))
+		mcp.AddTool(server, ListEnvironmentsDef.McpTool, ListEnvironmentsHandler(environmentsClientFactory))
 	}
 
 	if toolFilter.ShouldIncludeTool(&CreateEnvironmentDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", CreateEnvironmentDef.McpTool.Name))
-		mcp.AddTool(server, CreateEnvironmentDef.McpTool, CreateEnvironmentHandler(environmentsClientFactory, initializeAuthContext))
+		mcp.AddTool(server, CreateEnvironmentDef.McpTool, CreateEnvironmentHandler(environmentsClientFactory))
 	}
 
 	if toolFilter.ShouldIncludeTool(&GetEnvironmentDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetEnvironmentDef.McpTool.Name))
-		mcp.AddTool(server, GetEnvironmentDef.McpTool, GetEnvironmentHandler(environmentsClientFactory, initializeAuthContext))
+		mcp.AddTool(server, GetEnvironmentDef.McpTool, GetEnvironmentHandler(environmentsClientFactory))
 	}
 
 	if toolFilter.ShouldIncludeTool(&UpdateEnvironmentDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", UpdateEnvironmentDef.McpTool.Name))
-		mcp.AddTool(server, UpdateEnvironmentDef.McpTool, UpdateEnvironmentHandler(environmentsClientFactory, initializeAuthContext))
+		mcp.AddTool(server, UpdateEnvironmentDef.McpTool, UpdateEnvironmentHandler(environmentsClientFactory))
 	}
 
 	if toolFilter.ShouldIncludeTool(&GetEnvironmentServicesDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", GetEnvironmentServicesDef.McpTool.Name))
-		mcp.AddTool(server, GetEnvironmentServicesDef.McpTool, GetEnvironmentServicesHandler(environmentsClientFactory, initializeAuthContext))
+		mcp.AddTool(server, GetEnvironmentServicesDef.McpTool, GetEnvironmentServicesHandler(environmentsClientFactory))
 	}
 
 	if toolFilter.ShouldIncludeTool(&UpdateEnvironmentServicesDef) {
 		logger.FromContext(ctx).Debug("Registering MCP tool", slog.String("collection", c.Name()), slog.String("tool", UpdateEnvironmentServicesDef.McpTool.Name))
-		mcp.AddTool(server, UpdateEnvironmentServicesDef.McpTool, UpdateEnvironmentServicesHandler(environmentsClientFactory, initializeAuthContext))
+		mcp.AddTool(server, UpdateEnvironmentServicesDef.McpTool, UpdateEnvironmentServicesHandler(environmentsClientFactory))
 	}
 
 	return nil
@@ -87,7 +80,7 @@ func (c *EnvironmentsCollection) ListTools() []types.ToolDefinition {
 	}
 }
 
-func (c *EnvironmentsCollection) RegisterDynamicResources(_ context.Context, _ *mcp.Server, _ sdk.ClientFactory, _ client.AuthClientFactory, _ tokenstore.TokenStore, _ auth.GrantType) error {
+func (c *EnvironmentsCollection) RegisterDynamicResources(_ context.Context, _ *mcp.Server, _ sdk.ClientFactory, _ tokenstore.TokenStore) error {
 	// No dynamic resources to register
 	return nil
 }

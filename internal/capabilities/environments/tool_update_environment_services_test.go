@@ -434,7 +434,7 @@ func TestUpdateEnvironmentServicesHandler_MockClient(t *testing.T) {
 			// Setup
 			mockClient := &envtestutils.MockEnvironmentsClient{}
 			tt.setupMock(mockClient, tt.input.EnvironmentId)
-			handler := environments.UpdateEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil))
 			req := &mcp.CallToolRequest{}
 
 			// Execute
@@ -461,7 +461,7 @@ func TestUpdateEnvironmentServicesHandler_MockClient(t *testing.T) {
 			// Setup
 			mockClient := &envtestutils.MockEnvironmentsClient{}
 			tt.setupMock(mockClient, tt.input.EnvironmentId)
-			handler := environments.UpdateEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil))
 
 			server := mcptestutils.TestMcpServer(t)
 			mcp.AddTool(server, environments.UpdateEnvironmentServicesDef.McpTool, handler)
@@ -508,7 +508,7 @@ func TestUpdateEnvironmentServicesHandler_ContextCancellation(t *testing.T) {
 	// Mock should return context.Canceled error when context is already cancelled
 	mockClient.On("GetEnvironmentServices", testutils.CancelledContextMatcher, envID).Return(nil, nil, context.Canceled)
 
-	handler := environments.UpdateEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+	handler := environments.UpdateEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil))
 	req := &mcp.CallToolRequest{}
 	input := environments.UpdateEnvironmentServicesInput{
 		EnvironmentId: testEnv1.id,
@@ -551,7 +551,7 @@ func TestUpdateEnvironmentServicesHandler_APIErrors(t *testing.T) {
 			mockGetEnvironmentServicesSetup(mockClient, envID, currentServices, 200, nil)
 			// Mock UPDATE call returns the API error
 			mockUpdateEnvironmentServicesSetup(mockClient, envID, nil, nil, tt.StatusCode, tt.ApiError)
-			handler := environments.UpdateEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := environments.UpdateEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil))
 
 			// Execute
 			mcpResult, output, err := handler(context.Background(), &mcp.CallToolRequest{}, input)
@@ -566,7 +566,7 @@ func TestUpdateEnvironmentServicesHandler_APIErrors(t *testing.T) {
 func TestUpdateEnvironmentServicesHandler_GetAuthenticatedClientError(t *testing.T) {
 	mockClient := &envtestutils.MockEnvironmentsClient{}
 	clientFactoryErr := errors.New("failed to get authenticated client")
-	handler := environments.UpdateEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
+	handler := environments.UpdateEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, clientFactoryErr))
 	req := &mcp.CallToolRequest{}
 	input := environments.UpdateEnvironmentServicesInput{
 		EnvironmentId: testEnv1.id,
@@ -579,26 +579,6 @@ func TestUpdateEnvironmentServicesHandler_GetAuthenticatedClientError(t *testing
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to get authenticated client")
-	assert.Nil(t, mcpResult)
-	assert.Nil(t, output)
-}
-
-func TestUpdateEnvironmentServicesHandler_InitializeAuthContextError(t *testing.T) {
-	mockClient := &envtestutils.MockEnvironmentsClient{}
-	initContextErr := errors.New("failed to initialize auth context")
-	handler := environments.UpdateEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
-	req := &mcp.CallToolRequest{}
-	input := environments.UpdateEnvironmentServicesInput{
-		EnvironmentId: testEnv1.id,
-		Services: []environments.EnvironmentServiceInput{
-			{Type: string(pingone.ENVIRONMENTBILLOFMATERIALSPRODUCTTYPE_PING_ONE_BASE)},
-		},
-	}
-
-	mcpResult, output, err := handler(context.Background(), req, input)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to initialize auth context")
 	assert.Nil(t, mcpResult)
 	assert.Nil(t, output)
 }
@@ -617,7 +597,7 @@ func TestUpdateEnvironmentServicesHandler_RealClient(t *testing.T) {
 	testEnvID := uuid.MustParse("00000000-0000-0000-0000-000000000000")
 
 	// Get current services first
-	getHandler := environments.GetEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(clientWrapper, nil), testutils.MockContextInitializer())
+	getHandler := environments.GetEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(clientWrapper, nil))
 	_, getOutput, err := getHandler(t.Context(), &mcp.CallToolRequest{}, environments.GetEnvironmentServicesInput{
 		EnvironmentId: testEnvID,
 	})
@@ -625,7 +605,7 @@ func TestUpdateEnvironmentServicesHandler_RealClient(t *testing.T) {
 	require.NotNil(t, getOutput)
 
 	// Update with the same services (no-op update)
-	handler := environments.UpdateEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(clientWrapper, nil), testutils.MockContextInitializer())
+	handler := environments.UpdateEnvironmentServicesHandler(envtestutils.NewMockEnvironmentsClientFactory(clientWrapper, nil))
 
 	// Convert products to EnvironmentServiceInput slice
 	var services []environments.EnvironmentServiceInput

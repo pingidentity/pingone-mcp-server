@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/patrickcping/pingone-go-sdk-v2/management"
-	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/schema"
 	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/types"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
@@ -52,7 +51,7 @@ type ListApplicationsOutput struct {
 }
 
 // ListApplicationsHandler lists all PingOne applications using the provided client
-func ListApplicationsHandler(clientFactory ApplicationsClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+func ListApplicationsHandler(clientFactory ApplicationsClientFactory) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
 	input ListApplicationsInput,
@@ -62,14 +61,6 @@ func ListApplicationsHandler(clientFactory ApplicationsClientFactory, initialize
 	error,
 ) {
 	return func(ctx context.Context, req *mcp.CallToolRequest, input ListApplicationsInput) (*mcp.CallToolResult, *ListApplicationsOutput, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, ListApplicationsDef.McpTool.Name, req)
-		ctx, err := initializeAuthContext(ctx)
-		if err != nil {
-			toolErr := errs.NewToolError(ListApplicationsDef.McpTool.Name, err)
-			errs.Log(ctx, toolErr)
-			return nil, nil, toolErr
-		}
-
 		client, err := clientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
 			toolErr := errs.NewToolError(ListApplicationsDef.McpTool.Name, err)

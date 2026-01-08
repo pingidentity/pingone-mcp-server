@@ -457,7 +457,7 @@ Enabling/disabling tools (or collections of tools) provides the user control ove
 
 By default, the server starts in **read-only mode**, which only exposes tools that retrieve information without modifying any configuration or data. This provides a safety layer against accidental changes.
 
-To enable write operations (create, update, delete), add the `--disable-read-only` flag when starting the server:
+To enable write operations (create, update), add the `--disable-read-only` flag when starting the server:
 
 ```bash
 pingone-mcp-server run --disable-read-only
@@ -495,7 +495,7 @@ You can fine-tune which tools are available using inclusion and exclusion flags.
 - `--exclude-tools` - Disable specified tools
 - `--include-tool-collections` - Enable only specified collections
 - `--exclude-tool-collections` - Disable specified collections
-- `--disable-read-only` - Include write tools (required for create/update/delete operations)
+- `--disable-read-only` - Include write tools (required for create/update operations)
 
 #### Filtering Behavior
 
@@ -582,6 +582,7 @@ Tool collections group related tools together for easier management. Each collec
 | Collection | Description | Tools Included |
 |------------|-------------|----------------|
 | `applications` | Manage OIDC/OAuth 2.0 applications in PingOne environments | `list_applications`, `get_application`, `create_oidc_application`, `update_oidc_application` |
+| `directory` | Manage directory configuration PingOne environments | `get_total_identities_by_environment` |
 | `environments` | Manage PingOne environments and their service configurations | `list_environments`, `get_environment`, `create_environment`, `update_environment`, `get_environment_services`, `update_environment_services` |
 | `populations` | Manage user populations within PingOne environments | `list_populations`, `get_population`, `create_population`, `update_population` |
 
@@ -599,6 +600,14 @@ Create, update, view applications within an environment.
 | `get_application` | `applications` | ✓ | Retrieve the detailed configuration of an application | - `Show me application abc-123` <br> - `Get the config for My Web App` <br> - `Display the OIDC settings for app xyz` |
 | `list_applications` | `applications` | ✓ | List applications accessible to the authenticated user, each with a basic configuration summary, within an environment | - `Show all applications in environment xyz` <br> - `List OIDC apps` <br> - `What applications exist and are enabled?` |
 | `update_oidc_application` | `applications` | | Update an OpenID Connect/OAuth 2.0 application's configuration | - `Update app xyz to add a new redirect URI` <br> - `Change the token lifetime for My Web App` <br> - `Modify the grant types for application abc-123` <br> - `Disable application abc-123` |
+
+#### Directory Operations
+
+Read or manage directory operations within an environment.
+
+| Tool | Collections | Read Only | Description | Usage Examples |
+|------|-------------|-------------|-------------|----------------|
+| `get_total_identities_by_environment` | `directory` | ✓ | Generate a per-day report on total identities within an environment. | - `How many total identities are there in environment abc-123` <br> - `Show me the changes in total identities between now and last week` |
 
 #### Environments
 
