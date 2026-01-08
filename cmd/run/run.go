@@ -25,7 +25,7 @@ import (
 
 const commandName = "run"
 
-func NewCommand(tokenStoreFactory tokenstore.TokenStoreFactory, clientFactory sdk.ClientFactory, legacyClientFactory legacy.ClientFactory, authClientFactory client.AuthClientFactory, transport mcp.Transport) *cobra.Command {
+func NewCommand(tokenStoreFactory tokenstore.TokenStoreFactory, clientFactory sdk.ClientFactory, legacyClientFactory legacy.ClientFactory, authClientFactory client.AuthClientFactory, transport mcp.Transport, version string) *cobra.Command {
 	var includedTools []string
 	var excludedTools []string
 	var includedToolCollections []string
@@ -98,7 +98,7 @@ The server will communicate over stdin/stdout.`,
 				warnAboutPotentialWriteToolsFiltered(cmd.Context(), includedTools)
 			}
 
-			err = server.Start(cmd.Context(), transport, clientFactory, legacyClientFactory, authClientFactory, tokenStore, toolFilter, grantType)
+			err = server.Start(cmd.Context(), version, transport, clientFactory, legacyClientFactory, authClientFactory, tokenStore, toolFilter, grantType)
 			if err != nil {
 				return errs.NewCommandError(commandName, err)
 			}
