@@ -11,14 +11,14 @@ import (
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/environments"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/populations"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
 	authtestutils "github.com/pingidentity/pingone-mcp-server/internal/testutils/auth"
 	mcptestutils "github.com/pingidentity/pingone-mcp-server/internal/testutils/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/tokenstore"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/populations"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

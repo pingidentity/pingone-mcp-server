@@ -1,0 +1,133 @@
+// Copyright © 2025 Ping Identity Corporation
+
+package applications
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log/slog"
+
+	"github.com/google/uuid"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/patrickcping/pingone-go-sdk-v2/management"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/schema"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/types"
+	"github.com/pingidentity/pingone-mcp-server/internal/errs"
+	"github.com/pingidentity/pingone-mcp-server/internal/logger"
+)
+
+var GetApplicationDef = types.ToolDefinition{
+	ValidationPolicy: &types.ToolValidationPolicy{
+		AllowProductionEnvironmentRead: true,
+	},
+	McpTool: &mcp.Tool{
+		Name:        "get_application",
+		Title:       "Get PingOne Application by ID",
+		Description: "Retrieve application configuration by ID. Use 'list_applications' first if you need to find the application ID. Call before 'update_oidc_application' to get current settings.",
+		InputSchema: schema.MustGenerateSchema[GetApplicationInput](),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
+	},
+}
+
+type GetApplicationInput struct {
+	EnvironmentId uuid.UUID `json:"environmentId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne environment"`
+	ApplicationId uuid.UUID `json:"applicationId" jsonschema:"REQUIRED. The unique identifier (UUID) string of the PingOne application"`
+}
+
+// GetApplicationHandler retrieves a PingOne application by ID using the provided client
+func GetApplicationHandler(applicationsClientFactory ApplicationsClientFactory) func(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input GetApplicationInput,
+) (
+	*mcp.CallToolResult,
+	any,
+	error,
+) {
+	return func(ctx context.Context, req *mcp.CallToolRequest, input GetApplicationInput) (*mcp.CallToolResult, any, error) {
+		client, err := applicationsClientFactory.GetAuthenticatedClient(ctx)
+		if err != nil {
+			toolErr := errs.NewToolError(GetApplicationDef.McpTool.Name, err)
+			errs.Log(ctx, toolErr)
+			return nil, nil, toolErr
+		}
+
+		logger.FromContext(ctx).Debug("Retrieving application",
+			slog.String("environmentId", input.EnvironmentId.String()),
+			slog.String("applicationId", input.ApplicationId.String()))
+
+		// Call the API to retrieve the application
+		application, httpResponse, err := client.GetApplication(ctx, input.EnvironmentId, input.ApplicationId)
+		logger.LogHttpResponse(ctx, httpResponse)
+
+		if err != nil {
+			apiErr := errs.NewApiError(httpResponse, err)
+			errs.Log(ctx, apiErr)
+			return nil, nil, apiErr
+		}
+
+		if application == nil {
+			apiErr := errs.NewApiError(httpResponse, fmt.Errorf("no application data in response"))
+			errs.Log(ctx, apiErr)
+			return nil, nil, apiErr
+		}
+
+		logger.FromContext(ctx).Debug("Application retrieved successfully",
+			slog.String("environmentId", input.EnvironmentId.String()),
+			slog.String("applicationId", input.ApplicationId.String()))
+
+		// Serialize the application based on its type, filtering out the _links field
+		formattedApplication, err := getOutputFormattedApplication(application)
+		if err != nil {
+			toolErr := errs.NewToolError(GetApplicationDef.McpTool.Name, err)
+			errs.Log(ctx, toolErr)
+			return nil, nil, toolErr
+		}
+		applicationJsonBytes, err := json.Marshal(formattedApplication)
+		if err != nil {
+			toolErr := errs.NewToolError(GetApplicationDef.McpTool.Name, fmt.Errorf("failed to marshal formatted application response: %w", err))
+			errs.Log(ctx, toolErr)
+			return nil, nil, toolErr
+		}
+
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{
+					Text: string(applicationJsonBytes),
+				},
+			},
+		}, nil, nil
+	}
+}
+
+func getOutputFormattedApplication(application *management.ReadOneApplication200Response) (any, error) {
+	// Return the configured application type, and filter out the _links field
+	switch {
+	case application.ApplicationExternalLink != nil:
+		application.ApplicationExternalLink.Links = nil
+		return application.ApplicationExternalLink, nil
+	case application.ApplicationOIDC != nil:
+		application.ApplicationOIDC.Links = nil
+		return application.ApplicationOIDC, nil
+	case application.ApplicationPingOneAdminConsole != nil:
+		// No links field to remove
+		return application.ApplicationPingOneAdminConsole, nil
+	case application.ApplicationPingOnePortal != nil:
+		application.ApplicationPingOnePortal.Links = nil
+		return application.ApplicationPingOnePortal, nil
+	case application.ApplicationPingOneSelfService != nil:
+		application.ApplicationPingOneSelfService.Links = nil
+		return application.ApplicationPingOneSelfService, nil
+	case application.ApplicationSAML != nil:
+		application.ApplicationSAML.Links = nil
+		return application.ApplicationSAML, nil
+	case application.ApplicationWSFED != nil:
+		application.ApplicationWSFED.Links = nil
+		return application.ApplicationWSFED, nil
+	default:
+		return nil, fmt.Errorf("unknown application type in response")
+	}
+}
