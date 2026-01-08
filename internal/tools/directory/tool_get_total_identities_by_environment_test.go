@@ -7,20 +7,16 @@ import (
 	"encoding/json"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/testutils"
 	mcptestutils "github.com/pingidentity/pingone-mcp-server/internal/testutils/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/directory"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/oauth2"
 )
 
 func TestGetTotalIdentitiesByEnvironmentHandler_MockClient(t *testing.T) {
@@ -94,7 +90,7 @@ func TestGetTotalIdentitiesByEnvironmentHandler_MockClient(t *testing.T) {
 			// Calculate filter string based on input dates
 			filter := calculateFilter(tt.input)
 			tt.setupMock(mockClient, tt.input.EnvironmentId, filter)
-			handler := directory.GetTotalIdentitiesByEnvironmentHandler(NewMockPingOneClientDirectoryWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := directory.GetTotalIdentitiesByEnvironmentHandler(NewMockPingOneClientDirectoryWrapperFactory(mockClient, nil))
 			req := &mcp.CallToolRequest{}
 
 			// Execute
@@ -122,7 +118,7 @@ func TestGetTotalIdentitiesByEnvironmentHandler_MockClient(t *testing.T) {
 			mockClient := &mockPingOneClientDirectoryWrapper{}
 			filter := calculateFilter(tt.input)
 			tt.setupMock(mockClient, tt.input.EnvironmentId, filter)
-			handler := directory.GetTotalIdentitiesByEnvironmentHandler(NewMockPingOneClientDirectoryWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := directory.GetTotalIdentitiesByEnvironmentHandler(NewMockPingOneClientDirectoryWrapperFactory(mockClient, nil))
 
 			server := mcptestutils.TestMcpServer(t)
 			mcp.AddTool(server, directory.GetTotalIdentitiesByEnvironmentDef.McpTool, handler)
@@ -169,7 +165,7 @@ func TestGetTotalIdentitiesByEnvironmentHandler_ContextCancellation(t *testing.T
 	// Mock should return context.Canceled error when context is already cancelled
 	mockClient.On("GetTotalIdentitiesByEnvironmentId", testutils.CancelledContextMatcher, envID, mock.Anything).Return(nil, nil, context.Canceled)
 
-	handler := directory.GetTotalIdentitiesByEnvironmentHandler(NewMockPingOneClientDirectoryWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+	handler := directory.GetTotalIdentitiesByEnvironmentHandler(NewMockPingOneClientDirectoryWrapperFactory(mockClient, nil))
 	req := &mcp.CallToolRequest{}
 	input := directory.GetTotalIdentitiesByEnvironmentInput{
 		EnvironmentId: testEnvId,
@@ -200,7 +196,7 @@ func TestGetTotalIdentitiesByEnvironmentHandler_APIErrors(t *testing.T) {
 			// Setup
 			mockClient := &mockPingOneClientDirectoryWrapper{}
 			mockGetTotalIdentitiesByEnvironmentSetup(mockClient, envID, nil, tt.StatusCode, tt.ApiError)
-			handler := directory.GetTotalIdentitiesByEnvironmentHandler(NewMockPingOneClientDirectoryWrapperFactory(mockClient, nil), testutils.MockContextInitializer())
+			handler := directory.GetTotalIdentitiesByEnvironmentHandler(NewMockPingOneClientDirectoryWrapperFactory(mockClient, nil))
 
 			// Execute
 			mcpResult, output, err := handler(context.Background(), &mcp.CallToolRequest{}, input)
@@ -215,7 +211,7 @@ func TestGetTotalIdentitiesByEnvironmentHandler_APIErrors(t *testing.T) {
 func TestGetTotalIdentitiesByEnvironmentHandler_GetAuthenticatedClientError(t *testing.T) {
 	mockClient := &mockPingOneClientDirectoryWrapper{}
 	clientFactoryErr := errors.New("failed to get authenticated client")
-	handler := directory.GetTotalIdentitiesByEnvironmentHandler(NewMockPingOneClientDirectoryWrapperFactory(mockClient, clientFactoryErr), testutils.MockContextInitializer())
+	handler := directory.GetTotalIdentitiesByEnvironmentHandler(NewMockPingOneClientDirectoryWrapperFactory(mockClient, clientFactoryErr))
 	req := &mcp.CallToolRequest{}
 	input := directory.GetTotalIdentitiesByEnvironmentInput{
 		EnvironmentId: testEnvId,
@@ -229,96 +225,6 @@ func TestGetTotalIdentitiesByEnvironmentHandler_GetAuthenticatedClientError(t *t
 	assert.Nil(t, output)
 }
 
-func TestGetTotalIdentitiesByEnvironmentHandler_InitializeAuthContextError(t *testing.T) {
-	mockClient := &mockPingOneClientDirectoryWrapper{}
-	initContextErr := errors.New("failed to initialize auth context")
-	handler := directory.GetTotalIdentitiesByEnvironmentHandler(NewMockPingOneClientDirectoryWrapperFactory(mockClient, nil), testutils.MockContextInitializerWithError(initContextErr))
-	req := &mcp.CallToolRequest{}
-	input := directory.GetTotalIdentitiesByEnvironmentInput{
-		EnvironmentId: testEnvId,
-	}
-
-	mcpResult, output, err := handler(context.Background(), req, input)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to initialize auth context")
-	assert.Nil(t, mcpResult)
-	assert.Nil(t, output)
-}
-
-func TestGetTotalIdentitiesByEnvironmentHandler_InitializeAuthContext(t *testing.T) {
-	testCases := []struct {
-		name                       string
-		setupTokenStore            func() *testutils.InMemoryTokenStore
-		setupAuthClient            func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory)
-		expectTokenSourceRetrieval bool
-	}{
-		{
-			name: "Auto auth - no existing session",
-			setupTokenStore: func() *testutils.InMemoryTokenStore {
-				return testutils.NewInMemoryTokenStore()
-			},
-			setupAuthClient: func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory) {
-				authzCodeTokenSource := testutils.NewStaticTokenSource(&oauth2.Token{
-					AccessToken:  "authz-code-access-token",
-					RefreshToken: "authz-code-refresh-token",
-					Expiry:       time.Now().Add(time.Hour),
-				})
-				mockAuthClient := &testutils.MockAuthClient{}
-				mockAuthClient.On("TokenSource", mock.Anything, auth.GrantTypeAuthorizationCode).Return(authzCodeTokenSource, nil)
-				mockAuthClient.On("BrowserLoginAvailable", auth.GrantTypeAuthorizationCode).Return(true)
-				mockClientFactory := &testutils.MockAuthClientFactory{}
-				mockClientFactory.On("NewAuthClient").Return(mockAuthClient, nil)
-				return mockAuthClient, mockClientFactory
-			},
-			expectTokenSourceRetrieval: true,
-		},
-		{
-			name: "Use existing auth session",
-			setupTokenStore: func() *testutils.InMemoryTokenStore {
-				return testutils.NewInMemoryTokenStoreWithDefaultSession()
-			},
-			setupAuthClient: func() (*testutils.MockAuthClient, *testutils.MockAuthClientFactory) {
-				mockAuthClient := &testutils.MockAuthClient{}
-				mockAuthClient.On("BrowserLoginAvailable", auth.GrantTypeAuthorizationCode).Return(true)
-				mockClientFactory := &testutils.MockAuthClientFactory{}
-				mockClientFactory.On("NewAuthClient").Return(mockAuthClient, nil)
-				return mockAuthClient, mockClientFactory
-			},
-			expectTokenSourceRetrieval: false,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Set up a mock get response
-			mockClient := &mockPingOneClientDirectoryWrapper{}
-			expectedReport := createTotalIdentitiesResponse(t)
-			mockGetTotalIdentitiesByEnvironmentSetup(mockClient, testEnvId, &expectedReport, 200, nil)
-
-			// Set up auth mocks
-			tokenStore := tc.setupTokenStore()
-			mockAuthClient, mockClientFactory := tc.setupAuthClient()
-			authContextInitializer := initialize.AuthContextInitializer(mockClientFactory, tokenStore, auth.GrantTypeAuthorizationCode)
-
-			// Create handler and execute
-			handler := directory.GetTotalIdentitiesByEnvironmentHandler(NewMockPingOneClientDirectoryWrapperFactory(mockClient, nil), authContextInitializer)
-			req := &mcp.CallToolRequest{}
-			input := directory.GetTotalIdentitiesByEnvironmentInput{
-				EnvironmentId: testEnvId,
-			}
-
-			_, _, err := handler(context.Background(), req, input)
-
-			require.NoError(t, err)
-
-			// Verify expectations
-			mockClientFactory.AssertExpectations(t)
-			mockAuthClient.AssertExpectations(t)
-		})
-	}
-}
-
 func TestGetTotalIdentitiesByEnvironmentHandler_RealClient(t *testing.T) {
 	//TODO enable test when we can run against a real P1 client
 	t.Skip("Skipping TestGetTotalIdentitiesByEnvironmentHandler_RealClient since it relies on real P1 client")
@@ -329,7 +235,7 @@ func TestGetTotalIdentitiesByEnvironmentHandler_RealClient(t *testing.T) {
 	require.NoError(t, err, "Failed to create PingOne client - check your credentials")
 
 	clientWrapper := directory.NewPingOneClientDirectoryWrapper(client)
-	handler := directory.GetTotalIdentitiesByEnvironmentHandler(NewMockPingOneClientDirectoryWrapperFactory(clientWrapper, nil), testutils.MockContextInitializer())
+	handler := directory.GetTotalIdentitiesByEnvironmentHandler(NewMockPingOneClientDirectoryWrapperFactory(clientWrapper, nil))
 
 	// Note: Replace with a valid environment ID from your PingOne organization
 	testEnvironmentId := uuid.MustParse("00000000-0000-0000-0000-000000000000")

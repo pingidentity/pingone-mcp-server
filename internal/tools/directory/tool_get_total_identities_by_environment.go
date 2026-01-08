@@ -13,7 +13,6 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/schema"
 	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 )
@@ -53,7 +52,7 @@ type GetTotalIdentitiesByEnvironmentOutputReport struct {
 }
 
 // GetTotalIdentitiesByEnvironmentHandler retrieves the total identities count for a PingOne environment within a specified date range using the provided client
-func GetTotalIdentitiesByEnvironmentHandler(directoryClientFactory DirectoryClientFactory, initializeAuthContext initialize.ContextInitializer) func(
+func GetTotalIdentitiesByEnvironmentHandler(directoryClientFactory DirectoryClientFactory) func(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
 	input GetTotalIdentitiesByEnvironmentInput,
@@ -63,14 +62,6 @@ func GetTotalIdentitiesByEnvironmentHandler(directoryClientFactory DirectoryClie
 	error,
 ) {
 	return func(ctx context.Context, req *mcp.CallToolRequest, input GetTotalIdentitiesByEnvironmentInput) (*mcp.CallToolResult, *GetTotalIdentitiesByEnvironmentOutput, error) {
-		ctx = initialize.InitializeToolInvocation(ctx, GetTotalIdentitiesByEnvironmentDef.McpTool.Name, req)
-		ctx, err := initializeAuthContext(ctx)
-		if err != nil {
-			toolErr := errs.NewToolError(GetTotalIdentitiesByEnvironmentDef.McpTool.Name, err)
-			errs.Log(ctx, toolErr)
-			return nil, nil, toolErr
-		}
-
 		client, err := directoryClientFactory.GetAuthenticatedClient(ctx)
 		if err != nil {
 			toolErr := errs.NewToolError(GetTotalIdentitiesByEnvironmentDef.McpTool.Name, err)
