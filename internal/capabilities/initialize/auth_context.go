@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/audit"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
@@ -17,38 +18,30 @@ import (
 
 type ContextInitializer func(ctx context.Context) (context.Context, error)
 
-func AuthContextInitializer(authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, grantType auth.GrantType) func(ctx context.Context) (context.Context, error) {
+func AuthContextInitializer(mcpServerSession *mcp.ServerSession, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, grantType auth.GrantType) func(ctx context.Context) (context.Context, error) {
 	return func(ctx context.Context) (context.Context, error) {
 		authClient, err := authClientFactory.NewAuthClient()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create auth client: %w", err)
 		}
-		return InitializeAuthContext(ctx, authClient, tokenStore, grantType)
+		return InitializeAuthContext(ctx, mcpServerSession, authClient, tokenStore, grantType)
 	}
 }
 
-func InitializeAuthContext(ctx context.Context, authClient client.AuthClient, tokenStore tokenstore.TokenStore, grantType auth.GrantType) (context.Context, error) {
+func InitializeAuthContext(ctx context.Context, mcpServerSession *mcp.ServerSession, authClient client.AuthClient, tokenStore tokenstore.TokenStore, grantType auth.GrantType) (context.Context, error) {
 	var authSession *auth.AuthSession
 	var err error
-	// If browser login is available, we can attempt to auto-login if no valid session exists
-	if authClient.BrowserLoginAvailable(grantType) {
-		authSession, err = login.LoginIfNecessary(ctx, authClient, tokenStore, grantType)
-		if err != nil {
-			return nil, fmt.Errorf("failed to login: %w", err)
-		}
-	} else {
-		hasSession, err := tokenStore.HasSession()
-		if err != nil {
-			return nil, fmt.Errorf("failed to check for auth session: %w", err)
-		}
-		if !hasSession {
-			return nil, fmt.Errorf("no active auth session found and a browser can't be used for login. Unable to authenticate")
-		}
-		authSession, err = tokenStore.GetSession()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get auth session: %w", err)
-		}
+
+	// If the browser login is not available, and the grant type is not device code, return an error
+	if !authClient.BrowserLoginAvailable(grantType) && grantType != auth.GrantTypeDeviceCode {
+		return nil, fmt.Errorf("browser login is not available in this environment and grant type %s cannot be used. Use %s grant type instead for headless auth", grantType, auth.GrantTypeDeviceCode.String())
 	}
+
+	authSession, err = login.LoginIfNecessary(ctx, authClient, tokenStore, grantType, mcpServerSession)
+	if err != nil {
+		return nil, fmt.Errorf("failed to login: %w", err)
+	}
+
 	ctx = audit.ContextWithSessionId(ctx, authSession.SessionId)
 	return logger.ContextWithLogger(ctx, logger.FromContext(ctx).With(slog.String("sessionId", authSession.SessionId))), nil
 }

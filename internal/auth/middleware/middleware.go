@@ -76,7 +76,7 @@ func (m *AuthMiddleware) Handler(next mcp.MethodHandler) mcp.MethodHandler {
 		}
 
 		// Initialize auth context
-		authenticatedCtx, err := initialize.InitializeAuthContext(ctx, authClient, m.tokenStore, m.grantType)
+		authenticatedCtx, err := initialize.InitializeAuthContext(ctx, callToolReq.Session, authClient, m.tokenStore, m.grantType)
 		if err != nil {
 			logger.FromContext(ctx).Error("Authentication initialization failed",
 				slog.String("tool", toolName),

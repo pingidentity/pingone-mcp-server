@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth/logout"
@@ -22,18 +23,18 @@ const authTimeout = 5 * time.Minute
 // Login with the given authClient for the specified grant type. The resulting auth session
 // will be stored in the provided tokenStore.
 // This method will always re-authenticate, even if a valid session already exists.
-func ForceLogin(ctx context.Context, authClient client.AuthClient, tokenStore tokenstore.TokenStore, grantType auth.GrantType) (*auth.AuthSession, error) {
-	return login(ctx, authClient, tokenStore, grantType, true)
+func ForceLogin(ctx context.Context, authClient client.AuthClient, tokenStore tokenstore.TokenStore, grantType auth.GrantType, mcpServerSession *mcp.ServerSession) (*auth.AuthSession, error) {
+	return login(ctx, authClient, tokenStore, grantType, true, mcpServerSession)
 }
 
 // Login with the given authClient for the specified grant type. The resulting auth session
 // will be stored in the provided tokenStore.
 // If a valid session already exists, it will be returned without re-authenticating.
-func LoginIfNecessary(ctx context.Context, authClient client.AuthClient, tokenStore tokenstore.TokenStore, grantType auth.GrantType) (*auth.AuthSession, error) {
-	return login(ctx, authClient, tokenStore, grantType, false)
+func LoginIfNecessary(ctx context.Context, authClient client.AuthClient, tokenStore tokenstore.TokenStore, grantType auth.GrantType, mcpServerSession *mcp.ServerSession) (*auth.AuthSession, error) {
+	return login(ctx, authClient, tokenStore, grantType, false, mcpServerSession)
 }
 
-func login(ctx context.Context, authClient client.AuthClient, tokenStore tokenstore.TokenStore, grantType auth.GrantType, forceReAuth bool) (*auth.AuthSession, error) {
+func login(ctx context.Context, authClient client.AuthClient, tokenStore tokenstore.TokenStore, grantType auth.GrantType, forceReAuth bool, mcpServerSession *mcp.ServerSession) (*auth.AuthSession, error) {
 	hasSession, err := tokenStore.HasSession()
 	if err != nil {
 		return nil, err
@@ -64,7 +65,7 @@ func login(ctx context.Context, authClient client.AuthClient, tokenStore tokenst
 	authCtx, cancel := context.WithTimeout(ctx, authTimeout)
 	defer cancel()
 
-	tokenSource, err := authClient.TokenSource(authCtx, grantType)
+	tokenSource, err := authClient.TokenSource(authCtx, grantType, mcpServerSession)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return nil, fmt.Errorf("authentication timed out after %v", authTimeout)
