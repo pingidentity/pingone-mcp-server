@@ -11,15 +11,15 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/filter"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/types"
 	"github.com/pingidentity/pingone-mcp-server/internal/errs"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
 	"github.com/pingidentity/pingone-mcp-server/internal/server"
 	"github.com/pingidentity/pingone-mcp-server/internal/tokenstore"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/filter"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/types"
 	"github.com/spf13/cobra"
 )
 
@@ -120,7 +120,7 @@ The server will communicate over stdin/stdout.`,
 // warnAboutPotentialWriteToolsFiltered checks if any of the included tools are write tools
 // and warns the user that they will be filtered out due to read-only mode being enabled
 func warnAboutPotentialWriteToolsFiltered(ctx context.Context, includedTools []string) {
-	allTools := tools.ListTools()
+	allTools := capabilities.ListTools()
 
 	// Create a map of tool names to their definitions for quick lookup
 	toolMap := make(map[string]*types.ToolDefinition)

@@ -23,7 +23,7 @@ Know that:
 
 **CRITICAL:** All code must comply with the MCP specification. Key requirements:
 
-- ✅ **Use structured logging** in server code (`internal/server`, `internal/tools`, `internal/sdk`, `internal/auth`)
+- ✅ **Use structured logging** in server code (`internal/server`, `internal/capabilities`, `internal/sdk`, `internal/auth`)
 - ❌ **Never use `fmt.Printf`** in server code (breaks MCP protocol communication)
 - ✅ **Use `fmt.Printf`** in CLI commands (`cmd/` directory) for user output
 

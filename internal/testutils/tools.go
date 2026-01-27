@@ -2,7 +2,7 @@
 
 package testutils
 
-import "github.com/pingidentity/pingone-mcp-server/internal/tools"
+import tools "github.com/pingidentity/pingone-mcp-server/internal/capabilities"
 
 func AllServerToolNames() []string {
 	allTools := tools.ListTools()
