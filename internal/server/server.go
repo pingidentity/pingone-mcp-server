@@ -9,15 +9,15 @@ import (
 	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
 	authmiddleware "github.com/pingidentity/pingone-mcp-server/internal/auth/middleware"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/environments"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/filter"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/initialize"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/validation"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk"
 	"github.com/pingidentity/pingone-mcp-server/internal/sdk/legacy"
 	"github.com/pingidentity/pingone-mcp-server/internal/tokenstore"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/environments"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/filter"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/validation"
 )
 
 func Start(ctx context.Context, version string, transport mcp.Transport, clientFactory sdk.ClientFactory, legacySdkClientFactory legacy.ClientFactory, authClientFactory client.AuthClientFactory, tokenStore tokenstore.TokenStore, toolFilter *filter.Filter, grantType auth.GrantType) error {
@@ -27,10 +27,35 @@ func Start(ctx context.Context, version string, transport mcp.Transport, clientF
 		Version: version,
 	}, &mcp.ServerOptions{
 		Logger: logger.FromContext(ctx),
+		Capabilities: &mcp.ServerCapabilities{
+			Completions: nil,
+			Logging:     &mcp.LoggingCapabilities{},
+			Prompts: &mcp.PromptCapabilities{
+				ListChanged: true,
+			},
+			Resources: &mcp.ResourceCapabilities{
+				ListChanged: true,
+			},
+			Tools: &mcp.ToolCapabilities{
+				ListChanged: true,
+			},
+		},
 	})
 
 	logger.FromContext(ctx).Debug("Registering MCP tool collections")
-	err := tools.RegisterCollections(ctx, server, clientFactory, legacySdkClientFactory, tokenStore, toolFilter)
+	err := capabilities.RegisterToolCollections(ctx, server, clientFactory, legacySdkClientFactory, tokenStore, toolFilter)
+	if err != nil {
+		return err
+	}
+
+	logger.FromContext(ctx).Debug("Registering MCP resources")
+	err = capabilities.RegisterResources(ctx, server, clientFactory, legacySdkClientFactory, tokenStore)
+	if err != nil {
+		return err
+	}
+
+	logger.FromContext(ctx).Debug("Registering MCP prompts")
+	err = capabilities.RegisterPrompts(ctx, server)
 	if err != nil {
 		return err
 	}
@@ -65,7 +90,7 @@ func setupAuthMiddleware(ctx context.Context, server *mcp.Server, authClientFact
 }
 
 func setupValidationMiddleware(ctx context.Context, server *mcp.Server, clientFactory sdk.ClientFactory, tokenStore tokenstore.TokenStore) mcp.Middleware {
-	allTools := tools.ListTools()
+	allTools := capabilities.ListTools()
 	toolRegistry := validation.NewToolRegistry(allTools)
 	environmentsFactory := environments.NewPingOneClientEnvironmentsWrapperFactory(clientFactory, tokenStore)
 

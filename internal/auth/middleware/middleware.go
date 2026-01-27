@@ -10,9 +10,9 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth"
 	"github.com/pingidentity/pingone-mcp-server/internal/auth/client"
+	"github.com/pingidentity/pingone-mcp-server/internal/capabilities/initialize"
 	"github.com/pingidentity/pingone-mcp-server/internal/logger"
 	"github.com/pingidentity/pingone-mcp-server/internal/tokenstore"
-	"github.com/pingidentity/pingone-mcp-server/internal/tools/initialize"
 )
 
 // AuthMiddleware ensures all tool calls have proper authentication context.
