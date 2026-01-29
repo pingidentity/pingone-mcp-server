@@ -167,6 +167,34 @@ See [the latest GitHub release](https://github.com/pingidentity/pingone-mcp-serv
 
 </details>
 
+<details>
+<summary>Windows - GitHub Release Manual Installation Instructions</summary>
+
+##### Windows Manual Installation Instructions
+
+See [the latest GitHub release](https://github.com/pingidentity/pingone-mcp-server/releases/latest) for artifact downloads, artifact signatures, and the checksum file. To verify package downloads, see the [Verify Section](#verify).
+
+OR
+
+Use the following single-line PowerShell 7.4 command to install the server into '%LOCALAPPDATA%\Programs' directly.
+>**_NOTE:_** After installation, ensure that `%LOCALAPPDATA%\Programs` is included in your PATH environment variable. If it is not already present, add it so you can call `pingone-mcp-server` directly in your terminal, and so that it can be called directly in your chosen AI client.
+
+```powershell
+$latestReleaseUrl = Invoke-WebRequest -Uri "https://github.com/pingidentity/pingone-mcp-server/releases/latest" -MaximumRedirection 0 -ErrorAction Ignore -UseBasicParsing -SkipHttpErrorCheck; `
+$RELEASE_VERSION = [System.IO.Path]::GetFileName($latestReleaseUrl.Headers.Location); `
+$RELEASE_VERSION_NO_PREFIX = $RELEASE_VERSION -replace "^v", ""; `
+$HARDWARE_PLATFORM = $env:PROCESSOR_ARCHITECTURE -replace "ARM64", "arm64" -replace "x86", "386" -replace "AMD64", "amd64" -replace "EM64T", "amd64"; `
+$URL = "https://github.com/pingidentity/pingone-mcp-server/releases/download/${RELEASE_VERSION}/pingone-mcp-server_${RELEASE_VERSION_NO_PREFIX}_windows_${HARDWARE_PLATFORM}.exe"
+Invoke-WebRequest -Uri $URL -OutFile "pingone-mcp-server.exe"; `
+Move-Item -Path pingone-mcp-server.exe -Destination "${env:LOCALAPPDATA}\Programs"
+```
+
+##### Verify with Checksums
+
+See [the latest GitHub release](https://github.com/pingidentity/pingone-mcp-server/releases/latest) for the checksums.txt file. The checksums are in the format of SHA256.
+
+</details>
+
 Test the installation:
 
 ```shell
