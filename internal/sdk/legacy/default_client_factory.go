@@ -1,4 +1,4 @@
-// Copyright © 2025 Ping Identity Corporation
+// Copyright © 2026 Ping Identity Corporation
 
 // Package legacy provides client factory implementations for the legacy PingOne Go SDK v2.
 // This package is used for backward compatibility with the patrickcping/pingone-go-sdk-v2
