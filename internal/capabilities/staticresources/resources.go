@@ -1,3 +1,5 @@
+// Copyright © 2026 Ping Identity Corporation
+
 package staticresources
 
 import (
