@@ -9,13 +9,13 @@ require (
 	github.com/google/jsonschema-go v0.4.2
 	github.com/google/uuid v1.6.0
 	github.com/modelcontextprotocol/go-sdk v1.2.0
-	github.com/patrickcping/pingone-go-sdk-v2 v0.14.5
+	github.com/patrickcping/pingone-go-sdk-v2 v0.14.6
 	github.com/patrickcping/pingone-go-sdk-v2/management v0.63.0
 	github.com/pingidentity/pingone-go-client v0.4.1
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/zalando/go-keyring v0.2.6
-	golang.org/x/oauth2 v0.34.0
+	golang.org/x/oauth2 v0.35.0
 )
 
 require (
@@ -138,7 +138,7 @@ require (
 	github.com/patrickcping/pingone-go-sdk-v2/credentials v0.12.0 // indirect
 	github.com/patrickcping/pingone-go-sdk-v2/mfa v0.24.1 // indirect
 	github.com/patrickcping/pingone-go-sdk-v2/risk v0.21.0 // indirect
-	github.com/patrickcping/pingone-go-sdk-v2/verify v0.10.0 // indirect
+	github.com/patrickcping/pingone-go-sdk-v2/verify v0.11.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
